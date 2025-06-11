@@ -37,9 +37,12 @@ class Renderer {
         
         if (fogOfWar[y][x]) {
             if (explored[y][x]) {
-                // Explored but not currently visible - show dimmed terrain
-                this.ctx.fillStyle = tile === '#' ? CONFIG.COLORS.WALL : CONFIG.COLORS.FLOOR;
-                this.ctx.fillRect(pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+                // Explored but not currently visible - show dimmed terrain sprites
+                if (tile === '#') {
+                    terrainSprites.wall(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                } else {
+                    terrainSprites.floor(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                }
                 
                 // Add fog overlay
                 this.ctx.fillStyle = CONFIG.COLORS.FOG_EXPLORED;
@@ -50,15 +53,18 @@ class Renderer {
                 this.ctx.fillRect(pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
             }
         } else {
-            // Currently visible
-            this.ctx.fillStyle = tile === '#' ? CONFIG.COLORS.WALL : CONFIG.COLORS.FLOOR;
-            this.ctx.fillRect(pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+            // Currently visible - render beautiful sprite tiles
+            if (tile === '#') {
+                terrainSprites.wall(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+            } else {
+                terrainSprites.floor(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+            }
         }
     }
     
     renderStairs(x, y, fogOfWar) {
         if (!fogOfWar[y][x]) {
-            SPRITES.stairs(this.ctx, x * CONFIG.CELL_SIZE, y * CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+            terrainSprites.stairs(this.ctx, x * CONFIG.CELL_SIZE, y * CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
         }
     }
     
@@ -99,40 +105,56 @@ class Renderer {
         const x = player.x * CONFIG.CELL_SIZE;
         const y = player.y * CONFIG.CELL_SIZE;
         
-        // Draw player sprite
-        SPRITES.player(this.ctx, x, y, CONFIG.CELL_SIZE);
-        
-        // Draw facing indicator
-        if (CONFIG.FEATURES.DIRECTIONAL_COMBAT) {
-            this.renderFacingIndicator(x, y, player.facing);
-        }
+        // Draw player sprite with facing direction
+        playerSprites.default(this.ctx, x, y, CONFIG.CELL_SIZE, player.facing);
         
         // Draw status effect indicators
         if (CONFIG.FEATURES.STATUS_EFFECTS && player.statusEffects.length > 0) {
             this.renderStatusEffects(x, y, player.statusEffects);
         }
-    }
-    
-    renderFacingIndicator(x, y, facing) {
-        this.ctx.fillStyle = '#fff';
-        const size = 3;
-        const offset = CONFIG.CELL_SIZE - 4;
         
-        switch(facing) {
-            case 'up':
-                this.ctx.fillRect(x + CONFIG.CELL_SIZE/2 - size/2, y + 2, size, size);
-                break;
-            case 'down':
-                this.ctx.fillRect(x + CONFIG.CELL_SIZE/2 - size/2, y + offset, size, size);
-                break;
-            case 'left':
-                this.ctx.fillRect(x + 2, y + CONFIG.CELL_SIZE/2 - size/2, size, size);
-                break;
-            case 'right':
-                this.ctx.fillRect(x + offset, y + CONFIG.CELL_SIZE/2 - size/2, size, size);
-                break;
+        // Draw health bar if damaged or in combat
+        if (player.hp < player.maxHp || this.isPlayerInCombat(player)) {
+            this.renderPlayerHealthBar(x, y, player.hp / player.maxHp);
         }
     }
+    
+    isPlayerInCombat(player) {
+        // Check if any enemies are adjacent to player
+        if (!window.game || !window.game.gameState) return false;
+        
+        const enemies = window.game.gameState.enemies;
+        return enemies.some(enemy => {
+            const dist = Math.abs(enemy.x - player.x) + Math.abs(enemy.y - player.y);
+            return dist <= 1.5 && !window.game.gameState.fogOfWar[enemy.y][enemy.x];
+        });
+    }
+    
+    renderPlayerHealthBar(x, y, percentage) {
+        const barWidth = CONFIG.CELL_SIZE;
+        const barHeight = 3;
+        const barY = y - 6;
+        
+        // Background
+        this.ctx.fillStyle = '#333';
+        this.ctx.fillRect(x, barY, barWidth, barHeight);
+        
+        // Health fill with color based on health level
+        if (percentage > 0.6) {
+            this.ctx.fillStyle = '#4a4';
+        } else if (percentage > 0.3) {
+            this.ctx.fillStyle = '#aa4';
+        } else {
+            this.ctx.fillStyle = '#a44';
+        }
+        this.ctx.fillRect(x, barY, barWidth * percentage, barHeight);
+        
+        // Border
+        this.ctx.strokeStyle = '#fff';
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeRect(x, barY, barWidth, barHeight);
+    }
+    
     
     renderStatusEffects(x, y, effects) {
         let offsetX = 0;

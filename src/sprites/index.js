@@ -1,7 +1,7 @@
 // Main sprite registry - backwards compatible with existing code
 const SPRITES = {
     // Player sprites
-    player: playerSprites.default,
+    player: (ctx, x, y, size) => playerSprites.default(ctx, x, y, size, 'down'),
     playerWarrior: playerSprites.warrior,
     playerMage: playerSprites.mage,
     playerRogue: playerSprites.rogue,

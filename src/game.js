@@ -185,6 +185,12 @@ class Game {
         
         // Move player
         if (player.useEnergy(CONFIG.BALANCE.MOVE_ENERGY_COST)) {
+            // Update facing direction based on movement
+            if (dx > 0) player.facing = 'right';
+            else if (dx < 0) player.facing = 'left';
+            else if (dy > 0) player.facing = 'down';
+            else if (dy < 0) player.facing = 'up';
+            
             player.moveTo(newX, newY);
             
             // Check for item pickup
