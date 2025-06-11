@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Roguelike RPG</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+            font-family: monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        #game-container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        
+        #game-canvas {
+            border: 2px solid #444;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        #ui-panel {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            min-width: 250px;
+        }
+        
+        .stat-row {
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .progress-bar {
+            background: #444;
+            height: 20px;
+            margin: 5px 0;
+            position: relative;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: #4a4;
+            height: 100%;
+            transition: width 0.3s;
+        }
+        
+        .hp-fill { background: #a44; }
+        .exp-fill { background: #44a; }
+        .energy-fill { background: #aa4; }
+        
+        button {
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 8px 16px;
+            margin: 5px 0;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: background 0.2s;
+            width: 100%;
+            text-align: left;
+        }
+        
+        button:hover:not(:disabled) {
+            background: #444;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        #message-log {
+            background: #1a1a1a;
+            padding: 10px;
+            margin-top: 20px;
+            height: 150px;
+            overflow-y: auto;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .message {
+            margin: 2px 0;
+            opacity: 0.8;
+        }
+        
+        .damage-msg { color: #f88; }
+        .heal-msg { color: #8f8; }
+        .level-msg { color: #88f; font-weight: bold; }
+        
+        .controls {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #444;
+        }
+        
+        .control-hint {
+            font-size: 11px;
+            color: #888;
+            margin: 4px 0;
+        }
+        
+        h2, h3 {
+            margin: 10px 0;
+        }
+        
+        .stat-detail {
+            font-size: 11px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div id="ui-panel">
+            <h2>Pixel Roguelike</h2>
+            
+            <div class="stat-row">
+                <span>Level:</span>
+                <span id="player-level">1</span>
+            </div>
+            
+            <div class="stat-row">
+                <span>HP:</span>
+                <span id="player-hp">10/10</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill hp-fill" id="hp-bar" style="width: 100%"></div>
+            </div>
+            
+            <div class="stat-row">
+                <span>EXP:</span>
+                <span id="player-exp">0/10</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill exp-fill" id="exp-bar" style="width: 0%"></div>
+            </div>
+            
+            <div class="stat-row">
+                <span>Energy:</span>
+                <span id="player-energy">100/100</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill energy-fill" id="energy-bar" style="width: 100%"></div>
+            </div>
+            
+            <div class="stat-row">
+                <span>Floor:</span>
+                <span id="floor-level">1</span>
+            </div>
+            
+            <div class="stat-row">
+                <span>Gold:</span>
+                <span id="player-gold">0</span>
+            </div>
+            
+            <h3>Upgrades</h3>
+            <button id="upgrade-attack" onclick="game.upgradeAttack()">
+                Upgrade Attack (Cost: <span id="attack-cost">10</span>)
+            </button>
+            <button id="upgrade-defense" onclick="game.upgradeDefense()">
+                Upgrade Defense (Cost: <span id="defense-cost">10</span>)
+            </button>
+            
+            <h3>Actions</h3>
+            <button id="auto-explore" onclick="game.toggleAutoExplore()">
+                Auto-Explore: <span id="auto-explore-status">OFF</span>
+            </button>
+            <button onclick="game.saveGame()">Save Game</button>
+            
+            <div class="controls">
+                <div class="control-hint">↑↓←→ or WASD: Move</div>
+                <div class="control-hint">Z: Toggle Auto-Explore</div>
+                <div class="control-hint">ESC: Stop Auto-Explore</div>
+            </div>
+            
+            <div id="message-log"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { Game } from './src/game.js';
+        
+        // Create and start game
+        window.game = new Game();
+        game.init();
+    </script>
+</body>
+</html>

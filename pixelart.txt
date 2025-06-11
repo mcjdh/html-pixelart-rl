@@ -1,0 +1,6 @@
+
+## Creating Your Own Art
+
+1. Use a 16‑unit grid within a cell. Compute `const unit = size / 16` and build your sprite with `ctx.fillRect`.
+
+Since everything is plain canvas, you can combine these pixel drawings with CSS backgrounds or overlay elements to expand the game's art style.
