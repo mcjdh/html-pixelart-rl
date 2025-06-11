@@ -40,7 +40,7 @@ class MenuSystem {
             textAlign: 'center',
             textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
         });
-        this.titleElement.textContent = 'THE CURSED DEPTHS';
+        this.titleElement.textContent = 'MEMORY CAVERN';
         
         // Create subtitle
         this.subtitleElement = this.createElement('div', 'menu-subtitle', {
@@ -50,7 +50,7 @@ class MenuSystem {
             textAlign: 'center',
             fontStyle: 'italic'
         });
-        this.subtitleElement.textContent = 'A Tale of Three Depths';
+        this.subtitleElement.textContent = 'A Tale of Forgotten Memories';
         
         // Create menu container
         this.menuContainer = this.createElement('div', 'menu-container', {
@@ -156,12 +156,12 @@ class MenuSystem {
         this.storyContainer.style.display = 'block';
         
         this.storyContainer.innerHTML = `
-            <div style="color: #d4af37; font-weight: bold; margin-bottom: 15px;">THE LEGEND OF THE CURSED DEPTHS</div>
+            <div style="color: #d4af37; font-weight: bold; margin-bottom: 15px;">THE LEGEND OF MEMORY CAVERN</div>
             
-            <p>Long ago, the prosperous kingdom of Aethermoor discovered a vast dungeon beneath their capital. 
+            <p>Long ago, the prosperous kingdom of Aethermoor discovered a vast cavern beneath their capital. 
             What began as a source of wealth and magical artifacts soon became their doom.</p>
             
-            <p>The dungeon's depths are cursed, growing more treacherous with each level. Brave adventurers 
+            <p>The cavern's chambers are filled with forgotten memories, growing more mysterious with each level. Brave adventurers 
             venture down seeking glory, but few return. Those who do speak of three distinct realms:</p>
             
             <div style="margin: 15px 0; padding: 10px; background: rgba(32, 32, 32, 0.8); border-left: 3px solid #666;">
@@ -177,7 +177,7 @@ class MenuSystem {
             </div>
             
             <p style="color: #ff6666; margin-top: 20px;">You are the kingdom's last hope. Armed with courage and steel, 
-            you must descend into the cursed depths and end the threat that grows stronger each day.</p>
+            you must descend into the memory cavern and end the threat that grows stronger each day.</p>
             
             <p style="text-align: center; margin-top: 20px; font-style: italic; color: #a0a0a0;">
                 Will you emerge victorious, or become another lost soul in the darkness?

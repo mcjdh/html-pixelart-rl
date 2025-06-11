@@ -23,6 +23,9 @@ class Game {
         this.animationFrame = null;
         this.lastEnergyRegen = Date.now();
         
+        // Auto-path to stairs message flag
+        this.hasShownStairsMessage = false;
+        
         this.inputEnabled = true;
         this.gameOver = false;
         this.lastInputTime = 0;
@@ -57,7 +60,7 @@ class Game {
         this.setupEventListeners();
         this.updateUI();
         
-        this.gameState.addMessage('Welcome to The Cursed Depths!', 'level-msg');
+        this.gameState.addMessage('Welcome to Memory Cavern!', 'level-msg');
         this.gameState.addMessage('Use arrow keys or WASD to move.', '');
         
         // Emit game start event
@@ -502,6 +505,10 @@ class Game {
     
     handleStairs() {
         const previousFloor = this.gameState.floor;
+        
+        // Reset stairs message flag for new floor
+        this.hasShownStairsMessage = false;
+        
         this.gameState.nextFloor();
         
         // Emit floor completion and entrance events
@@ -649,22 +656,58 @@ class Game {
         let target = this.findAutoExploreTarget(player);
         
         if (target) {
-            // Anti-stuck mechanism: if we're trying to reach the same target for too long, find a new one
+            // Check if target is an enemy (for combat)
+            const targetEnemy = this.gameState.getEnemyAt(target.x, target.y);
+            
+            // Smart movement logic
+            if (targetEnemy) {
+                // Combat movement: move adjacent to enemy to attack
+                const adjacentPositions = [
+                    {x: target.x + 1, y: target.y},
+                    {x: target.x - 1, y: target.y},
+                    {x: target.x, y: target.y + 1},
+                    {x: target.x, y: target.y - 1}
+                ].filter(pos => 
+                    this.gameState.inBounds(pos.x, pos.y) && 
+                    !this.gameState.isWall(pos.x, pos.y) &&
+                    !this.gameState.isOccupied(pos.x, pos.y)
+                );
+                
+                if (adjacentPositions.length > 0) {
+                    // Choose the closest adjacent position
+                    const bestPos = adjacentPositions.reduce((closest, pos) => {
+                        const dist = Math.abs(pos.x - player.x) + Math.abs(pos.y - player.y);
+                        const closestDist = Math.abs(closest.x - player.x) + Math.abs(closest.y - player.y);
+                        return dist < closestDist ? pos : closest;
+                    });
+                    
+                    target = bestPos;
+                }
+            }
+            
+            // Anti-stuck mechanism with better detection
             if (this.lastAutoTarget && 
                 this.lastAutoTarget.x === target.x && 
-                this.lastAutoTarget.y === target.y) {
+                this.lastAutoTarget.y === target.y &&
+                this.lastPlayerPosition &&
+                this.lastPlayerPosition.x === player.x &&
+                this.lastPlayerPosition.y === player.y) {
+                
                 this.autoTargetAttempts = (this.autoTargetAttempts || 0) + 1;
                 
-                // If stuck for more than 10 attempts, find a different target
-                if (this.autoTargetAttempts > 10) {
+                // If stuck for more than 5 attempts, find a different approach
+                if (this.autoTargetAttempts > 5) {
+                    // Try a different target or add some randomness
                     target = this.findAlternativeTarget(player, target);
                     this.autoTargetAttempts = 0;
+                    this.gameState.addMessage('Auto-explore: Finding alternative path...', '');
                 }
             } else {
                 this.autoTargetAttempts = 0;
             }
             
             this.lastAutoTarget = target;
+            this.lastPlayerPosition = {x: player.x, y: player.y};
             
             // Use A* pathfinding for smart movement
             const path = this.findPath(player.x, player.y, target.x, target.y);
@@ -674,44 +717,96 @@ class Game {
                 const dy = nextStep.y - player.y;
                 this.movePlayer(dx, dy);
             } else {
-                // Fallback to direct movement
+                // Fallback to direct movement with bounds checking
                 const dx = Math.sign(target.x - player.x);
                 const dy = Math.sign(target.y - player.y);
-                this.movePlayer(dx || 0, dy || 0);
+                
+                // Try primary direction first
+                if (dx !== 0 && this.canMoveTo(player.x + dx, player.y)) {
+                    this.movePlayer(dx, 0);
+                } else if (dy !== 0 && this.canMoveTo(player.x, player.y + dy)) {
+                    this.movePlayer(0, dy);
+                } else {
+                    // Can't move toward target, try alternative
+                    this.autoTargetAttempts = 10; // Force alternative target next time
+                }
             }
         }
         
-        // Continue auto-exploring
+        // Continue auto-exploring with slightly longer delay for better performance
         setTimeout(() => this.autoExploreStep(), CONFIG.GAME.AUTO_EXPLORE_DELAY);
     }
     
+    // Helper method to check if movement is valid
+    canMoveTo(x, y) {
+        return this.gameState.inBounds(x, y) && 
+               !this.gameState.isWall(x, y) && 
+               !this.gameState.getEnemyAt(x, y);
+    }
+    
     findAutoExploreTarget(player) {
-        // Check for nearby enemies first
-        const nearbyEnemies = this.gameState.enemies.filter(enemy => {
-            const dist = player.distanceTo(enemy);
-            return dist <= 3 && !this.gameState.fogOfWar[enemy.y][enemy.x];
-        });
+        // Priority 0: Combat - Always prioritize clearing visible enemies first
+        const visibleEnemies = this.gameState.enemies.filter(enemy => 
+            !this.gameState.fogOfWar[enemy.y][enemy.x]
+        );
         
-        // If enemies nearby and player is low health, prioritize escape
-        if (nearbyEnemies.length > 0 && player.hp < player.maxHp * 0.5) {
-            // Find safe direction away from enemies
-            const safeSpot = this.findSafeSpot(player, nearbyEnemies);
-            if (safeSpot) return safeSpot;
+        if (visibleEnemies.length > 0) {
+            // If player is critically low on health, try to escape first
+            if (player.hp <= 2) {
+                const nearbyEnemies = visibleEnemies.filter(enemy => 
+                    player.distanceTo(enemy) <= 2
+                );
+                if (nearbyEnemies.length > 0) {
+                    const safeSpot = this.findSafeSpot(player, nearbyEnemies);
+                    if (safeSpot) return safeSpot;
+                }
+            }
+            
+            // Otherwise, target the closest visible enemy
+            const closestEnemy = visibleEnemies.reduce((closest, enemy) => {
+                const dist = player.distanceTo(enemy);
+                const closestDist = player.distanceTo(closest);
+                return dist < closestDist ? enemy : closest;
+            });
+            
+            return { x: closestEnemy.x, y: closestEnemy.y };
         }
         
-        // Priority 1: Visible items (but avoid if enemies are guarding)
-        if (!this.cachedVisibleItems || this.lastVisibleItemsCheck !== this.gameState.turn) {
-            this.cachedVisibleItems = this.gameState.items.filter(item => {
-                if (this.gameState.fogOfWar[item.y][item.x]) return false;
-                
-                // Check if enemies are near the item
-                const enemiesNearItem = this.gameState.enemies.filter(e => 
-                    e.distanceTo(item) <= 2 && !this.gameState.fogOfWar[e.y][e.x]
+        // Priority 1: Auto-path to stairs if all enemies are cleared
+        if (CONFIG.BALANCE.AUTO_PATH_TO_STAIRS && this.gameState.enemies.length === 0) {
+            // Check if there are any visible items to collect first
+            if (!this.cachedVisibleItems || this.lastVisibleItemsCheck !== this.gameState.turn) {
+                this.cachedVisibleItems = this.gameState.items.filter(item => 
+                    !this.gameState.fogOfWar[item.y][item.x]
                 );
-                
-                // Only go for item if we're healthy or no enemies guard it
-                return player.hp > player.maxHp * 0.7 || enemiesNearItem.length === 0;
-            });
+                this.lastVisibleItemsCheck = this.gameState.turn;
+            }
+            
+            // If there are visible items, collect them first
+            if (this.cachedVisibleItems.length > 0) {
+                return this.cachedVisibleItems.reduce((closest, item) => {
+                    const dist = player.distanceTo(item);
+                    return dist < player.distanceTo(closest) ? item : closest;
+                });
+            }
+            
+            // No items left, head to stairs
+            if (!this.hasShownStairsMessage) {
+                this.gameState.addMessage('🎯 All enemies cleared! Auto-pathing to stairs...', 'level-msg');
+                this.hasShownStairsMessage = true;
+            }
+            return { x: this.gameState.stairsX, y: this.gameState.stairsY };
+        }
+        
+        // Priority 2: Explore to find more enemies or items
+        const unexplored = this.findClosestUnexplored(player.x, player.y);
+        if (unexplored) return unexplored;
+        
+        // Priority 3: Collect any remaining visible items while exploring
+        if (!this.cachedVisibleItems || this.lastVisibleItemsCheck !== this.gameState.turn) {
+            this.cachedVisibleItems = this.gameState.items.filter(item => 
+                !this.gameState.fogOfWar[item.y][item.x]
+            );
             this.lastVisibleItemsCheck = this.gameState.turn;
         }
         
@@ -722,17 +817,8 @@ class Game {
             });
         }
         
-        // Priority 2: Closest unexplored area (improved algorithm)
-        const unexplored = this.findClosestUnexplored(player.x, player.y);
-        if (unexplored) return unexplored;
-        
-        // Priority 3: Stairs (only if healthy enough)
-        if (player.hp > player.maxHp * 0.3) {
-            return { x: this.gameState.stairsX, y: this.gameState.stairsY };
-        }
-        
-        // Priority 4: Find a safe corner to recover
-        return this.findSafeCorner(player);
+        // Priority 4: Stairs (fallback if nothing else to do)
+        return { x: this.gameState.stairsX, y: this.gameState.stairsY };
     }
     
     findSafeSpot(player, enemies) {
@@ -1222,7 +1308,7 @@ class Game {
     }
     
     showHelpModal() {
-        let helpText = `MOVEMENT:\n↑↓←→ or WASD - Move character\n\nCOMBAT:\nMove into enemies to attack\nEnemies attack when adjacent\nPositional bonuses apply!\n\nGAME CONTROLS:\nZ - Toggle Auto-Explore\nP - Pause Auto-Explore\nESC - Stop Auto-Explore\nL - View Collected Lore\nI - Quick Info Summary\nH or ? - Show this help\n\nCAMPAIGN:\nConquer 3 cursed floors\nEach floor has unique lore\nDefeat the final evil\nSave the kingdom!`;
+        let helpText = `MOVEMENT:\n↑↓←→ or WASD - Move character\n\nCOMBAT:\nMove into enemies to attack\nEnemies attack when adjacent\nPositional bonuses apply!\n\nGAME CONTROLS:\nZ - Toggle Auto-Explore\nP - Pause Auto-Explore\nESC - Stop Auto-Explore\nL - View Collected Lore\nI - Quick Info Summary\nH or ? - Show this help\n\nAUTO-EXPLORE:\nAuto-paths to stairs when\nall enemies are cleared!\n\nCAMPAIGN:\nConquer 3 cursed floors\nEach floor has unique lore\nDefeat the final evil\nSave the kingdom!`;
         
         if (CONFIG.FEATURES.DEBUG_MODE) {
             helpText += `\n\nDEBUG COMMANDS:\nD - Toggle debug display\nG - Give 100 gold\nL - Level up\nR - Reveal entire map`;
@@ -1233,7 +1319,7 @@ class Game {
         }
         
         this.modal.show({
-            title: 'PIXEL ROGUELIKE - HELP',
+            title: 'MEMORY CAVERN - HELP',
             message: helpText,
             buttons: [
                 {
@@ -1266,7 +1352,7 @@ class Game {
         
         if (allLore.length === 0) {
             this.events.emit('narrative.triggered', {
-                narrative: "📜 No lore has been discovered yet. Explore to uncover the secrets of the depths!",
+                narrative: "📜 No lore has been discovered yet. Explore to uncover the secrets of the cavern!",
                 importance: 'normal'
             });
             return;
@@ -1318,11 +1404,144 @@ class Game {
         });
         
         this.events.emit('narrative.triggered', {
-            narrative: "📜 Press L again to view your lore collection",
+            narrative: "📜 === END OF LORE COLLECTION ===",
             importance: 'normal'
         });
+        
+        // After viewing lore post-victory, show options to continue
+        if (this.gameOver && this.gameState.campaignProgress && this.gameState.campaignProgress.completed) {
+            setTimeout(() => {
+                this.modal.show({
+                    title: '📜 Lore Viewed',
+                    message: 'You have reviewed your collected lore.\n\nWhat would you like to do next?',
+                    buttons: [
+                        {
+                            text: 'New Game',
+                            primary: true,
+                            callback: () => {
+                                location.reload();
+                            }
+                        },
+                        {
+                            text: 'View Victory Screen',
+                            callback: () => {
+                                this.modal.hide();
+                                // Re-trigger victory modal if we have the stats
+                                if (this.lastVictoryStats) {
+                                    this.cutsceneManager.showVictoryModal(
+                                        this.lastVictoryStats.stats,
+                                        this.lastVictoryStats.score,
+                                        this.lastVictoryStats.minutes,
+                                        this.lastVictoryStats.seconds
+                                    );
+                                }
+                            }
+                        }
+                    ]
+                });
+            }, 1000);
+        }
     }
     
+    showLoreModal() {
+        // Get all collected lore from the event bus
+        const allLore = this.events.getAllLore();
+        
+        if (allLore.length === 0) {
+            this.modal.show({
+                title: '📜 Lore Collection',
+                message: 'No lore has been discovered yet.\n\nExplore the cavern to uncover the secrets of this ancient place!',
+                buttons: [
+                    {
+                        text: 'Back to Victory',
+                        primary: true,
+                        callback: () => {
+                            this.modal.hide();
+                            // Return to victory modal
+                            if (this.lastVictoryStats) {
+                                this.cutsceneManager.showVictoryModal(
+                                    this.lastVictoryStats.stats,
+                                    this.lastVictoryStats.score,
+                                    this.lastVictoryStats.minutes,
+                                    this.lastVictoryStats.seconds
+                                );
+                            }
+                        }
+                    }
+                ]
+            });
+            return;
+        }
+        
+        // Group lore by category
+        const categories = {};
+        allLore.forEach(entry => {
+            if (!categories[entry.category]) {
+                categories[entry.category] = [];
+            }
+            categories[entry.category].push(entry);
+        });
+        
+        // Format lore for modal display
+        let loreContent = `<div style="font-size: 10px; line-height: 1.4;">`;
+        loreContent += `<div style="color: #d4af37; font-weight: bold; margin-bottom: 8px;">📜 COLLECTED LORE (${allLore.length} entries)</div>`;
+        
+        Object.entries(categories).forEach(([category, entries]) => {
+            loreContent += `<div style="color: #aaaaff; font-weight: bold; margin: 8px 0 4px 0;">${category.toUpperCase()} (${entries.length})</div>`;
+            
+            entries.forEach(entry => {
+                const rarityColor = {
+                    common: '#c0c0c0',
+                    uncommon: '#90ee90',
+                    rare: '#4169e1',
+                    legendary: '#ffd700'
+                }[entry.rarity] || '#c0c0c0';
+                
+                const raritySymbol = {
+                    common: '○',
+                    uncommon: '◐', 
+                    rare: '●',
+                    legendary: '★'
+                }[entry.rarity] || '○';
+                
+                loreContent += `<div style="margin: 4px 0; padding: 4px; border-left: 2px solid ${rarityColor}; font-size: 9px;">`;
+                loreContent += `<span style="color: ${rarityColor};">${raritySymbol}</span> ${entry.content}`;
+                loreContent += `</div>`;
+            });
+        });
+        
+        loreContent += `</div>`;
+        
+        this.modal.show({
+            title: '📜 Lore Collection',
+            message: loreContent,
+            buttons: [
+                {
+                    text: 'Back to Victory',
+                    primary: true,
+                    callback: () => {
+                        this.modal.hide();
+                        // Return to victory modal
+                        if (this.lastVictoryStats) {
+                            this.cutsceneManager.showVictoryModal(
+                                this.lastVictoryStats.stats,
+                                this.lastVictoryStats.score,
+                                this.lastVictoryStats.minutes,
+                                this.lastVictoryStats.seconds
+                            );
+                        }
+                    }
+                },
+                {
+                    text: 'New Game',
+                    callback: () => {
+                        location.reload();
+                    }
+                }
+            ]
+        });
+    }
+
     calculateFinalScore() {
         const player = this.gameState.player;
         const stats = this.gameState.stats;

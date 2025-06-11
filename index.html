@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pixel Roguelike RPG</title>
+    <title>Memory Cavern</title>
     <style>
         body {
             margin: 0;
@@ -388,74 +388,114 @@
         }
         
         .modal-window {
-            background: #1a1a1a;
+            background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
             border: 2px solid #c0c0c0;
-            width: 400px;
+            width: 500px;
+            max-width: 90vw;
+            max-height: 85vh;
             padding: 0;
             position: relative;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+            border-radius: 4px;
+            overflow: hidden;
         }
         
         .modal-header {
-            background: #2a2a2a;
-            padding: 8px 12px;
-            border-bottom: 1px solid #c0c0c0;
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+            padding: 12px 16px;
+            border-bottom: 2px solid #c0c0c0;
             font-weight: bold;
             text-align: center;
             color: #ffffff;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
         
         .modal-body {
-            padding: 16px;
+            padding: 20px;
             text-align: center;
-            line-height: 1.4;
+            line-height: 1.5;
+            max-height: 60vh;
+            overflow-y: auto;
+            font-size: 12px;
         }
         
         .modal-buttons {
-            padding: 12px;
+            padding: 16px;
             text-align: center;
-            border-top: 1px solid #404040;
+            border-top: 2px solid #404040;
             display: flex;
-            gap: 8px;
+            gap: 12px;
             justify-content: center;
+            background: linear-gradient(135deg, #1a1a1a, #0f0f0f);
+            flex-wrap: wrap;
         }
         
         .modal-button {
-            background: #2a2a2a;
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
             color: #c0c0c0;
             border: 1px solid #404040;
-            padding: 6px 16px;
+            padding: 8px 16px;
             cursor: pointer;
             font-size: 11px;
-            min-width: 80px;
+            min-width: 120px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         .modal-button:hover,
         .modal-button:focus {
-            background: #404040;
+            background: linear-gradient(135deg, #404040, #303030);
             color: #ffffff;
             outline: none;
+            border-color: #606060;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
         }
         
         .modal-button:active {
-            background: #555555;
-            transform: translateY(1px);
+            background: linear-gradient(135deg, #555555, #404040);
+            transform: translateY(0px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         .modal-button.primary {
-            background: #444444;
+            background: linear-gradient(135deg, #444444, #333333);
             color: #ffffff;
             border-color: #666666;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
         }
-        
-        .modal-button.primary:hover,
+         .modal-button.primary:hover,
         .modal-button.primary:focus {
-            background: #555555;
+            background: linear-gradient(135deg, #555555, #444444);
             outline: none;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
         }
-        
+
         .modal-button.primary:active {
-            background: #666666;
-            transform: translateY(1px);
+            background: linear-gradient(135deg, #666666, #555555);
+            transform: translateY(0px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Victory Modal Enhancements */
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-body::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #404040;
+            border-radius: 4px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #606060;
         }
         
         .ascii-border {

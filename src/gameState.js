@@ -298,7 +298,7 @@ class GameState {
         // Check for campaign completion before generating new floor
         if (this.campaignMode && this.floor > 3) {
             // Campaign complete - don't generate new floor
-            this.addMessage('The depths have been conquered!', 'level-msg');
+            this.addMessage('The cavern has been conquered!', 'level-msg');
             return;
         }
         

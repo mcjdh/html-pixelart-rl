@@ -111,6 +111,9 @@ const playerSprites = {
         
         // Long hair flowing behind (to the right)
         ctx.fillStyle = '#643';
+        // Hair on top of head
+        ctx.fillRect(x + 5*unit, y + 1*unit, 6*unit, 2*unit);
+        // Hair flowing back
         ctx.fillRect(x + 8*unit, y + 1*unit, 5*unit, 2*unit);
         ctx.fillRect(x + 8*unit, y + 3*unit, 4*unit, 5*unit);
         ctx.fillRect(x + 5*unit, y + 6*unit, 3*unit, 3*unit);
@@ -154,6 +157,9 @@ const playerSprites = {
         
         // Long hair flowing behind (to the left)
         ctx.fillStyle = '#643';
+        // Hair on top of head
+        ctx.fillRect(x + 5*unit, y + 1*unit, 6*unit, 2*unit);
+        // Hair flowing back
         ctx.fillRect(x + 3*unit, y + 1*unit, 5*unit, 2*unit);
         ctx.fillRect(x + 4*unit, y + 3*unit, 4*unit, 5*unit);
         ctx.fillRect(x + 8*unit, y + 6*unit, 3*unit, 3*unit);

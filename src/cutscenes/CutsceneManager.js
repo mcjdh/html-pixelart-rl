@@ -81,13 +81,14 @@ class CutsceneManager {
         for (let i = 0; i < sequences.length; i++) {
             const sequence = sequences[i];
             
-            // Only emit to narrative system - don't double-add to console
+            // Emit to narrative system - goes directly to console
             this.eventBus.emit('narrative.triggered', {
                 narrative: sequence.text,
                 importance: sequence.importance || 'normal'
             });
             
-            if (sequence.delay) {
+            // Only delay if explicitly specified (victory sequence has all 0 delays)
+            if (sequence.delay && sequence.delay > 0) {
                 await this.delay(sequence.delay);
             }
         }
@@ -108,28 +109,27 @@ class CutsceneManager {
         const minutes = Math.floor(time / 60000);
         const seconds = Math.floor((time % 60000) / 1000);
         
-        // Victory cutscene sequence - improved timing and visibility
+        // Fast victory sequence - all in console, no delays
         const victorySequences = [
-            { text: "🌟 The final shadow dissolves as ancient magic unravels...", importance: 'urgent', delay: 3000 },
-            { text: "⚡ The ancient evil is vanquished! Light returns to the depths!", importance: 'urgent', delay: 3000 },
-            { text: "🏰 The cursed depths are cleansed! The kingdom is saved!", importance: 'urgent', delay: 3000 },
-            { text: "👑 The kingdom celebrates your heroic triumph!", importance: 'important', delay: 2000 },
-            { text: "🏆 CAMPAIGN COMPLETE! You are the Hero of the Cursed Depths! 🏆", importance: 'urgent', delay: 3000 }
+            { text: "🌟 The final shadow dissolves as ancient magic unravels...", importance: 'urgent', delay: 0 },
+            { text: "⚡ The ancient evil is vanquished! Light returns to the cavern!", importance: 'urgent', delay: 0 },
+            { text: "🏰 The memory cavern is cleansed! The kingdom is saved!", importance: 'urgent', delay: 0 },
+            { text: "👑 The kingdom celebrates your heroic triumph!", importance: 'important', delay: 0 },
+            { text: "🏆 CAMPAIGN COMPLETE! You are the Hero of Memory Cavern! 🏆", importance: 'urgent', delay: 0 }
         ];
         
         await this.playNarrativeSequence(victorySequences);
         
-        // Show final statistics in console
+        // Show final statistics in console (no delays)
         await this.showFinalStatsInConsole(stats, score, minutes, seconds);
         
-        // Show victory modal after brief pause
-        await this.delay(2000);
+        // Show victory modal immediately
         this.showVictoryModal(stats, score, minutes, seconds);
     }
     
     async playDeathSequence(data) {
         const deathNarratives = [
-            "💀 Your journey ends here, brave adventurer. The dungeon claims another soul...",
+            "💀 Your journey ends here, brave adventurer. The cavern claims another soul...",
             "🌑 Darkness embraces you as your tale comes to a close...",
             "⚰️ The ancient stones bear witness to your final moments. Rest now, weary traveler...",
             "🕯️ Your light fades, but legends of your bravery shall echo through these halls..."
@@ -168,9 +168,9 @@ class CutsceneManager {
     
     async playOpeningSequence(data) {
         const openingSequences = [
-            { text: "🏰 You stand at the entrance to the Cursed Depths. Ancient stones whisper warnings...", importance: 'important', delay: 2500 },
+            { text: "🏰 You stand at the entrance to Memory Cavern. Ancient stones whisper warnings...", importance: 'important', delay: 2500 },
             { text: "⚔️ Yet duty calls, and the kingdom's fate rests upon your shoulders.", importance: 'important', delay: 2500 },
-            { text: "🌟 Welcome to The Cursed Depths! Your quest begins now...", importance: 'story', delay: 1000 }
+            { text: "🌟 Welcome to Memory Cavern! Your quest begins now...", importance: 'story', delay: 1000 }
         ];
         
         await this.playNarrativeSequence(openingSequences);
@@ -178,9 +178,9 @@ class CutsceneManager {
     
     async showFinalStatsInConsole(stats, score, minutes, seconds) {
         const sequences = [
-            { text: "📊 FINAL CAMPAIGN STATISTICS 📊", importance: 'important', delay: 1000 },
-            { text: `⚔️ Hero Level: ${stats.level} | 💰 Gold Earned: ${stats.gold}`, importance: 'story', delay: 1000 },
-            { text: `💀 Enemies Vanquished: ${stats.enemiesKilled} | ⏱️ Time: ${minutes}m ${seconds}s`, importance: 'story', delay: 1000 },
+            { text: "📊 FINAL CAMPAIGN STATISTICS 📊", importance: 'important', delay: 0 },
+            { text: `⚔️ Hero Level: ${stats.level} | 💰 Gold Earned: ${stats.gold}`, importance: 'story', delay: 0 },
+            { text: `💀 Enemies Vanquished: ${stats.enemiesKilled} | ⏱️ Time: ${minutes}m ${seconds}s`, importance: 'story', delay: 0 },
             { text: `🏆 Final Score: ${score} | 📜 Lore Collected: ${stats.loreCount || 0}`, importance: 'story', delay: 0 }
         ];
         
@@ -189,24 +189,51 @@ class CutsceneManager {
     
     showVictoryModal(stats, score, minutes, seconds) {
         if (window.game && window.game.modal) {
-            // Simplified, more compact victory message
-            const content = `🏆 CAMPAIGN COMPLETE! 🏆
+            // Store victory stats for potential re-display
+            if (window.game) {
+                window.game.lastVictoryStats = {
+                    stats, score, minutes, seconds
+                };
+            }
+            
+            // Calculate additional performance metrics
+            const gameState = window.game.gameState;
+            const totalTime = minutes * 60 + seconds;
+            const avgDamagePerEnemy = stats.enemiesKilled > 0 ? Math.round((gameState.stats.totalDamageDealt || 0) / stats.enemiesKilled) : 0;
+            const survivalRate = gameState.stats.totalDamageTaken > 0 ? Math.round((gameState.player.maxHp / (gameState.stats.totalDamageTaken + gameState.player.maxHp)) * 100) : 100;
+            const explorationEfficiency = Math.round((stats.loreCount || 0) * 10 + (gameState.stats.goldCollected || stats.gold) / 10);
+            
+            // Performance ranking based on time and efficiency
+            let performanceRank = "Novice Adventurer";
+            if (totalTime < 300 && stats.enemiesKilled > 15) performanceRank = "Skilled Hero";
+            if (totalTime < 240 && stats.enemiesKilled > 20 && stats.loreCount > 3) performanceRank = "Master Explorer";
+            if (totalTime < 180 && stats.enemiesKilled > 25 && stats.loreCount > 5) performanceRank = "Legendary Champion";
+            
+            // Create compact victory message optimized for 640x480 window
+            const content = `<div style="text-align: center; font-size: 11px; line-height: 1.3;">
+<div style="font-size: 14px; color: #ffff00; margin-bottom: 6px;">🏆 VICTORY! 🏆</div>
+<div style="color: #88ff88; margin-bottom: 8px; font-size: 10px;">${performanceRank}</div>
 
-The Cursed Depths have been cleansed!
+<div style="text-align: left; font-size: 10px;">
+<div style="color: #aaaaff; font-weight: bold; margin-bottom: 4px;">📊 FINAL STATS</div>
+<div style="color: #ffffff;">⚔️ Level ${stats.level} | ⏱️ ${minutes}m ${seconds}s</div>
+<div style="color: #ffffff;">💰 ${stats.gold} Gold | 💀 ${stats.enemiesKilled} Enemies</div>
+<div style="color: #ffffff;">📜 ${stats.loreCount || 0} Lore | 🏆 Score: ${score}</div>
+<div style="color: #ffffff;">🛡️ ${gameState.stats.totalDamageTaken || 0} Damage Taken</div>
+</div>
 
-Final Stats:
-Level: ${stats.level} | Time: ${minutes}m ${seconds}s
-Enemies: ${stats.enemiesKilled} | Score: ${score}
-Lore: ${stats.loreCount || 0} | Gold: ${stats.gold}
-
-Thank you for playing!`;
+<div style="margin-top: 8px; color: #888888; font-style: italic; font-size: 9px;">
+Memory Cavern is cleansed!<br>
+Thank you for playing!
+</div>
+</div>`;
             
             window.game.modal.show({
-                title: 'VICTORY!',
+                title: '🎉 VICTORY!',
                 message: content,
                 buttons: [
                     { 
-                        text: 'Play Again', 
+                        text: 'New Game', 
                         primary: true,
                         callback: () => {
                             location.reload();
@@ -216,7 +243,15 @@ Thank you for playing!`;
                         text: 'View Lore', 
                         callback: () => {
                             window.game.modal.hide();
-                            window.game.showLoreInConsole();
+                            // Show lore in a modal instead of console to avoid softlock
+                            window.game.showLoreModal();
+                        }
+                    },
+                    {
+                        text: 'Full Stats',
+                        callback: () => {
+                            window.game.modal.hide();
+                            window.game.showStatsModal();
                         }
                     }
                 ]

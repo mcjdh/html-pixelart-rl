@@ -122,6 +122,7 @@ const CONFIG = {
         AUTO_EXPLORE_ESCAPE_THRESHOLD: 0.5,
         AUTO_EXPLORE_ITEM_THRESHOLD: 0.7,
         STAIRS_PURSUIT_THRESHOLD: 0.3,
+        AUTO_PATH_TO_STAIRS: true, // Auto-path to stairs when all enemies cleared
         CORNER_WALL_COUNT: 6,
         
         // Scoring

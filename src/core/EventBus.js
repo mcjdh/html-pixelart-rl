@@ -228,7 +228,7 @@ class EventBus {
             ],
             legends: [
                 "The tale of the brave adventurer who reached floor {context.floor} before {trigger.data.fate}...",
-                "Local legends speak of heroes who dared venture into these cursed depths...",
+                "Local legends speak of heroes who dared venture into this memory cavern...",
                 "Another soul joins the countless others who sought glory in the ancient dungeon..."
             ]
         };

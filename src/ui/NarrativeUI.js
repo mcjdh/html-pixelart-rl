@@ -135,12 +135,12 @@ class NarrativeUI {
     async displayNarrative(narrativeData) {
         const { narrative, importance = 'normal' } = narrativeData;
         
-        // Route ALL narratives to the console with different styling
+        // Route ALL narratives to the console - no more red banners or overlays
         switch (importance) {
             case 'urgent':
                 this.showConsoleNarrative(narrative, 'urgent');
                 break;
-            case 'high':
+            case 'important':
                 this.showConsoleNarrative(narrative, 'important');
                 break;
             case 'normal':
@@ -148,6 +148,9 @@ class NarrativeUI {
                 break;
             case 'low':
                 this.showConsoleNarrative(narrative, 'atmospheric');
+                break;
+            default:
+                this.showConsoleNarrative(narrative, 'story');
                 break;
         }
     }
@@ -196,10 +199,7 @@ class NarrativeUI {
         
         this.addToMessageConsole(`${prefix}${text}`, className);
         
-        // For urgent messages, also show a brief banner for extra visibility
-        if (type === 'urgent') {
-            this.showUrgentBanner(text);
-        }
+        // No more banner display - everything goes to console for faster victory sequence
     }
     
     getNarrativeClassName(type) {
@@ -378,7 +378,7 @@ class NarrativeUI {
     
     showDeathNarrative() {
         const deathNarratives = [
-            "Your journey ends here, brave adventurer. The dungeon claims another soul...",
+            "Your journey ends here, brave adventurer. The cavern claims another soul...",
             "Darkness embraces you as your tale comes to a close. Will others remember your courage?",
             "The ancient stones bear witness to your final moments. Rest now, weary traveler...",
             "Your light fades, but legends of your bravery shall echo through these halls..."

@@ -42,7 +42,7 @@ class CampaignSystem {
                 floor2_complete: "The skeletal guardians lie still. A final stairway descends into absolute darkness.",
                 
                 floor3_enter: "The Heart of Darkness throbs with malevolent energy. This is where your true test begins...",
-                campaign_complete: "The ancient evil is vanquished! Light returns to the depths, and the kingdom is saved!"
+                campaign_complete: "The ancient evil is vanquished! Light returns to the cavern, and the kingdom is saved!"
             }
         };
         
@@ -291,7 +291,7 @@ class CampaignSystem {
                 "The skeletal guardians were once the necromancer's most trusted servants."
             ],
             3: [
-                "The Heart of Darkness contains the source of all the dungeon's corruption.",
+                "The Heart of Darkness contains the source of all the cavern's corruption.",
                 "An ancient demon lord was bound here by the kingdom's greatest heroes.",
                 "The final chamber holds the key to either salvation or eternal damnation."
             ]
@@ -339,12 +339,12 @@ class CampaignSystem {
         // Mark campaign as nearly complete
         this.gameState.campaignProgress.bossDefeated = true;
         
-        // Trigger ending sequence in 3 seconds - but only if campaign not already completed
+        // Trigger ending sequence immediately - no delay for faster victory
         setTimeout(() => {
             if (!this.campaignData.completed && !this.gameState.campaignProgress.completed) {
                 this.completeCampaign();
             }
-        }, 3000);
+        }, 500); // Much shorter delay
     }
     
     awardFloorCompletionBonus(floor) {
