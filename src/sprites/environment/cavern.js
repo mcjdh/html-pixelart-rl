@@ -2,26 +2,26 @@ const cavernSprites = {
     wall: function(ctx, x, y, size) {
         const unit = size / 16;
         
-        // Base rock wall (dark gray)
-        ctx.fillStyle = '#404040';
+        // Base rock wall (dark brown-gray for better contrast)
+        ctx.fillStyle = '#2a251f';
         ctx.fillRect(x, y, size, size);
         
-        // Rock texture variations
-        ctx.fillStyle = '#505050';
+        // Rock texture variations (brownish stone)
+        ctx.fillStyle = '#3d3429';
         ctx.fillRect(x + 2*unit, y + 1*unit, 3*unit, 4*unit);
         ctx.fillRect(x + 8*unit, y + 3*unit, 4*unit, 3*unit);
         ctx.fillRect(x + 1*unit, y + 8*unit, 5*unit, 3*unit);
         ctx.fillRect(x + 10*unit, y + 10*unit, 4*unit, 4*unit);
         
-        // Darker cracks and crevices
-        ctx.fillStyle = '#303030';
+        // Darker cracks and crevices (very dark)
+        ctx.fillStyle = '#1a1510';
         ctx.fillRect(x + 4*unit, y + 2*unit, 1*unit, 6*unit);
         ctx.fillRect(x + 9*unit, y + 5*unit, 1*unit, 4*unit);
         ctx.fillRect(x + 2*unit, y + 12*unit, 6*unit, 1*unit);
         ctx.fillRect(x + 11*unit, y + 8*unit, 3*unit, 1*unit);
         
-        // Lighter highlights
-        ctx.fillStyle = '#606060';
+        // Lighter highlights (tan/beige)
+        ctx.fillStyle = '#4f453a';
         ctx.fillRect(x + 1*unit, y + 0*unit, 2*unit, 1*unit);
         ctx.fillRect(x + 6*unit, y + 1*unit, 2*unit, 1*unit);
         ctx.fillRect(x + 0*unit, y + 5*unit, 1*unit, 2*unit);
@@ -31,24 +31,24 @@ const cavernSprites = {
     floor: function(ctx, x, y, size) {
         const unit = size / 16;
         
-        // Base stone floor (medium gray)
-        ctx.fillStyle = '#555555';
+        // Base stone floor (lighter gray for strong contrast with dark walls)
+        ctx.fillStyle = '#6b6b6b';
         ctx.fillRect(x, y, size, size);
         
-        // Stone tile variations
-        ctx.fillStyle = '#4a4a4a';
+        // Stone tile variations (medium gray)
+        ctx.fillStyle = '#5a5a5a';
         ctx.fillRect(x + 1*unit, y + 2*unit, 6*unit, 5*unit);
         ctx.fillRect(x + 9*unit, y + 1*unit, 5*unit, 4*unit);
         ctx.fillRect(x + 2*unit, y + 9*unit, 4*unit, 5*unit);
         ctx.fillRect(x + 8*unit, y + 10*unit, 6*unit, 4*unit);
         
-        // Mortar lines (darker)
-        ctx.fillStyle = '#3a3a3a';
+        // Mortar lines (darker gray for definition)
+        ctx.fillStyle = '#484848';
         ctx.fillRect(x + 7*unit, y + 0*unit, 1*unit, size);
         ctx.fillRect(x + 0*unit, y + 8*unit, size, 1*unit);
         
-        // Small debris and pebbles
-        ctx.fillStyle = '#606060';
+        // Small debris and pebbles (light highlights)
+        ctx.fillStyle = '#7a7a7a';
         ctx.fillRect(x + 3*unit, y + 4*unit, 1*unit, 1*unit);
         ctx.fillRect(x + 11*unit, y + 6*unit, 1*unit, 1*unit);
         ctx.fillRect(x + 5*unit, y + 12*unit, 1*unit, 1*unit);
@@ -180,24 +180,24 @@ const cavernSprites = {
         // Floor base
         cavernSprites.floor(ctx, x, y, size);
         
-        // Stairs going down (darker opening)
-        ctx.fillStyle = '#202020';
+        // Stairs going down (very dark opening for depth)
+        ctx.fillStyle = '#0f0f0f';
         ctx.fillRect(x + 4*unit, y + 4*unit, 8*unit, 8*unit);
         
-        // Step edges
-        ctx.fillStyle = '#606060';
+        // Step edges (bright stone for visibility)
+        ctx.fillStyle = '#8a8a8a';
         ctx.fillRect(x + 4*unit, y + 6*unit, 8*unit, 1*unit);
         ctx.fillRect(x + 5*unit, y + 8*unit, 7*unit, 1*unit);
         ctx.fillRect(x + 6*unit, y + 10*unit, 6*unit, 1*unit);
         
-        // Side walls of stairwell
-        ctx.fillStyle = '#404040';
+        // Side walls of stairwell (using new wall color)
+        ctx.fillStyle = '#2a251f';
         ctx.fillRect(x + 4*unit, y + 4*unit, 1*unit, 8*unit);
         ctx.fillRect(x + 11*unit, y + 4*unit, 1*unit, 8*unit);
         ctx.fillRect(x + 4*unit, y + 4*unit, 8*unit, 1*unit);
         
-        // Highlight on edges
-        ctx.fillStyle = '#707070';
+        // Highlight on edges (bright for visibility)
+        ctx.fillStyle = '#9a9a9a';
         ctx.fillRect(x + 3*unit, y + 3*unit, 10*unit, 1*unit);
         ctx.fillRect(x + 3*unit, y + 3*unit, 1*unit, 10*unit);
     }

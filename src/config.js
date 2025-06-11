@@ -8,8 +8,8 @@ const CONFIG = {
     VIEWPORT_HEIGHT: 14, // Tiles visible vertically
     
     COLORS: {
-        FLOOR: '#444',
-        WALL: '#777',
+        FLOOR: '#666',
+        WALL: '#222',
         PLAYER: '#4a4',
         ENEMY: '#a44',
         GOLD: '#aa4',
