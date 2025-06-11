@@ -1,25 +1,26 @@
-export const CONFIG = {
-    CELL_SIZE: 16,
-    GRID_WIDTH: 30,
-    GRID_HEIGHT: 20,
-    TILE_SIZE: 16,
-    VIEW_RADIUS: 5,
+const CONFIG = {
+    CELL_SIZE: 20,
+    GRID_WIDTH: 24,
+    GRID_HEIGHT: 16,
+    TILE_SIZE: 20,
+    VIEW_RADIUS: 6,
     
     COLORS: {
-        FLOOR: '#333',
-        WALL: '#666',
+        FLOOR: '#444',
+        WALL: '#777',
         PLAYER: '#4a4',
         ENEMY: '#a44',
         GOLD: '#aa4',
         STAIRS: '#44a',
-        FOG: '#000'
+        FOG: 'rgba(0, 0, 0, 0.8)',
+        FOG_EXPLORED: 'rgba(0, 0, 0, 0.4)'
     },
     
     GAME: {
-        ENERGY_REGEN_RATE: 1000,
-        ENERGY_REGEN_AMOUNT: 1,
-        AUTO_EXPLORE_DELAY: 200,
-        MAX_MESSAGES: 20
+        ENERGY_REGEN_RATE: 800,
+        ENERGY_REGEN_AMOUNT: 2,
+        AUTO_EXPLORE_DELAY: 150,
+        MAX_MESSAGES: 15
     },
     
     BALANCE: {

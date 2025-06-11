@@ -1,6 +1,4 @@
-import { CONFIG } from './config.js';
-
-export class CombatSystem {
+class CombatSystem {
     constructor(gameState) {
         this.gameState = gameState;
         this.combatLog = [];
@@ -122,7 +120,7 @@ export class CombatSystem {
     }
 }
 
-export class UpgradeSystem {
+class UpgradeSystem {
     constructor(gameState) {
         this.gameState = gameState;
     }
@@ -191,5 +189,4 @@ export class UpgradeSystem {
     }
 }
 
-// Import Item class for loot drops
-import { Item } from './entities.js';
+// Item class is now globally available

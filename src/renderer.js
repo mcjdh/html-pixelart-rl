@@ -1,7 +1,4 @@
-import { CONFIG } from './config.js';
-import { SPRITES, ENEMY_SPRITES, ITEM_SPRITES } from './sprites.js';
-
-export class Renderer {
+class Renderer {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
@@ -10,6 +7,10 @@ export class Renderer {
         
         // Enable pixel art rendering
         this.ctx.imageSmoothingEnabled = false;
+        
+        // Cache for dirty region tracking
+        this.dirtyRegions = new Set();
+        this.lastFogState = null;
     }
     
     clear() {
@@ -17,21 +18,41 @@ export class Renderer {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
     
-    renderMap(map, fogOfWar) {
+    renderMap(map, fogOfWar, explored) {
+        // Always render everything for now (could optimize later)
         for (let y = 0; y < CONFIG.GRID_HEIGHT; y++) {
             for (let x = 0; x < CONFIG.GRID_WIDTH; x++) {
-                const tile = map[y][x];
-                const pixelX = x * CONFIG.CELL_SIZE;
-                const pixelY = y * CONFIG.CELL_SIZE;
+                this.renderTile(map, fogOfWar, explored, x, y);
+            }
+        }
+        
+        // Cache fog state for next frame
+        this.lastFogState = fogOfWar.map(row => [...row]);
+    }
+    
+    renderTile(map, fogOfWar, explored, x, y) {
+        const tile = map[y][x];
+        const pixelX = x * CONFIG.CELL_SIZE;
+        const pixelY = y * CONFIG.CELL_SIZE;
+        
+        if (fogOfWar[y][x]) {
+            if (explored[y][x]) {
+                // Explored but not currently visible - show dimmed terrain
+                this.ctx.fillStyle = tile === '#' ? CONFIG.COLORS.WALL : CONFIG.COLORS.FLOOR;
+                this.ctx.fillRect(pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
                 
-                if (fogOfWar[y][x]) {
-                    this.ctx.fillStyle = CONFIG.COLORS.FOG;
-                } else {
-                    this.ctx.fillStyle = tile === '#' ? CONFIG.COLORS.WALL : CONFIG.COLORS.FLOOR;
-                }
-                
+                // Add fog overlay
+                this.ctx.fillStyle = CONFIG.COLORS.FOG_EXPLORED;
+                this.ctx.fillRect(pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+            } else {
+                // Completely unexplored
+                this.ctx.fillStyle = CONFIG.COLORS.FOG;
                 this.ctx.fillRect(pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
             }
+        } else {
+            // Currently visible
+            this.ctx.fillStyle = tile === '#' ? CONFIG.COLORS.WALL : CONFIG.COLORS.FLOOR;
+            this.ctx.fillRect(pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
         }
     }
     
@@ -108,17 +129,33 @@ export class Renderer {
     }
 }
 
-export class ParticleSystem {
+class ParticleSystem {
     constructor(renderer) {
         this.renderer = renderer;
         this.particles = [];
+        this.particlePool = [];
+        this.maxPoolSize = 100;
     }
     
     addParticle(x, y, vx, vy, color, lifetime) {
-        this.particles.push({
-            x, y, vx, vy, color, lifetime,
-            maxLifetime: lifetime
-        });
+        let particle = this.particlePool.pop();
+        
+        if (!particle) {
+            particle = {
+                x: 0, y: 0, vx: 0, vy: 0, 
+                color: '', lifetime: 0, maxLifetime: 0
+            };
+        }
+        
+        particle.x = x;
+        particle.y = y;
+        particle.vx = vx;
+        particle.vy = vy;
+        particle.color = color;
+        particle.lifetime = lifetime;
+        particle.maxLifetime = lifetime;
+        
+        this.particles.push(particle);
     }
     
     addExplosion(x, y, color = '#f88', count = 10) {
@@ -140,7 +177,8 @@ export class ParticleSystem {
     }
     
     update() {
-        this.particles = this.particles.filter(p => {
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
             p.x += p.vx;
             p.y += p.vy;
             p.vy += 0.2; // Gravity
@@ -151,9 +189,13 @@ export class ParticleSystem {
                 this.renderer.ctx.globalAlpha = alpha;
                 this.renderer.renderParticle(p.x, p.y, p.color);
                 this.renderer.ctx.globalAlpha = 1;
-                return true;
+            } else {
+                // Return to pool
+                if (this.particlePool.length < this.maxPoolSize) {
+                    this.particlePool.push(p);
+                }
+                this.particles.splice(i, 1);
             }
-            return false;
-        });
+        }
     }
 }

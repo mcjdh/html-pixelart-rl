@@ -1,4 +1,4 @@
-export const goblinSprites = {
+const goblinSprites = {
     default: (ctx, x, y, size) => {
         const unit = size / 16;
         ctx.fillStyle = '#a44';

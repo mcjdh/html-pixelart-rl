@@ -1,6 +1,4 @@
-import { CONFIG } from './config.js';
-
-export class Entity {
+class Entity {
     constructor(x, y) {
         this.x = x;
         this.y = y;
@@ -16,7 +14,7 @@ export class Entity {
     }
 }
 
-export class Player extends Entity {
+class Player extends Entity {
     constructor(x, y) {
         super(x, y);
         this.hp = CONFIG.BALANCE.PLAYER_START_HP;
@@ -78,7 +76,7 @@ export class Player extends Entity {
     }
 }
 
-export class Enemy extends Entity {
+class Enemy extends Entity {
     constructor(x, y, type, floor = 1) {
         super(x, y);
         this.type = type;
@@ -157,7 +155,7 @@ export class Enemy extends Entity {
     }
 }
 
-export class Item extends Entity {
+class Item extends Entity {
     constructor(x, y, type, value = null) {
         super(x, y);
         this.type = type;

@@ -1,6 +1,4 @@
-import { CONFIG } from './config.js';
-
-export class Room {
+class Room {
     constructor(x, y, width, height) {
         this.x = x;
         this.y = y;
@@ -18,7 +16,7 @@ export class Room {
     }
 }
 
-export class MapGenerator {
+class MapGenerator {
     constructor(width = CONFIG.GRID_WIDTH, height = CONFIG.GRID_HEIGHT) {
         this.width = width;
         this.height = height;
@@ -181,7 +179,7 @@ export class MapGenerator {
 }
 
 // Advanced map generation algorithms
-export class DungeonThemes {
+class DungeonThemes {
     static cave(generator, floor) {
         // Use cellular automata for cave-like structures
         generator.initializeMap();

@@ -1,8 +1,4 @@
-import { CONFIG } from './config.js';
-import { Player, Enemy, Item } from './entities.js';
-import { MapGenerator } from './mapGenerator.js';
-
-export class GameState {
+class GameState {
     constructor() {
         this.player = null;
         this.floor = 1;
@@ -138,29 +134,52 @@ export class GameState {
     
     initFogOfWar() {
         this.fogOfWar = [];
+        this.explored = [];
         for (let y = 0; y < CONFIG.GRID_HEIGHT; y++) {
             this.fogOfWar[y] = [];
+            this.explored[y] = [];
             for (let x = 0; x < CONFIG.GRID_WIDTH; x++) {
-                this.fogOfWar[y][x] = true;
+                this.fogOfWar[y][x] = true;   // true = fogged, false = visible
+                this.explored[y][x] = false;  // true = explored before
             }
         }
     }
     
     updateFogOfWar() {
         const viewRadius = CONFIG.VIEW_RADIUS;
+        const viewRadiusSquared = viewRadius * viewRadius;
         
-        for (let dy = -viewRadius; dy <= viewRadius; dy++) {
-            for (let dx = -viewRadius; dx <= viewRadius; dx++) {
-                const x = this.player.x + dx;
-                const y = this.player.y + dy;
+        // Only update if player position changed
+        if (this.lastPlayerX === this.player.x && this.lastPlayerY === this.player.y) {
+            return;
+        }
+        
+        this.lastPlayerX = this.player.x;
+        this.lastPlayerY = this.player.y;
+        
+        // Reset all tiles to fogged, but keep explored status
+        for (let y = 0; y < CONFIG.GRID_HEIGHT; y++) {
+            for (let x = 0; x < CONFIG.GRID_WIDTH; x++) {
+                this.fogOfWar[y][x] = true;
+            }
+        }
+        
+        // Pre-calculate bounds to avoid repeated checks
+        const minX = Math.max(0, this.player.x - viewRadius);
+        const maxX = Math.min(CONFIG.GRID_WIDTH - 1, this.player.x + viewRadius);
+        const minY = Math.max(0, this.player.y - viewRadius);
+        const maxY = Math.min(CONFIG.GRID_HEIGHT - 1, this.player.y + viewRadius);
+        
+        for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
+                const dx = x - this.player.x;
+                const dy = y - this.player.y;
+                const distSquared = dx * dx + dy * dy;
                 
-                if (this.inBounds(x, y)) {
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist <= viewRadius) {
-                        // Simple line of sight check
-                        if (this.hasLineOfSight(this.player.x, this.player.y, x, y)) {
-                            this.fogOfWar[y][x] = false;
-                        }
+                if (distSquared <= viewRadiusSquared) {
+                    if (this.hasLineOfSight(this.player.x, this.player.y, x, y)) {
+                        this.fogOfWar[y][x] = false;    // Currently visible
+                        this.explored[y][x] = true;     // Mark as explored
                     }
                 }
             }
@@ -259,7 +278,7 @@ export class GameState {
     
     saveGame() {
         const saveData = {
-            version: '1.0',
+            version: '1.1',
             player: {
                 x: this.player.x,
                 y: this.player.y,
@@ -277,7 +296,8 @@ export class GameState {
             floor: this.floor,
             upgrades: this.upgrades,
             stats: this.stats,
-            settings: this.settings
+            settings: this.settings,
+            explored: this.explored
         };
         
         localStorage.setItem('pixelRoguelikeSave', JSON.stringify(saveData));
@@ -304,6 +324,13 @@ export class GameState {
             // Generate current floor
             this.generateFloor();
             this.player.moveTo(data.player.x, data.player.y);
+            
+            // Restore explored areas if available
+            if (data.explored) {
+                this.explored = data.explored;
+            } else {
+                this.initFogOfWar();
+            }
             
             this.addMessage('Game loaded!', 'heal-msg');
             return true;

@@ -1,4 +1,4 @@
-export const playerSprites = {
+const playerSprites = {
     default: (ctx, x, y, size) => {
         const unit = size / 16;
         ctx.fillStyle = '#4a4';

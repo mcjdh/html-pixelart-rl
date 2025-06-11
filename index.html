@@ -7,195 +7,351 @@
     <style>
         body {
             margin: 0;
-            padding: 20px;
-            background: #1a1a1a;
-            color: #fff;
-            font-family: monospace;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            padding: 0;
+            background: #000;
+            color: #c0c0c0;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            overflow: hidden;
+            line-height: 1.2;
         }
         
         #game-container {
+            width: 640px;
+            height: 480px;
+            margin: 0 auto;
+            background: #000;
+            border: 2px solid #808080;
             display: flex;
-            gap: 20px;
-            align-items: flex-start;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        #main-area {
+            display: flex;
+            height: 400px;
         }
         
         #game-canvas {
-            border: 2px solid #444;
+            width: 480px;
+            height: 320px;
+            border: 1px solid #404040;
             image-rendering: pixelated;
             image-rendering: crisp-edges;
+            background: #000;
         }
         
-        #ui-panel {
-            background: #2a2a2a;
-            padding: 20px;
-            border-radius: 8px;
-            min-width: 250px;
+        #side-panel {
+            width: 158px;
+            height: 320px;
+            background: #1a1a1a;
+            border-left: 1px solid #404040;
+            padding: 0;
         }
         
-        .stat-row {
-            margin: 10px 0;
+        #status-bar {
+            height: 78px;
+            background: #1a1a1a;
+            border-top: 1px solid #404040;
+            display: flex;
+            flex-direction: column;
+            padding: 2px;
+        }
+        
+        /* Status Bar Styles */
+        .status-line {
             display: flex;
             justify-content: space-between;
+            padding: 1px 4px;
+            font-size: 10px;
+            border-bottom: 1px solid #333;
         }
         
-        .progress-bar {
-            background: #444;
-            height: 20px;
-            margin: 5px 0;
-            position: relative;
-            border-radius: 3px;
-            overflow: hidden;
+        .status-group {
+            display: flex;
+            gap: 12px;
         }
         
-        .progress-fill {
-            background: #4a4;
-            height: 100%;
-            transition: width 0.3s;
+        .stat-item {
+            color: #c0c0c0;
         }
         
-        .hp-fill { background: #a44; }
-        .exp-fill { background: #44a; }
-        .energy-fill { background: #aa4; }
+        .stat-value {
+            color: #ffffff;
+            font-weight: bold;
+        }
         
-        button {
-            background: #333;
-            color: #fff;
-            border: 1px solid #555;
-            padding: 8px 16px;
-            margin: 5px 0;
+        .hp-value { color: #ff4444; }
+        .mp-value { color: #4444ff; }
+        .exp-value { color: #44ff44; }
+        
+        /* Side Panel Styles */
+        .panel-section {
+            border-bottom: 1px solid #333;
+            padding: 4px;
+        }
+        
+        .panel-title {
+            color: #808080;
+            font-size: 9px;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+        }
+        
+        .compact-button {
+            background: #2a2a2a;
+            color: #c0c0c0;
+            border: 1px solid #404040;
+            padding: 2px 4px;
+            margin: 1px 0;
             cursor: pointer;
-            border-radius: 3px;
-            transition: background 0.2s;
+            font-size: 9px;
             width: 100%;
             text-align: left;
         }
         
-        button:hover:not(:disabled) {
-            background: #444;
+        .compact-button:hover:not(:disabled) {
+            background: #404040;
+            color: #ffffff;
         }
         
-        button:disabled {
+        .compact-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
         
         #message-log {
-            background: #1a1a1a;
-            padding: 10px;
-            margin-top: 20px;
-            height: 150px;
+            background: #000;
+            padding: 2px;
+            height: 60px;
             overflow-y: auto;
-            border-radius: 3px;
-            font-size: 12px;
+            font-size: 8px;
+            border: 1px solid #333;
         }
         
         .message {
-            margin: 2px 0;
-            opacity: 0.8;
+            margin: 0;
+            padding: 0;
+            line-height: 1.1;
         }
         
-        .damage-msg { color: #f88; }
-        .heal-msg { color: #8f8; }
-        .level-msg { color: #88f; font-weight: bold; }
+        .damage-msg { color: #ff6666; }
+        .heal-msg { color: #66ff66; }
+        .level-msg { color: #6666ff; font-weight: bold; }
         
         .controls {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #444;
+            padding: 2px;
+            font-size: 8px;
+            color: #808080;
         }
         
-        .control-hint {
+        .key-hint {
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .progress-mini {
+            width: 40px;
+            height: 6px;
+            background: #333;
+            border: 1px solid #666;
+            display: inline-block;
+            margin-left: 4px;
+            position: relative;
+        }
+        
+        .progress-mini-fill {
+            height: 100%;
+            background: #666;
+        }
+        
+        .hp-mini { background: #aa4444; }
+        .mp-mini { background: #4444aa; }
+        .exp-mini { background: #44aa44; }
+        
+        /* Modal System */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-window {
+            background: #1a1a1a;
+            border: 2px solid #c0c0c0;
+            width: 400px;
+            padding: 0;
+            position: relative;
+        }
+        
+        .modal-header {
+            background: #2a2a2a;
+            padding: 8px 12px;
+            border-bottom: 1px solid #c0c0c0;
+            font-weight: bold;
+            text-align: center;
+            color: #ffffff;
+        }
+        
+        .modal-body {
+            padding: 16px;
+            text-align: center;
+            line-height: 1.4;
+        }
+        
+        .modal-buttons {
+            padding: 12px;
+            text-align: center;
+            border-top: 1px solid #404040;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+        
+        .modal-button {
+            background: #2a2a2a;
+            color: #c0c0c0;
+            border: 1px solid #404040;
+            padding: 6px 16px;
+            cursor: pointer;
             font-size: 11px;
-            color: #888;
-            margin: 4px 0;
+            min-width: 80px;
         }
         
-        h2, h3 {
-            margin: 10px 0;
+        .modal-button:hover {
+            background: #404040;
+            color: #ffffff;
         }
         
-        .stat-detail {
-            font-size: 11px;
-            color: #888;
+        .modal-button.primary {
+            background: #444444;
+            color: #ffffff;
+            border-color: #666666;
+        }
+        
+        .modal-button.primary:hover {
+            background: #555555;
+        }
+        
+        .ascii-border {
+            border: none;
+            background: #1a1a1a;
+            position: relative;
+        }
+        
+        .ascii-border::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: 
+                repeating-linear-gradient(0deg, #c0c0c0 0px, #c0c0c0 1px, transparent 1px, transparent 2px),
+                repeating-linear-gradient(90deg, #c0c0c0 0px, #c0c0c0 1px, transparent 1px, transparent 2px);
         }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <canvas id="game-canvas"></canvas>
-        <div id="ui-panel">
-            <h2>Pixel Roguelike</h2>
-            
-            <div class="stat-row">
-                <span>Level:</span>
-                <span id="player-level">1</span>
+        <div id="main-area">
+            <canvas id="game-canvas"></canvas>
+            <div id="side-panel">
+                <div class="panel-section">
+                    <div class="panel-title">Character</div>
+                    <div style="font-size: 9px;">
+                        <div>Lvl <span id="player-level" class="stat-value">1</span></div>
+                        <div>HP <span id="player-hp" class="hp-value">10/10</span></div>
+                        <div>En <span id="player-energy" class="mp-value">100/100</span></div>
+                        <div>XP <span id="player-exp" class="exp-value">0/10</span></div>
+                    </div>
+                </div>
+                
+                <div class="panel-section">
+                    <div class="panel-title">Dungeon</div>
+                    <div style="font-size: 9px;">
+                        <div>Floor <span id="floor-level" class="stat-value">1</span></div>
+                        <div>Gold <span id="player-gold" class="stat-value">0</span></div>
+                    </div>
+                </div>
+                
+                <div class="panel-section">
+                    <div class="panel-title">Actions</div>
+                    <button class="compact-button" id="upgrade-attack" onclick="game.upgradeAttack()">
+                        +Att (<span id="attack-cost">10</span>g)
+                    </button>
+                    <button class="compact-button" id="upgrade-defense" onclick="game.upgradeDefense()">
+                        +Def (<span id="defense-cost">10</span>g)
+                    </button>
+                    <button class="compact-button" id="auto-explore" onclick="game.toggleAutoExplore()">
+                        Auto: <span id="auto-explore-status">OFF</span>
+                    </button>
+                    <button class="compact-button" onclick="game.saveGame()">Save</button>
+                </div>
+                
+                <div class="panel-section" style="flex-grow: 1;">
+                    <div class="panel-title">Messages</div>
+                    <div id="message-log"></div>
+                </div>
             </div>
-            
-            <div class="stat-row">
-                <span>HP:</span>
-                <span id="player-hp">10/10</span>
+        </div>
+        
+        <div id="status-bar">
+            <div class="status-line">
+                <div class="status-group">
+                    <span class="stat-item">HP: <span id="status-hp" class="hp-value">10/10</span></span>
+                    <span class="stat-item">EN: <span id="status-energy" class="mp-value">100/100</span></span>
+                    <span class="stat-item">XP: <span id="status-exp" class="exp-value">0/10</span></span>
+                </div>
+                <div class="status-group">
+                    <span class="stat-item">Floor: <span id="status-floor" class="stat-value">1</span></span>
+                    <span class="stat-item">Gold: <span id="status-gold" class="stat-value">0</span></span>
+                </div>
             </div>
-            <div class="progress-bar">
-                <div class="progress-fill hp-fill" id="hp-bar" style="width: 100%"></div>
-            </div>
-            
-            <div class="stat-row">
-                <span>EXP:</span>
-                <span id="player-exp">0/10</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill exp-fill" id="exp-bar" style="width: 0%"></div>
-            </div>
-            
-            <div class="stat-row">
-                <span>Energy:</span>
-                <span id="player-energy">100/100</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill energy-fill" id="energy-bar" style="width: 100%"></div>
-            </div>
-            
-            <div class="stat-row">
-                <span>Floor:</span>
-                <span id="floor-level">1</span>
-            </div>
-            
-            <div class="stat-row">
-                <span>Gold:</span>
-                <span id="player-gold">0</span>
-            </div>
-            
-            <h3>Upgrades</h3>
-            <button id="upgrade-attack" onclick="game.upgradeAttack()">
-                Upgrade Attack (Cost: <span id="attack-cost">10</span>)
-            </button>
-            <button id="upgrade-defense" onclick="game.upgradeDefense()">
-                Upgrade Defense (Cost: <span id="defense-cost">10</span>)
-            </button>
-            
-            <h3>Actions</h3>
-            <button id="auto-explore" onclick="game.toggleAutoExplore()">
-                Auto-Explore: <span id="auto-explore-status">OFF</span>
-            </button>
-            <button onclick="game.saveGame()">Save Game</button>
-            
             <div class="controls">
-                <div class="control-hint">↑↓←→ or WASD: Move</div>
-                <div class="control-hint">Z: Toggle Auto-Explore</div>
-                <div class="control-hint">ESC: Stop Auto-Explore</div>
+                <span class="key-hint">↑↓←→/WASD:Move</span>
+                <span class="key-hint">Z:Auto</span>
+                <span class="key-hint">H:Help</span>
+                <span class="key-hint">ESC:Stop</span>
             </div>
-            
-            <div id="message-log"></div>
+        </div>
+        
+        <!-- Modal System -->
+        <div id="modal-overlay" class="modal-overlay">
+            <div id="modal-window" class="modal-window">
+                <div id="modal-header" class="modal-header"></div>
+                <div id="modal-body" class="modal-body"></div>
+                <div id="modal-buttons" class="modal-buttons"></div>
+            </div>
         </div>
     </div>
 
-    <script type="module">
-        import { Game } from './src/game.js';
-        
+    <!-- Load all game modules in dependency order -->
+    <script src="./src/config.js"></script>
+    <script src="./src/sprites/player.js"></script>
+    <script src="./src/sprites/enemies/goblin.js"></script>
+    <script src="./src/sprites/enemies/skeleton.js"></script>
+    <script src="./src/sprites/items/consumables.js"></script>
+    <script src="./src/sprites/items/treasure.js"></script>
+    <script src="./src/sprites/items/equipment.js"></script>
+    <script src="./src/sprites/environment/terrain.js"></script>
+    <script src="./src/sprites/environment/decorations.js"></script>
+    <script src="./src/sprites/index.js"></script>
+    <script src="./src/entities.js"></script>
+    <script src="./src/mapGenerator.js"></script>
+    <script src="./src/gameState.js"></script>
+    <script src="./src/renderer.js"></script>
+    <script src="./src/combat.js"></script>
+    <script src="./src/game.js"></script>
+    
+    <script>
         // Create and start game
         window.game = new Game();
         game.init();
