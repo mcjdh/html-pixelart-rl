@@ -9,7 +9,7 @@ class CombatSystem {
         
         // Calculate base damage
         let baseDamage = player.attack;
-        const critChance = 0.1 + (player.level * 0.01);
+        const critChance = CONFIG.BALANCE.BASE_CRIT_CHANCE + (player.level * CONFIG.BALANCE.CRIT_CHANCE_PER_LEVEL);
         const isCrit = Math.random() < critChance;
         
         // Apply directional combat bonuses
@@ -39,7 +39,7 @@ class CombatSystem {
         const damage = Math.floor(baseDamage * (1 + positionBonus) * (isCrit ? 2 : 1));
         
         // Check for status effect applications
-        if (CONFIG.FEATURES.STATUS_EFFECTS && Math.random() < 0.1) {
+        if (CONFIG.FEATURES.STATUS_EFFECTS && Math.random() < CONFIG.BALANCE.STATUS_EFFECT_CHANCE) {
             enemy.applyStatusEffect('stun', CONFIG.BALANCE.STATUS_STUN_DURATION);
             this.gameState.addMessage('Enemy is stunned!', 'damage-msg');
         }

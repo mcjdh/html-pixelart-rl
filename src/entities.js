@@ -18,7 +18,7 @@ class Entity {
     }
     
     distanceTo(other) {
-        return Math.sqrt((other.x - this.x) ** 2 + (other.y - this.y) ** 2);
+        return GameUtils.calculateDistance(this, other);
     }
     
     getRelativePosition(target) {
@@ -66,7 +66,7 @@ class Entity {
                 }
             }
         }
-        return wallCount >= 6; // Surrounded by 6+ walls/edges = cornered
+        return wallCount >= CONFIG.BALANCE.CORNER_WALL_COUNT; // Surrounded by enough walls/edges = cornered
     }
     
     applyStatusEffect(type, duration) {
@@ -181,7 +181,7 @@ class Enemy extends Entity {
                     hp: CONFIG.BALANCE.GOBLIN_HP_BASE + floorBonus,
                     attack: CONFIG.BALANCE.GOBLIN_ATTACK_BASE + Math.floor(floorBonus / 2),
                     expValue: CONFIG.BALANCE.GOBLIN_EXP,
-                    goldDrop: Math.floor(Math.random() * 5) + 2 + floorBonus,
+                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.GOBLIN_GOLD_RANGE) + CONFIG.BALANCE.GOBLIN_GOLD_BASE + floorBonus,
                     viewRange: 5,
                     moveSpeed: 1
                 };
@@ -190,7 +190,7 @@ class Enemy extends Entity {
                     hp: CONFIG.BALANCE.SKELETON_HP_BASE + floorBonus,
                     attack: CONFIG.BALANCE.SKELETON_ATTACK_BASE + Math.floor(floorBonus / 2),
                     expValue: CONFIG.BALANCE.SKELETON_EXP,
-                    goldDrop: Math.floor(Math.random() * 8) + 5 + floorBonus * 2,
+                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.SKELETON_GOLD_RANGE) + CONFIG.BALANCE.SKELETON_GOLD_BASE + floorBonus * 2,
                     viewRange: 6,
                     moveSpeed: 1
                 };

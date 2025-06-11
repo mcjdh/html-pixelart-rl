@@ -26,7 +26,7 @@ class Game {
         this.inputEnabled = true;
         this.gameOver = false;
         this.lastInputTime = 0;
-        this.inputThrottle = 50; // 50ms between inputs
+        this.inputThrottle = CONFIG.GAME.INPUT_THROTTLE;
         this.gameStartTime = Date.now();
         
         // Debug mode
@@ -191,7 +191,7 @@ class Game {
             const deltaY = touch.clientY - touchStartY;
             
             // Minimum swipe distance
-            const minSwipeDistance = 30;
+            const minSwipeDistance = CONFIG.GAME.MIN_SWIPE_DISTANCE;
             
             if (Math.abs(deltaX) > minSwipeDistance || Math.abs(deltaY) > minSwipeDistance) {
                 // Determine swipe direction
@@ -302,8 +302,8 @@ class Game {
             case 'G':
                 if (this.debug) {
                     // Give gold
-                    this.gameState.player.gold += 100;
-                    this.gameState.addMessage('Debug: +100 gold', 'heal-msg');
+                    this.gameState.player.gold += CONFIG.DEBUG.GOLD_AMOUNT;
+                    this.gameState.addMessage(`Debug: +${CONFIG.DEBUG.GOLD_AMOUNT} gold`, 'heal-msg');
                 }
                 return;
             case 'l':
