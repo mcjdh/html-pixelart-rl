@@ -346,7 +346,7 @@ class MenuSystem {
         
         // Reset game state for new campaign
         this.game.gameState.floor = 1;
-        this.game.gameState.campaignMode = true;
+        this.game.gameState.campaignMode = false; // Use modular area progression instead
         this.game.gameState.campaignProgress = {
             floorsCompleted: 0,
             bossesDefeated: 0,

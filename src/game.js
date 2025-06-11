@@ -866,7 +866,7 @@ class Game {
             });
     }
     
-    findAlternativeTarget(player, currentTarget) {
+    findAlternativeTarget(player) {
         // When stuck, try to find a different unexplored area
         const alternatives = [];
         
@@ -999,6 +999,11 @@ class Game {
         // Only render if game state is initialized
         if (!this.gameState.map || !this.gameState.fogOfWar || !this.gameState.explored) {
             return;
+        }
+        
+        // Update camera to follow player
+        if (this.gameState.player) {
+            this.renderer.updateCamera(this.gameState.player.x, this.gameState.player.y);
         }
         
         this.renderer.renderMap(this.gameState.map, this.gameState.fogOfWar, this.gameState.explored);

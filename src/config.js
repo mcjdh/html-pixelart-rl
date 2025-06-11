@@ -1,9 +1,11 @@
 const CONFIG = {
     CELL_SIZE: 20,
-    GRID_WIDTH: 20,
-    GRID_HEIGHT: 14,
+    GRID_WIDTH: 40,
+    GRID_HEIGHT: 30,
     TILE_SIZE: 20,
     VIEW_RADIUS: 6,
+    VIEWPORT_WIDTH: 20,  // Tiles visible horizontally
+    VIEWPORT_HEIGHT: 14, // Tiles visible vertically
     
     COLORS: {
         FLOOR: '#444',
@@ -74,6 +76,14 @@ const CONFIG = {
         SKELETON_ATTACK_BASE: 2,
         SKELETON_EXP: 8,
         
+        WOLF_HP_BASE: 8,
+        WOLF_ATTACK_BASE: 4,
+        WOLF_EXP: 6,
+        
+        TREANT_HP_BASE: 15,
+        TREANT_ATTACK_BASE: 6,
+        TREANT_EXP: 12,
+        
         GOLD_VALUE_BASE: 5,
         GOLD_VALUE_RANGE: 10,
         
@@ -109,6 +119,10 @@ const CONFIG = {
         GOBLIN_GOLD_RANGE: 5,
         SKELETON_GOLD_BASE: 5,
         SKELETON_GOLD_RANGE: 8,
+        WOLF_GOLD_BASE: 8,
+        WOLF_GOLD_RANGE: 6,
+        TREANT_GOLD_BASE: 15,
+        TREANT_GOLD_RANGE: 10,
         
         // Other balance values
         ENEMY_DEFENSE_DIVISOR: 10,

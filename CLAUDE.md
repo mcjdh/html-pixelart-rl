@@ -5,9 +5,16 @@
 ### Script Loading Dependencies
 **ALWAYS CHECK** script loading order in index.html before any file modifications:
 ```
-config.js → sprite files → sprites/index.js → entities.js → mapGenerator.js → gameState.js → renderer.js → combat.js → game.js
+config.js → utils.js → 
+sprites/player.js → sprites/enemies/*.js → sprites/items/*.js → 
+sprites/environment/*.js → sprites/index.js → 
+entities.js → levels/*.js → mapGenerator.js → gameState.js → 
+renderer.js → combat.js → core/*.js → ui/*.js → game.js → 
+levels/areas/*.js (LAST)
 ```
 **FAILURE TO MAINTAIN ORDER = RUNTIME ERRORS**
+
+**CRITICAL**: Area definition files MUST load after all sprite and system files!
 
 ### Global Namespace Pattern
 ```javascript
@@ -87,31 +94,226 @@ player.takeDamage(damage);
 4. **Fog of war**: Corner visibility?
 5. **Item spawning**: Full inventory?
 
-## FEATURE IMPLEMENTATION TEMPLATES
+## MODULAR LEVEL SYSTEM (CRITICAL)
 
-### Adding New Enemy Type
+### Level System Architecture
+The game uses a **modular area-based system** instead of hardcoded floors:
+
+**Core Components:**
+- `LevelDefinition` class: Defines areas with floors, enemies, sprites, narrative
+- `AreaManager` class: Handles area loading, progression, unlocking, state
+- Theme generators: `BaseGenerator`, `CavernGenerator`, `ForestGenerator`
+- Area definitions: `src/levels/areas/*.js` (caverns.js, forest.js)
+
+### Current Areas
+1. **Caverns** (3 floors): Shallow Crypts → Bone Gardens → Heart of Darkness
+2. **Forest** (3 floors): Forest Edge → Deep Woods → Sacred Grove
+
+### Sprite Organization Standards
+**CRITICAL**: Each theme MUST have consistent sprite organization:
+
+```
+src/sprites/environment/
+├── terrain.js      # Default/base sprites
+├── decorations.js  # Generic decorations
+├── cavern.js      # Cavern-specific sprites
+├── forest.js      # Forest-specific sprites
+└── [theme].js     # Future theme sprites
+```
+
+**Each theme sprite file MUST:**
+1. Export `[theme]Sprites` object globally (`window.[theme]Sprites`)
+2. Register in `window.SPRITES.[theme]` if available
+3. Follow standard sprite function signature: `(ctx, x, y, size)`
+
+### Level Definition Template
 ```javascript
-// 1. Add to gameState.js getEnemyTypesForFloor()
-if (this.floor >= X) types.push('newEnemy');
+const newAreaLevel = new LevelDefinition({
+    id: 'area_name',
+    name: 'Display Name',
+    theme: 'theme_name',
+    
+    tileSprites: {
+        wall: () => window.themeSprites ? window.themeSprites.wall : fallback,
+        floor: () => window.themeSprites ? window.themeSprites.floor : fallback,
+        // Add all tile types used by this theme
+    },
+    
+    floors: [
+        {
+            number: 1,
+            name: "Floor Display Name",
+            description: "Floor description for lore",
+            narrative: {
+                enter: "Floor entrance narrative...",
+                complete: "Floor completion narrative..."
+            },
+            enemies: ["enemy1", "enemy2"],
+            enemyCount: { base: 4, perFloor: 1 },
+            itemCount: { base: 3, perFloor: 0.5 },
+            specialEvents: ["event1", "event2"],
+            completionBonus: {
+                gold: 30,
+                message: "Completion message"
+            }
+        }
+        // Add more floors...
+    ],
+    
+    enemyTypes: {
+        default: ["enemy1", "enemy2"]
+    },
+    
+    mapConfig: {
+        baseRoomCount: 6,
+        roomsPerFloor: 1,
+        minRoomSize: 6,
+        maxRoomSize: 10,
+        corridorWidth: 2,
+        decorationChance: 0.15
+    },
+    
+    progression: {
+        unlocks: ["next_area"],
+        connections: ["connected_area"],
+        victoryCondition: "complete_all_floors"
+    },
+    
+    narrative: {
+        loreCategories: ["category1", "category2"],
+        combatNarratives: {
+            enemy1: ["Narrative 1", "Narrative 2"],
+            enemy2: ["Narrative 3", "Narrative 4"]
+        }
+    }
+});
+
+window.newAreaLevel = newAreaLevel;
+```
+
+### Adding New Theme Generator
+```javascript
+class NewThemeGenerator extends BaseGenerator {
+    constructor() {
+        super('new_theme');
+    }
+    
+    generate(width, height, config) {
+        // Custom generation logic
+        const result = super.generate(width, height, config);
+        this.addThemeSpecificFeatures(result.map, result.rooms, config);
+        return result;
+    }
+    
+    addThemeSpecificFeatures(map, rooms, config) {
+        // Theme-specific map modifications
+    }
+}
+
+window.NewThemeGenerator = NewThemeGenerator;
+```
+
+### Enemy Integration with Areas
+```javascript
+// 1. Add stats to CONFIG.BALANCE
+NEWENEMY_HP_BASE: 12,
+NEWENEMY_ATTACK_BASE: 5,
+NEWENEMY_EXP: 8,
+NEWENEMY_GOLD_BASE: 15,
+NEWENEMY_GOLD_RANGE: 8,
 
 // 2. Add to entities.js getStatsForType()
 case 'newEnemy':
     return {
         hp: CONFIG.BALANCE.NEWENEMY_HP_BASE + floorBonus,
-        attack: CONFIG.BALANCE.NEWENEMY_ATTACK_BASE + Math.floor(floorBonus/2),
+        attack: CONFIG.BALANCE.NEWENEMY_ATTACK_BASE + Math.floor(floorBonus / 2),
         expValue: CONFIG.BALANCE.NEWENEMY_EXP,
-        goldDrop: Math.floor(Math.random() * X) + Y + floorBonus
+        goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.NEWENEMY_GOLD_RANGE) + CONFIG.BALANCE.NEWENEMY_GOLD_BASE + floorBonus,
+        viewRange: 6,
+        moveSpeed: 1.0
     };
 
-// 3. Add sprite to sprites/enemies/newEnemy.js
+// 3. Create sprite file: src/sprites/enemies/newEnemy.js
 const newEnemySprites = {
     default: function(ctx, x, y, size) {
-        const unit = size / 16;
-        // Draw using ctx.fillRect only
+        // Sprite drawing code
     }
 };
+window.newEnemySprites = newEnemySprites;
 
-// 4. Register in sprites/index.js
+// 4. Update sprites/index.js ENEMY_SPRITES registry
+newEnemy: window.newEnemySprites ? window.newEnemySprites.default : fallback,
+
+// 5. Add to area definition enemies array
+enemies: ["goblin", "newEnemy"]
+```
+
+## FEATURE IMPLEMENTATION TEMPLATES
+
+### Adding New Area (Complete Process)
+1. **Create theme sprites**: `src/sprites/environment/[theme].js`
+2. **Create enemy sprites**: `src/sprites/enemies/[enemy].js` (if new)
+3. **Create generator**: `src/levels/generators/[Theme]Generator.js` (if needed)
+4. **Create area definition**: `src/levels/areas/[area].js`
+5. **Update index.html**: Add script tags in correct order
+6. **Update gameState.js**: Add theme generator support
+7. **Register area**: Add to `registerAreas()` in gameState.js
+8. **Update progression**: Set unlock conditions in existing areas
+
+### Theme Integration Checklist
+- [ ] Theme sprites created and registered globally
+- [ ] Area definition created with all required floors
+- [ ] Generator created (if custom generation needed)
+- [ ] Script loading order maintained in index.html
+- [ ] Enemy stats added to CONFIG.BALANCE
+- [ ] Area registered in gameState.js
+- [ ] Progression configured from existing areas
+- [ ] Special events defined for theme
+- [ ] Combat narratives written for theme enemies
+
+### File Structure (Updated)
+```
+src/
+├── levels/
+│   ├── LevelDefinition.js     # Core level class
+│   ├── AreaManager.js         # Area progression management
+│   ├── generators/
+│   │   ├── BaseGenerator.js   # Base map generation
+│   │   ├── CavernGenerator.js # Cave-style generation
+│   │   └── ForestGenerator.js # Forest-style generation
+│   └── areas/
+│       ├── caverns.js         # 3-floor cavern area
+│       └── forest.js          # 3-floor forest area
+├── sprites/
+│   ├── environment/
+│   │   ├── terrain.js         # Base terrain sprites
+│   │   ├── decorations.js     # Generic decorations
+│   │   ├── cavern.js         # Cavern-specific sprites
+│   │   └── forest.js         # Forest-specific sprites
+│   ├── enemies/
+│   │   ├── goblin.js         # Basic enemy
+│   │   ├── skeleton.js       # Cavern enemy
+│   │   ├── wolf.js           # Forest enemy
+│   │   └── treant.js         # Forest boss
+│   └── index.js              # Sprite registry
+└── core/
+    └── CampaignSystem.js     # Integrates with areas
+```
+
+### Testing New Areas
+```javascript
+// Debug mode - add to game.js or console
+game.gameState.loadArea('new_area_id');
+game.gameState.generateFloor();
+
+// Check area registration
+console.log(game.gameState.areaManager.areas);
+
+// Check sprite loading
+console.log(window.newThemeSprites);
+
+// Test progression
+game.gameState.areaManager.completeArea('current_area');
 ```
 
 ### Adding Status Effect

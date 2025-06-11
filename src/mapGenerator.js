@@ -26,7 +26,37 @@ class MapGenerator {
         this.stairsY = -1;
     }
     
-    generate(floor = 1) {
+    generate(floor = 1, config = null) {
+        // Support both old and new calling conventions
+        if (typeof floor === 'object') {
+            config = floor;
+            floor = config.currentFloor || 1;
+        }
+        
+        // Use theme-specific generator if available
+        if (config && window.BaseGenerator) {
+            const themeConfig = {
+                baseRoomCount: config.baseRoomCount || 5,
+                roomsPerFloor: config.roomsPerFloor || 1,
+                minRoomSize: config.minRoomSize || 5,
+                maxRoomSize: config.maxRoomSize || 10,
+                corridorWidth: config.corridorWidth || 1,
+                decorationChance: config.decorationChance || 0.1,
+                currentFloor: floor
+            };
+            
+            const result = this.generateWithConfig(floor, themeConfig);
+            return {
+                map: result.map,
+                rooms: result.rooms,
+                stairsX: this.stairsX,
+                stairsY: this.stairsY,
+                startX: result.rooms[0].x + Math.floor(result.rooms[0].width / 2),
+                startY: result.rooms[0].y + Math.floor(result.rooms[0].height / 2)
+            };
+        }
+        
+        // Fallback to original generation
         this.initializeMap();
         this.generateRooms(floor);
         this.connectRooms();
@@ -39,6 +69,50 @@ class MapGenerator {
             stairsY: this.stairsY,
             startX: this.rooms[0].centerX,
             startY: this.rooms[0].centerY
+        };
+    }
+    
+    generateWithConfig(floor, config) {
+        // Initialize map
+        this.initializeMap();
+        
+        // Generate rooms with config
+        const roomCount = config.baseRoomCount + Math.floor(config.roomsPerFloor * (floor - 1));
+        this.rooms = [];
+        
+        for (let i = 0; i < roomCount * 3; i++) {
+            const roomWidth = Math.floor(Math.random() * (config.maxRoomSize - config.minRoomSize + 1)) + config.minRoomSize;
+            const roomHeight = Math.floor(Math.random() * (config.maxRoomSize - config.minRoomSize + 1)) + config.minRoomSize;
+            const x = Math.floor(Math.random() * (this.width - roomWidth - 2)) + 1;
+            const y = Math.floor(Math.random() * (this.height - roomHeight - 2)) + 1;
+            
+            const newRoom = new Room(x, y, roomWidth, roomHeight);
+            
+            let overlaps = false;
+            for (let room of this.rooms) {
+                if (newRoom.intersects(room)) {
+                    overlaps = true;
+                    break;
+                }
+            }
+            
+            if (!overlaps) {
+                this.createRoom(newRoom);
+                this.rooms.push(newRoom);
+                
+                if (this.rooms.length >= roomCount) break;
+            }
+        }
+        
+        // Connect rooms
+        this.connectRooms();
+        
+        // Place stairs
+        this.placeStairs();
+        
+        return {
+            map: this.map,
+            rooms: this.rooms
         };
     }
     

@@ -194,6 +194,24 @@ class Enemy extends Entity {
                     viewRange: 6,
                     moveSpeed: 1
                 };
+            case 'wolf':
+                return {
+                    hp: CONFIG.BALANCE.WOLF_HP_BASE + floorBonus,
+                    attack: CONFIG.BALANCE.WOLF_ATTACK_BASE + Math.floor(floorBonus / 2),
+                    expValue: CONFIG.BALANCE.WOLF_EXP,
+                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.WOLF_GOLD_RANGE) + CONFIG.BALANCE.WOLF_GOLD_BASE + floorBonus,
+                    viewRange: 7,
+                    moveSpeed: 1.2
+                };
+            case 'treant':
+                return {
+                    hp: CONFIG.BALANCE.TREANT_HP_BASE + floorBonus * 2,
+                    attack: CONFIG.BALANCE.TREANT_ATTACK_BASE + Math.floor(floorBonus / 2),
+                    expValue: CONFIG.BALANCE.TREANT_EXP,
+                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.TREANT_GOLD_RANGE) + CONFIG.BALANCE.TREANT_GOLD_BASE + floorBonus * 2,
+                    viewRange: 5,
+                    moveSpeed: 0.8
+                };
             default:
                 return {
                     hp: 5,

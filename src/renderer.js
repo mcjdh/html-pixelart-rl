@@ -2,8 +2,12 @@ class Renderer {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
-        this.canvas.width = CONFIG.GRID_WIDTH * CONFIG.CELL_SIZE;
-        this.canvas.height = CONFIG.GRID_HEIGHT * CONFIG.CELL_SIZE;
+        this.canvas.width = CONFIG.VIEWPORT_WIDTH * CONFIG.CELL_SIZE;
+        this.canvas.height = CONFIG.VIEWPORT_HEIGHT * CONFIG.CELL_SIZE;
+        
+        // Camera tracking
+        this.cameraX = 0;
+        this.cameraY = 0;
         
         // Enable pixel art rendering
         this.ctx.imageSmoothingEnabled = false;
@@ -18,10 +22,25 @@ class Renderer {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
     
+    updateCamera(playerX, playerY) {
+        // Center camera on player
+        this.cameraX = playerX - Math.floor(CONFIG.VIEWPORT_WIDTH / 2);
+        this.cameraY = playerY - Math.floor(CONFIG.VIEWPORT_HEIGHT / 2);
+        
+        // Clamp camera to map bounds
+        this.cameraX = Math.max(0, Math.min(CONFIG.GRID_WIDTH - CONFIG.VIEWPORT_WIDTH, this.cameraX));
+        this.cameraY = Math.max(0, Math.min(CONFIG.GRID_HEIGHT - CONFIG.VIEWPORT_HEIGHT, this.cameraY));
+    }
+    
     renderMap(map, fogOfWar, explored) {
-        // Always render everything for now (could optimize later)
-        for (let y = 0; y < CONFIG.GRID_HEIGHT; y++) {
-            for (let x = 0; x < CONFIG.GRID_WIDTH; x++) {
+        // Render only the viewport area
+        const startX = this.cameraX;
+        const endX = Math.min(this.cameraX + CONFIG.VIEWPORT_WIDTH, CONFIG.GRID_WIDTH);
+        const startY = this.cameraY;
+        const endY = Math.min(this.cameraY + CONFIG.VIEWPORT_HEIGHT, CONFIG.GRID_HEIGHT);
+        
+        for (let y = startY; y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
                 this.renderTile(map, fogOfWar, explored, x, y);
             }
         }
@@ -32,13 +51,40 @@ class Renderer {
     
     renderTile(map, fogOfWar, explored, x, y) {
         const tile = map[y][x];
-        const pixelX = x * CONFIG.CELL_SIZE;
-        const pixelY = y * CONFIG.CELL_SIZE;
+        const pixelX = (x - this.cameraX) * CONFIG.CELL_SIZE;
+        const pixelY = (y - this.cameraY) * CONFIG.CELL_SIZE;
         
+        // Get theme-specific sprites if available
+        const gameState = window.game && window.game.gameState;
+        const currentArea = gameState && gameState.currentArea;
+        let tileSprites = terrainSprites;
+        
+        if (currentArea && currentArea.tileSprites) {
+            // Use area-specific tile sprites
+            const tileType = this.getTileType(tile);
+            const customSprite = currentArea.getTileSprite(tileType);
+            if (customSprite && typeof customSprite === 'function') {
+                if (fogOfWar[y][x]) {
+                    if (explored[y][x]) {
+                        customSprite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                        this.ctx.fillStyle = CONFIG.COLORS.FOG_EXPLORED;
+                        this.ctx.fillRect(pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+                    } else {
+                        this.ctx.fillStyle = CONFIG.COLORS.FOG;
+                        this.ctx.fillRect(pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+                    }
+                } else {
+                    customSprite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                }
+                return;
+            }
+        }
+        
+        // Fallback to default rendering
         if (fogOfWar[y][x]) {
             if (explored[y][x]) {
                 // Explored but not currently visible - show dimmed terrain sprites
-                if (tile === '#') {
+                if (tile === '#' || tile === 1) {
                     terrainSprites.wall(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
                 } else {
                     terrainSprites.floor(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
@@ -54,26 +100,105 @@ class Renderer {
             }
         } else {
             // Currently visible - render beautiful sprite tiles
-            if (tile === '#') {
+            if (tile === '#' || tile === 1) {
                 terrainSprites.wall(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+            } else if (tile === 3) {
+                // Decoration - use area-specific decoration
+                const decorSprite = currentArea && currentArea.getTileSprite('bones');
+                if (decorSprite && typeof decorSprite === 'function') {
+                    decorSprite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                } else {
+                    terrainSprites.floor(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                    if (decorationSprites.bones) {
+                        decorationSprites.bones(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                    }
+                }
+            } else if (tile === 4) {
+                // Stalagmite - use area-specific decoration
+                const stalagmiteSprite = currentArea && currentArea.getTileSprite('stalagmite');
+                if (stalagmiteSprite && typeof stalagmiteSprite === 'function') {
+                    stalagmiteSprite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                } else {
+                    terrainSprites.floor(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                    if (decorationSprites.stalagmite) {
+                        decorationSprites.stalagmite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                    }
+                }
+            } else if (tile === 5) {
+                // Crystal - use area-specific decoration
+                const crystalSprite = currentArea && currentArea.getTileSprite('crystal');
+                if (crystalSprite && typeof crystalSprite === 'function') {
+                    crystalSprite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                } else {
+                    terrainSprites.floor(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                    if (decorationSprites.crystal) {
+                        decorationSprites.crystal(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                    }
+                }
+            } else if (tile === 6) {
+                // Flower (forest)
+                terrainSprites.floor(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                const flowerSprite = currentArea && currentArea.getTileSprite('flower');
+                if (flowerSprite && typeof flowerSprite === 'function') {
+                    flowerSprite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                }
+            } else if (tile === 7) {
+                // Stone (forest)
+                terrainSprites.floor(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                const stoneSprite = currentArea && currentArea.getTileSprite('stone');
+                if (stoneSprite && typeof stoneSprite === 'function') {
+                    stoneSprite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                }
+            } else if (tile === 8) {
+                // Bush (forest)
+                terrainSprites.floor(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                const bushSprite = currentArea && currentArea.getTileSprite('bush');
+                if (bushSprite && typeof bushSprite === 'function') {
+                    bushSprite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                }
             } else {
                 terrainSprites.floor(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
             }
         }
     }
     
+    getTileType(tile) {
+        if (tile === '#' || tile === 1) return 'wall';
+        if (tile === 0 || tile === '.') return 'floor';
+        if (tile === 3) return 'decoration';
+        if (tile === 4) return 'stalagmite';
+        if (tile === 5) return 'crystal';
+        if (tile === 6) return 'flower';
+        if (tile === 7) return 'stone';
+        if (tile === 8) return 'bush';
+        return 'floor';
+    }
+    
     renderStairs(x, y, fogOfWar) {
-        if (!fogOfWar[y][x]) {
-            terrainSprites.stairs(this.ctx, x * CONFIG.CELL_SIZE, y * CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+        // Check if stairs are in viewport
+        if (x >= this.cameraX && x < this.cameraX + CONFIG.VIEWPORT_WIDTH &&
+            y >= this.cameraY && y < this.cameraY + CONFIG.VIEWPORT_HEIGHT &&
+            !fogOfWar[y][x]) {
+            
+            const pixelX = (x - this.cameraX) * CONFIG.CELL_SIZE;
+            const pixelY = (y - this.cameraY) * CONFIG.CELL_SIZE;
+            terrainSprites.stairs(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
         }
     }
     
     renderItems(items, fogOfWar) {
         for (const item of items) {
-            if (!fogOfWar[item.y][item.x]) {
+            // Check if item is in viewport
+            if (item.x >= this.cameraX && item.x < this.cameraX + CONFIG.VIEWPORT_WIDTH &&
+                item.y >= this.cameraY && item.y < this.cameraY + CONFIG.VIEWPORT_HEIGHT &&
+                !fogOfWar[item.y][item.x]) {
+                
+                const pixelX = (item.x - this.cameraX) * CONFIG.CELL_SIZE;
+                const pixelY = (item.y - this.cameraY) * CONFIG.CELL_SIZE;
+                
                 const sprite = ITEM_SPRITES[item.type];
                 if (sprite) {
-                    sprite(this.ctx, item.x * CONFIG.CELL_SIZE, item.y * CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+                    sprite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
                 }
             }
         }
@@ -81,17 +206,24 @@ class Renderer {
     
     renderEnemies(enemies, fogOfWar) {
         for (const enemy of enemies) {
-            if (!fogOfWar[enemy.y][enemy.x]) {
+            // Check if enemy is in viewport
+            if (enemy.x >= this.cameraX && enemy.x < this.cameraX + CONFIG.VIEWPORT_WIDTH &&
+                enemy.y >= this.cameraY && enemy.y < this.cameraY + CONFIG.VIEWPORT_HEIGHT &&
+                !fogOfWar[enemy.y][enemy.x]) {
+                
+                const pixelX = (enemy.x - this.cameraX) * CONFIG.CELL_SIZE;
+                const pixelY = (enemy.y - this.cameraY) * CONFIG.CELL_SIZE;
+                
                 const sprite = ENEMY_SPRITES[enemy.type];
                 if (sprite) {
-                    sprite(this.ctx, enemy.x * CONFIG.CELL_SIZE, enemy.y * CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+                    sprite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
                 }
                 
                 // Render health bar if damaged
                 if (enemy.hp < enemy.maxHp) {
                     this.renderHealthBar(
-                        enemy.x * CONFIG.CELL_SIZE, 
-                        enemy.y * CONFIG.CELL_SIZE - 4,
+                        pixelX, 
+                        pixelY - 4,
                         CONFIG.CELL_SIZE,
                         3,
                         enemy.hp / enemy.maxHp
@@ -102,8 +234,8 @@ class Renderer {
     }
     
     renderPlayer(player) {
-        const x = player.x * CONFIG.CELL_SIZE;
-        const y = player.y * CONFIG.CELL_SIZE;
+        const x = (player.x - this.cameraX) * CONFIG.CELL_SIZE;
+        const y = (player.y - this.cameraY) * CONFIG.CELL_SIZE;
         
         // Draw player sprite with facing direction
         playerSprites.default(this.ctx, x, y, CONFIG.CELL_SIZE, player.facing);

@@ -127,7 +127,7 @@ class CutsceneManager {
         this.showVictoryModal(stats, score, minutes, seconds);
     }
     
-    async playDeathSequence(data) {
+    async playDeathSequence() {
         const deathNarratives = [
             "💀 Your journey ends here, brave adventurer. The cavern claims another soul...",
             "🌑 Darkness embraces you as your tale comes to a close...",
@@ -166,7 +166,7 @@ class CutsceneManager {
         }
     }
     
-    async playOpeningSequence(data) {
+    async playOpeningSequence() {
         const openingSequences = [
             { text: "🏰 You stand at the entrance to Memory Cavern. Ancient stones whisper warnings...", importance: 'important', delay: 2500 },
             { text: "⚔️ Yet duty calls, and the kingdom's fate rests upon your shoulders.", importance: 'important', delay: 2500 },
@@ -196,12 +196,9 @@ class CutsceneManager {
                 };
             }
             
-            // Calculate additional performance metrics
+            // Calculate performance ranking based on completion time and achievements
             const gameState = window.game.gameState;
             const totalTime = minutes * 60 + seconds;
-            const avgDamagePerEnemy = stats.enemiesKilled > 0 ? Math.round((gameState.stats.totalDamageDealt || 0) / stats.enemiesKilled) : 0;
-            const survivalRate = gameState.stats.totalDamageTaken > 0 ? Math.round((gameState.player.maxHp / (gameState.stats.totalDamageTaken + gameState.player.maxHp)) * 100) : 100;
-            const explorationEfficiency = Math.round((stats.loreCount || 0) * 10 + (gameState.stats.goldCollected || stats.gold) / 10);
             
             // Performance ranking based on time and efficiency
             let performanceRank = "Novice Adventurer";

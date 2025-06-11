@@ -11,6 +11,8 @@ const SPRITES = {
     goblinWarrior: goblinSprites.warrior,
     goblinShaman: goblinSprites.shaman,
     skeleton: skeletonSprites.default,
+    wolf: wolfSprites.default,
+    treant: treantSprites.default,
     
     // Item sprites
     gold: treasureSprites.gold,
@@ -27,7 +29,9 @@ const SPRITE_CATEGORIES = {
     player: playerSprites,
     enemies: {
         goblin: goblinSprites,
-        skeleton: skeletonSprites
+        skeleton: skeletonSprites,
+        wolf: wolfSprites,
+        treant: treantSprites
     },
     items: {
         consumables: consumableSprites,
@@ -36,14 +40,18 @@ const SPRITE_CATEGORIES = {
     },
     environment: {
         terrain: terrainSprites,
-        decorations: decorationSprites
+        decorations: decorationSprites,
+        cavern: cavernSprites,
+        forest: forestSprites
     }
 };
 
 // Backwards compatible registries
 const ENEMY_SPRITES = {
     goblin: goblinSprites.default,
-    skeleton: skeletonSprites.default
+    skeleton: skeletonSprites.default,
+    wolf: wolfSprites.default,
+    treant: treantSprites.default
 };
 
 const ITEM_SPRITES = {
