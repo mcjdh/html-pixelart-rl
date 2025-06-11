@@ -111,8 +111,22 @@ class CampaignSystem {
         
         // Check if this is the final floor
         if (floor >= this.campaignData.totalFloors) {
-            // Don't complete immediately - wait for boss event
-            // Campaign completion happens in triggerBossEvent or when final enemy is killed
+            // On final floor, check if boss was defeated or if all enemies are clear
+            if (this.gameState.campaignProgress && this.gameState.campaignProgress.bossDefeated) {
+                // Boss already defeated, trigger victory immediately
+                this.completeCampaign();
+            } else if (this.gameState.enemies.length === 0) {
+                // All enemies cleared on final floor, trigger victory
+                this.gameState.campaignProgress = this.gameState.campaignProgress || {};
+                this.gameState.campaignProgress.bossDefeated = true;
+                this.completeCampaign();
+            } else {
+                // Final floor completed but enemies remain - show narrative but don't complete
+                this.eventBus.emit('narrative.triggered', {
+                    narrative: "The stairs to the surface beckon, but dark energies still pulse through these depths. Defeat all foes to claim victory!",
+                    importance: 'important'
+                });
+            }
             return;
         }
         
@@ -325,9 +339,11 @@ class CampaignSystem {
         // Mark campaign as nearly complete
         this.gameState.campaignProgress.bossDefeated = true;
         
-        // Trigger ending sequence in 3 seconds
+        // Trigger ending sequence in 3 seconds - but only if campaign not already completed
         setTimeout(() => {
-            this.completeCampaign();
+            if (!this.campaignData.completed && !this.gameState.campaignProgress.completed) {
+                this.completeCampaign();
+            }
         }, 3000);
     }
     
@@ -358,7 +374,13 @@ class CampaignSystem {
     }
     
     completeCampaign() {
+        // Prevent duplicate completion
+        if (this.campaignData.completed || (this.gameState.campaignProgress && this.gameState.campaignProgress.completed)) {
+            return;
+        }
+        
         this.campaignData.completed = true;
+        this.gameState.campaignProgress = this.gameState.campaignProgress || {};
         this.gameState.campaignProgress.completed = true;
         this.gameState.campaignProgress.endTime = Date.now();
         

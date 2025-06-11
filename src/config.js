@@ -35,12 +35,14 @@ const CONFIG = {
     },
     
     GAME: {
-        ENERGY_REGEN_RATE: 800,
+        ENERGY_REGEN_RATE: 750, // Slightly faster energy regen for better flow
         ENERGY_REGEN_AMOUNT: 2,
         AUTO_EXPLORE_DELAY: 150,
         MAX_MESSAGES: 15,
         INPUT_THROTTLE: 50,
-        MIN_SWIPE_DISTANCE: 30,
+        MIN_SWIPE_DISTANCE: 40, // Increased for better mobile responsiveness
+        MAX_SWIPE_TIME: 300, // Maximum time for a swipe gesture
+        TOUCH_DEADZONE: 10, // Minimum distance to register as intentional swipe
         HIGH_SCORES_LIMIT: 10,
         GAME_OVER_DELAY: 1000,
         

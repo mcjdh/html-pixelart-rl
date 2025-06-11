@@ -28,14 +28,8 @@ class NarrativeUI {
             this.showLoreDiscovery(eventData.data);
         });
         
-        // Listen for important game events
-        this.eventBus.on('player.died', () => {
-            this.showDeathNarrative();
-        });
-        
-        this.eventBus.on('floor.completed', (eventData) => {
-            this.showFloorCompletionNarrative(eventData.data);
-        });
+        // Note: Death and floor completion are now handled by CutsceneManager
+        // to avoid duplication
     }
     
     createNarrativeElements() {
@@ -229,8 +223,8 @@ class NarrativeUI {
     }
     
     showUrgentBanner(text) {
-        // Only show banner if not already showing one to prevent rapid flashing
-        if (this.narrativeBanner.style.display !== 'none') {
+        // Prevent banner overlap - only show if not already showing one
+        if (this.narrativeBanner.style.display === 'block') {
             return; // Don't show overlapping banners
         }
         

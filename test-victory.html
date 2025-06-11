@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Victory Test - HTML Pixel Roguelike</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #222;
+            color: #fff;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #555;
+            background: #333;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 5px;
+        }
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+        button {
+            background: #555;
+            color: #fff;
+            border: 1px solid #777;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Campaign Victory Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>Test Scenario 1: Boss Defeated, Then Stairs</h2>
+        <p>Simulate defeating 5 skeletons on floor 3, then going to stairs</p>
+        <button onclick="testBossDefeatedThenStairs()">Run Test</button>
+        <div id="test1-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Scenario 2: Clear All Enemies, Then Stairs</h2>
+        <p>Simulate clearing all enemies on floor 3, then going to stairs</p>
+        <button onclick="testClearAllThenStairs()">Run Test</button>
+        <div id="test2-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Scenario 3: Stairs With Enemies Remaining</h2>
+        <p>Simulate going to stairs with enemies still alive on floor 3</p>
+        <button onclick="testStairsWithEnemiesRemaining()">Run Test</button>
+        <div id="test3-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Debug Console</h2>
+        <div id="debug-console" style="background: #111; padding: 10px; height: 200px; overflow-y: auto; white-space: pre-wrap;"></div>
+    </div>
+
+    <!-- Load game scripts -->
+    <script src="src/config.js"></script>
+    <script src="src/core/EventBus.js"></script>
+    <script src="src/entities.js"></script>
+    <script src="src/gameState.js"></script>
+    <script src="src/core/CampaignSystem.js"></script>
+    <script src="src/cutscenes/CutsceneManager.js"></script>
+    <script src="src/ui/NarrativeUI.js"></script>
+    
+    <script>
+        // Mock dependencies and setup test environment
+        class MockNarrativeUI {
+            constructor() {}
+            showConsoleNarrative(text, importance) {
+                logDebug(`[NarrativeUI] ${importance}: ${text}`);
+            }
+        }
+        
+        // Debug logging
+        function logDebug(message) {
+            const console = document.getElementById('debug-console');
+            console.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        function createTestGameState() {
+            const gameState = new GameState();
+            gameState.campaignMode = true;
+            gameState.floor = 3;
+            gameState.campaignProgress = {
+                startTime: Date.now() - 300000, // 5 minutes ago
+                currentFloor: 3,
+                floorsReached: 3,
+                skeletonsKilledFloor3: 0
+            };
+            gameState.stats = {
+                enemiesKilled: 20,
+                totalDamageDealt: 500,
+                totalDamageTaken: 200,
+                floorsCompleted: 2
+            };
+            gameState.player = {
+                level: 5,
+                gold: 150,
+                hp: 80,
+                maxHp: 100
+            };
+            // Add some mock enemies
+            gameState.enemies = [
+                { type: 'skeleton', x: 5, y: 5 },
+                { type: 'skeleton', x: 8, y: 3 }
+            ];
+            return gameState;
+        }
+        
+        function testBossDefeatedThenStairs() {
+            logDebug('=== Test 1: Boss Defeated Then Stairs ===');
+            
+            const eventBus = new EventBus();
+            const narrativeUI = new MockNarrativeUI();
+            const gameState = createTestGameState();
+            const campaignSystem = new CampaignSystem(eventBus, gameState);
+            const cutsceneManager = new CutsceneManager(eventBus, narrativeUI);
+            
+            let victoryTriggered = false;
+            eventBus.on('campaign.victory', () => {
+                victoryTriggered = true;
+                logDebug('✓ Victory cutscene triggered!');
+            });
+            
+            // Simulate defeating 5 skeletons to trigger boss event
+            for (let i = 0; i < 5; i++) {
+                eventBus.emit('enemy.killed', {
+                    enemy: { type: 'skeleton', x: 5, y: 5 },
+                    killer: gameState.player,
+                    floor: 3
+                });
+            }
+            
+            // Wait for boss event timeout, then simulate stairs
+            setTimeout(() => {
+                logDebug('Simulating stairs interaction...');
+                eventBus.emit('floor.completed', {
+                    floor: 3,
+                    player: gameState.player,
+                    stats: gameState.stats
+                });
+                
+                setTimeout(() => {
+                    const result = document.getElementById('test1-result');
+                    if (victoryTriggered) {
+                        result.innerHTML = '<div class="test-result pass">✓ PASS: Victory triggered correctly</div>';
+                    } else {
+                        result.innerHTML = '<div class="test-result fail">✗ FAIL: Victory not triggered</div>';
+                    }
+                }, 100);
+            }, 3500); // Wait for boss event timeout
+        }
+        
+        function testClearAllThenStairs() {
+            logDebug('=== Test 2: Clear All Then Stairs ===');
+            
+            const eventBus = new EventBus();
+            const narrativeUI = new MockNarrativeUI();
+            const gameState = createTestGameState();
+            const campaignSystem = new CampaignSystem(eventBus, gameState);
+            const cutsceneManager = new CutsceneManager(eventBus, narrativeUI);
+            
+            // Clear all enemies
+            gameState.enemies = [];
+            
+            let victoryTriggered = false;
+            eventBus.on('campaign.victory', () => {
+                victoryTriggered = true;
+                logDebug('✓ Victory cutscene triggered!');
+            });
+            
+            // Simulate stairs with no enemies
+            logDebug('Simulating stairs with no enemies...');
+            eventBus.emit('floor.completed', {
+                floor: 3,
+                player: gameState.player,
+                stats: gameState.stats
+            });
+            
+            setTimeout(() => {
+                const result = document.getElementById('test2-result');
+                if (victoryTriggered) {
+                    result.innerHTML = '<div class="test-result pass">✓ PASS: Victory triggered correctly</div>';
+                } else {
+                    result.innerHTML = '<div class="test-result fail">✗ FAIL: Victory not triggered</div>';
+                }
+            }, 100);
+        }
+        
+        function testStairsWithEnemiesRemaining() {
+            logDebug('=== Test 3: Stairs With Enemies Remaining ===');
+            
+            const eventBus = new EventBus();
+            const narrativeUI = new MockNarrativeUI();
+            const gameState = createTestGameState();
+            const campaignSystem = new CampaignSystem(eventBus, gameState);
+            const cutsceneManager = new CutsceneManager(eventBus, narrativeUI);
+            
+            let victoryTriggered = false;
+            let warningShown = false;
+            
+            eventBus.on('campaign.victory', () => {
+                victoryTriggered = true;
+                logDebug('✗ Victory incorrectly triggered!');
+            });
+            
+            eventBus.on('narrative.triggered', (eventData) => {
+                logDebug(`Received narrative event: ${JSON.stringify(eventData.data)}`);
+                if (eventData.data && eventData.data.narrative && eventData.data.narrative.includes('dark energies still pulse')) {
+                    warningShown = true;
+                    logDebug('✓ Warning message shown correctly');
+                }
+            });
+            
+            // Simulate stairs with enemies still present
+            logDebug('Simulating stairs with enemies remaining...');
+            eventBus.emit('floor.completed', {
+                floor: 3,
+                player: gameState.player,
+                stats: gameState.stats
+            });
+            
+            setTimeout(() => {
+                const result = document.getElementById('test3-result');
+                if (!victoryTriggered && warningShown) {
+                    result.innerHTML = '<div class="test-result pass">✓ PASS: Warning shown, victory not triggered</div>';
+                } else if (victoryTriggered) {
+                    result.innerHTML = '<div class="test-result fail">✗ FAIL: Victory incorrectly triggered</div>';
+                } else {
+                    result.innerHTML = '<div class="test-result fail">✗ FAIL: No warning shown</div>';
+                }
+            }, 100);
+        }
+        
+        // Override console.log to show in debug console
+        const originalLog = console.log;
+        console.log = function(...args) {
+            logDebug(args.join(' '));
+            originalLog.apply(console, args);
+        };
+        
+        logDebug('Test suite ready. Click buttons to run tests.');
+    </script>
+</body>
+</html>

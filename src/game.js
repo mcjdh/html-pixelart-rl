@@ -87,20 +87,12 @@ class Game {
     }
     
     setupGameEventListeners() {
-        // Listen for important game events to trigger narratives
-        this.events.on('player.died', () => {
-            this.narrativeUI.showDeathNarrative();
-        });
-        
+        // Listen for player level up (this one is unique to Game class)
         this.events.on('player.levelup', (eventData) => {
             this.events.emit('narrative.triggered', {
                 narrative: `Experience transforms you! You feel the power of level ${eventData.data.newLevel} coursing through your being!`,
                 importance: 'high'
             });
-        });
-        
-        this.events.on('floor.completed', (eventData) => {
-            this.narrativeUI.showFloorCompletionNarrative(eventData.data);
         });
         
         // Add keyboard shortcut for lore viewing
@@ -172,7 +164,7 @@ class Game {
     }
     
     setupCanvasTouchControls() {
-        let touchStartX, touchStartY;
+        let touchStartX, touchStartY, touchStartTime;
         const canvas = this.canvas;
         
         canvas.addEventListener('touchstart', (e) => {
@@ -180,6 +172,7 @@ class Game {
             const touch = e.touches[0];
             touchStartX = touch.clientX;
             touchStartY = touch.clientY;
+            touchStartTime = Date.now();
         });
         
         canvas.addEventListener('touchend', (e) => {
@@ -189,19 +182,33 @@ class Game {
             const touch = e.changedTouches[0];
             const deltaX = touch.clientX - touchStartX;
             const deltaY = touch.clientY - touchStartY;
+            const deltaTime = Date.now() - touchStartTime;
             
-            // Minimum swipe distance
+            // Check if swipe was fast enough
+            if (deltaTime > CONFIG.GAME.MAX_SWIPE_TIME) {
+                touchStartX = touchStartY = null;
+                return;
+            }
+            
+            // Check if movement is large enough (ignoring small accidental touches)
+            const totalDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            if (totalDistance < CONFIG.GAME.TOUCH_DEADZONE) {
+                touchStartX = touchStartY = null;
+                return;
+            }
+            
+            // Minimum swipe distance for intentional movement
             const minSwipeDistance = CONFIG.GAME.MIN_SWIPE_DISTANCE;
             
             if (Math.abs(deltaX) > minSwipeDistance || Math.abs(deltaY) > minSwipeDistance) {
-                // Determine swipe direction
+                // Determine swipe direction with better precision
                 let dx = 0, dy = 0;
                 
                 if (Math.abs(deltaX) > Math.abs(deltaY)) {
                     // Horizontal swipe
                     dx = deltaX > 0 ? 1 : -1;
                 } else {
-                    // Vertical swipe
+                    // Vertical swipe  
                     dy = deltaY > 0 ? 1 : -1;
                 }
                 
@@ -210,12 +217,12 @@ class Game {
             }
             
             // Reset touch coordinates
-            touchStartX = touchStartY = null;
+            touchStartX = touchStartY = touchStartTime = null;
         });
         
         canvas.addEventListener('touchcancel', (e) => {
             e.preventDefault();
-            touchStartX = touchStartY = null;
+            touchStartX = touchStartY = touchStartTime = null;
         });
     }
     
@@ -236,7 +243,7 @@ class Game {
         if (!this.inputEnabled || this.gameOver) return;
         if (!this.gameState.player || this.gameState.player.energy <= 0) return;
         
-        // Throttle input to prevent spam
+        // Enhanced input throttling to prevent accidental double-inputs
         const now = Date.now();
         if (now - this.lastInputTime < this.inputThrottle) return;
         this.lastInputTime = now;
@@ -642,6 +649,23 @@ class Game {
         let target = this.findAutoExploreTarget(player);
         
         if (target) {
+            // Anti-stuck mechanism: if we're trying to reach the same target for too long, find a new one
+            if (this.lastAutoTarget && 
+                this.lastAutoTarget.x === target.x && 
+                this.lastAutoTarget.y === target.y) {
+                this.autoTargetAttempts = (this.autoTargetAttempts || 0) + 1;
+                
+                // If stuck for more than 10 attempts, find a different target
+                if (this.autoTargetAttempts > 10) {
+                    target = this.findAlternativeTarget(player, target);
+                    this.autoTargetAttempts = 0;
+                }
+            } else {
+                this.autoTargetAttempts = 0;
+            }
+            
+            this.lastAutoTarget = target;
+            
             // Use A* pathfinding for smart movement
             const path = this.findPath(player.x, player.y, target.x, target.y);
             if (path && path.length > 1) {
@@ -698,7 +722,7 @@ class Game {
             });
         }
         
-        // Priority 2: Closest unexplored area (spiral search)
+        // Priority 2: Closest unexplored area (improved algorithm)
         const unexplored = this.findClosestUnexplored(player.x, player.y);
         if (unexplored) return unexplored;
         
@@ -754,6 +778,40 @@ class Game {
                 const dist = player.distanceTo(corner);
                 return dist < player.distanceTo(closest) ? corner : closest;
             });
+    }
+    
+    findAlternativeTarget(player, currentTarget) {
+        // When stuck, try to find a different unexplored area
+        const alternatives = [];
+        
+        // Look for unexplored areas in different directions
+        const directions = [
+            { dx: 5, dy: 0 }, { dx: -5, dy: 0 },
+            { dx: 0, dy: 5 }, { dx: 0, dy: -5 },
+            { dx: 3, dy: 3 }, { dx: -3, dy: -3 },
+            { dx: 3, dy: -3 }, { dx: -3, dy: 3 }
+        ];
+        
+        for (const dir of directions) {
+            const testX = player.x + dir.dx;
+            const testY = player.y + dir.dy;
+            
+            if (this.gameState.inBounds(testX, testY) && 
+                !this.gameState.isWall(testX, testY) &&
+                this.gameState.fogOfWar[testY][testX]) {
+                alternatives.push({ x: testX, y: testY });
+            }
+        }
+        
+        // Return closest alternative, or fallback to stairs
+        if (alternatives.length > 0) {
+            return alternatives.reduce((closest, alt) => {
+                const dist = player.distanceTo(alt);
+                return dist < player.distanceTo(closest) ? alt : closest;
+            });
+        }
+        
+        return { x: this.gameState.stairsX, y: this.gameState.stairsY };
     }
     
     findClosestUnexplored(startX, startY) {
@@ -898,16 +956,20 @@ class Game {
         ctx.globalAlpha = 0.08;
         ctx.strokeStyle = '#f44';
         ctx.lineWidth = 1;
-        for (const enemy of this.gameState.enemies) {
-            // Only show vision for enemies that are visible and close to player (performance optimization)
-            if (!this.gameState.fogOfWar[enemy.y][enemy.x] && 
-                enemy.distanceTo(this.gameState.player) <= 5) {
-                const centerX = enemy.x * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
-                const centerY = enemy.y * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, enemy.viewRange * CONFIG.CELL_SIZE, 0, Math.PI * 2);
-                ctx.stroke();
-            }
+        
+        // Only show vision for up to 3 closest visible enemies to improve performance
+        const visibleEnemies = this.gameState.enemies
+            .filter(enemy => !this.gameState.fogOfWar[enemy.y][enemy.x] && 
+                           enemy.distanceTo(this.gameState.player) <= 6)
+            .sort((a, b) => a.distanceTo(this.gameState.player) - b.distanceTo(this.gameState.player))
+            .slice(0, 3);
+            
+        for (const enemy of visibleEnemies) {
+            const centerX = enemy.x * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+            const centerY = enemy.y * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, enemy.viewRange * CONFIG.CELL_SIZE, 0, Math.PI * 2);
+            ctx.stroke();
         }
         
         // Draw pathfinding target

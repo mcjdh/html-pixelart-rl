@@ -195,12 +195,13 @@ class GameState {
         this.lastPlayerX = this.player.x;
         this.lastPlayerY = this.player.y;
         
-        // Reset all tiles to fogged, but keep explored status
-        for (let y = 0; y < CONFIG.GRID_HEIGHT; y++) {
-            for (let x = 0; x < CONFIG.GRID_WIDTH; x++) {
+        // Only reset tiles that were previously visible (performance optimization)
+        if (this.lastVisibleTiles) {
+            for (const {x, y} of this.lastVisibleTiles) {
                 this.fogOfWar[y][x] = true;
             }
         }
+        this.lastVisibleTiles = [];
         
         // Pre-calculate bounds to avoid repeated checks
         const minX = Math.max(0, this.player.x - viewRadius);
@@ -218,6 +219,7 @@ class GameState {
                     if (this.hasLineOfSight(this.player.x, this.player.y, x, y)) {
                         this.fogOfWar[y][x] = false;    // Currently visible
                         this.explored[y][x] = true;     // Mark as explored
+                        this.lastVisibleTiles.push({x, y}); // Track for next frame
                     }
                 }
             }
@@ -308,6 +310,13 @@ class GameState {
         
         // Restore some energy
         this.player.restoreEnergy(CONFIG.BALANCE.FLOOR_ENERGY_RESTORE);
+        
+        // Auto-save progress on floor transitions (QoL improvement)
+        try {
+            this.saveGame();
+        } catch (e) {
+            console.warn('Auto-save failed:', e);
+        }
     }
     
     addMessage(text, className = '') {

@@ -190,6 +190,16 @@
         .energy-bar { background: linear-gradient(90deg, #4444ff, #2222aa); }
         .exp-bar { background: linear-gradient(90deg, #44ff44, #22aa22); }
         
+        /* Low resource warning animations */
+        .progress-fill.low {
+            animation: warning-pulse 1s infinite alternate;
+        }
+        
+        @keyframes warning-pulse {
+            from { opacity: 1.0; }
+            to { opacity: 0.6; }
+        }
+        
         .health-bar.low { background: linear-gradient(90deg, #ff6666, #ff2222); animation: pulse-red 1s infinite; }
         .energy-bar.low { background: linear-gradient(90deg, #6666ff, #4444ff); }
         

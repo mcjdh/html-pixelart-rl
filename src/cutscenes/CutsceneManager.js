@@ -81,17 +81,11 @@ class CutsceneManager {
         for (let i = 0; i < sequences.length; i++) {
             const sequence = sequences[i];
             
-            // Emit to narrative system (for red banners)
+            // Only emit to narrative system - don't double-add to console
             this.eventBus.emit('narrative.triggered', {
                 narrative: sequence.text,
                 importance: sequence.importance || 'normal'
             });
-            
-            // Also directly add to console log for better visibility
-            if (window.game && window.game.gameState) {
-                const className = this.getConsoleClass(sequence.importance);
-                window.game.gameState.addMessage(`📜 ${sequence.text}`, className);
-            }
             
             if (sequence.delay) {
                 await this.delay(sequence.delay);
