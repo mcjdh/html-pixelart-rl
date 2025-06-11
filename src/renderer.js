@@ -96,7 +96,51 @@ class Renderer {
     }
     
     renderPlayer(player) {
-        SPRITES.player(this.ctx, player.x * CONFIG.CELL_SIZE, player.y * CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+        const x = player.x * CONFIG.CELL_SIZE;
+        const y = player.y * CONFIG.CELL_SIZE;
+        
+        // Draw player sprite
+        SPRITES.player(this.ctx, x, y, CONFIG.CELL_SIZE);
+        
+        // Draw facing indicator
+        if (CONFIG.FEATURES.DIRECTIONAL_COMBAT) {
+            this.renderFacingIndicator(x, y, player.facing);
+        }
+        
+        // Draw status effect indicators
+        if (CONFIG.FEATURES.STATUS_EFFECTS && player.statusEffects.length > 0) {
+            this.renderStatusEffects(x, y, player.statusEffects);
+        }
+    }
+    
+    renderFacingIndicator(x, y, facing) {
+        this.ctx.fillStyle = '#fff';
+        const size = 3;
+        const offset = CONFIG.CELL_SIZE - 4;
+        
+        switch(facing) {
+            case 'up':
+                this.ctx.fillRect(x + CONFIG.CELL_SIZE/2 - size/2, y + 2, size, size);
+                break;
+            case 'down':
+                this.ctx.fillRect(x + CONFIG.CELL_SIZE/2 - size/2, y + offset, size, size);
+                break;
+            case 'left':
+                this.ctx.fillRect(x + 2, y + CONFIG.CELL_SIZE/2 - size/2, size, size);
+                break;
+            case 'right':
+                this.ctx.fillRect(x + offset, y + CONFIG.CELL_SIZE/2 - size/2, size, size);
+                break;
+        }
+    }
+    
+    renderStatusEffects(x, y, effects) {
+        let offsetX = 0;
+        for (const effect of effects) {
+            this.ctx.fillStyle = CONFIG.COLORS[effect.type.toUpperCase()] || '#fff';
+            this.ctx.fillRect(x + offsetX, y - 4, 4, 4);
+            offsetX += 5;
+        }
     }
     
     renderHealthBar(x, y, width, height, percentage) {

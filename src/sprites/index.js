@@ -49,5 +49,7 @@ const ENEMY_SPRITES = {
 const ITEM_SPRITES = {
     gold: treasureSprites.gold,
     potion: consumableSprites.potion,
-    sword: equipmentSprites.sword
+    sword: equipmentSprites.sword,
+    shield: equipmentSprites.shield,
+    scroll: equipmentSprites.scroll
 };

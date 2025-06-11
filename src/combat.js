@@ -7,22 +7,52 @@ class CombatSystem {
     playerAttack(enemy) {
         const player = this.gameState.player;
         
-        // Calculate damage
-        const baseDamage = player.attack;
+        // Calculate base damage
+        let baseDamage = player.attack;
         const critChance = 0.1 + (player.level * 0.01);
         const isCrit = Math.random() < critChance;
-        const damage = isCrit ? baseDamage * 2 : baseDamage;
+        
+        // Apply directional combat bonuses
+        let positionBonus = 0;
+        let positionText = '';
+        
+        if (CONFIG.FEATURES.DIRECTIONAL_COMBAT) {
+            const relativePos = player.getRelativePosition(enemy);
+            
+            switch(relativePos) {
+                case 'behind':
+                    positionBonus = CONFIG.BALANCE.BACKSTAB_DAMAGE_BONUS;
+                    positionText = ' (Backstab!)';
+                    break;
+                case 'side':
+                    positionBonus = CONFIG.BALANCE.FLANKING_DAMAGE_BONUS;
+                    positionText = ' (Flanking!)';
+                    break;
+                case 'cornered':
+                    positionBonus = CONFIG.BALANCE.CORNER_DAMAGE_BONUS;
+                    positionText = ' (Cornered!)';
+                    break;
+            }
+        }
+        
+        // Calculate final damage
+        const damage = Math.floor(baseDamage * (1 + positionBonus) * (isCrit ? 2 : 1));
+        
+        // Check for status effect applications
+        if (CONFIG.FEATURES.STATUS_EFFECTS && Math.random() < 0.1) {
+            enemy.applyStatusEffect('stun', CONFIG.BALANCE.STATUS_STUN_DURATION);
+            this.gameState.addMessage('Enemy is stunned!', 'damage-msg');
+        }
         
         // Apply damage
         const actualDamage = enemy.takeDamage(damage, player.level);
         this.gameState.stats.totalDamageDealt += actualDamage;
         
         // Add message
-        if (isCrit) {
-            this.gameState.addMessage(`CRITICAL! You deal ${actualDamage} damage!`, 'damage-msg');
-        } else {
-            this.gameState.addMessage(`You deal ${actualDamage} damage!`, 'damage-msg');
-        }
+        let message = `You deal ${actualDamage} damage`;
+        if (isCrit) message = `CRITICAL! ${message}`;
+        message += positionText + '!';
+        this.gameState.addMessage(message, 'damage-msg');
         
         // Check if enemy died
         if (enemy.isDead()) {
@@ -30,14 +60,34 @@ class CombatSystem {
             return { killed: true, damage: actualDamage, crit: isCrit };
         }
         
-        // Enemy counter-attack
-        this.enemyAttack(enemy, player);
+        // Enemy counter-attack (unless stunned)
+        if (!enemy.hasStatusEffect('stun')) {
+            this.enemyAttack(enemy, player);
+        }
         
         return { killed: false, damage: actualDamage, crit: isCrit };
     }
     
     enemyAttack(enemy, player) {
-        const damage = Math.max(1, enemy.attack - player.defense);
+        let damage = Math.max(1, enemy.attack - player.defense);
+        
+        // Apply directional defense
+        if (CONFIG.FEATURES.DIRECTIONAL_COMBAT) {
+            const relativePos = enemy.getRelativePosition(player);
+            
+            // Player blocks attacks from the front
+            if (relativePos === 'front') {
+                damage = Math.floor(damage * (1 - CONFIG.BALANCE.BLOCK_DAMAGE_REDUCTION));
+                this.gameState.addMessage(`You block some damage!`, '');
+            }
+        }
+        
+        // Apply status effects from enemy
+        if (CONFIG.FEATURES.STATUS_EFFECTS && enemy.type === 'skeleton' && Math.random() < 0.15) {
+            player.applyStatusEffect('poison', CONFIG.BALANCE.STATUS_POISON_DURATION);
+            this.gameState.addMessage('You are poisoned!', 'damage-msg');
+        }
+        
         const actualDamage = player.takeDamage(damage);
         this.gameState.stats.totalDamageTaken += actualDamage;
         

@@ -2,15 +2,94 @@ class Entity {
     constructor(x, y) {
         this.x = x;
         this.y = y;
+        this.facing = 'down'; // up, down, left, right
+        this.statusEffects = [];
     }
     
     moveTo(x, y) {
+        // Update facing based on movement
+        if (x > this.x) this.facing = 'right';
+        else if (x < this.x) this.facing = 'left';
+        else if (y > this.y) this.facing = 'down';
+        else if (y < this.y) this.facing = 'up';
+        
         this.x = x;
         this.y = y;
     }
     
     distanceTo(other) {
         return Math.sqrt((other.x - this.x) ** 2 + (other.y - this.y) ** 2);
+    }
+    
+    getRelativePosition(target) {
+        const dx = target.x - this.x;
+        const dy = target.y - this.y;
+        
+        // Check if target is in a corner relative to this entity
+        if (this.isInCorner(target)) {
+            return 'cornered';
+        }
+        
+        // Check facing-based positions
+        switch(this.facing) {
+            case 'up':
+                if (dy < 0) return 'front';
+                if (dy > 0) return 'behind';
+                return 'side';
+            case 'down':
+                if (dy > 0) return 'front';
+                if (dy < 0) return 'behind';
+                return 'side';
+            case 'left':
+                if (dx < 0) return 'front';
+                if (dx > 0) return 'behind';
+                return 'side';
+            case 'right':
+                if (dx > 0) return 'front';
+                if (dx < 0) return 'behind';
+                return 'side';
+        }
+    }
+    
+    isInCorner(target) {
+        // Check if target is trapped in a corner (simplified check)
+        let wallCount = 0;
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                if (dx === 0 && dy === 0) continue;
+                const checkX = target.x + dx;
+                const checkY = target.y + dy;
+                if (checkX < 0 || checkX >= CONFIG.GRID_WIDTH || 
+                    checkY < 0 || checkY >= CONFIG.GRID_HEIGHT ||
+                    (window.game && window.game.gameState.isWall(checkX, checkY))) {
+                    wallCount++;
+                }
+            }
+        }
+        return wallCount >= 6; // Surrounded by 6+ walls/edges = cornered
+    }
+    
+    applyStatusEffect(type, duration) {
+        if (!CONFIG.FEATURES.STATUS_EFFECTS) return;
+        
+        // Check if already has this effect
+        const existing = this.statusEffects.find(e => e.type === type);
+        if (existing) {
+            existing.duration = Math.max(existing.duration, duration);
+        } else {
+            this.statusEffects.push({ type, duration });
+        }
+    }
+    
+    hasStatusEffect(type) {
+        return this.statusEffects.some(e => e.type === type);
+    }
+    
+    updateStatusEffects() {
+        this.statusEffects = this.statusEffects.filter(effect => {
+            effect.duration--;
+            return effect.duration > 0;
+        });
     }
 }
 
@@ -183,10 +262,49 @@ class Item extends Entity {
                 return { message: `Found ${this.value} gold!`, type: 'heal-msg' };
             case 'potion':
                 const healed = player.heal(this.value);
+                // Chance for blessed effect
+                if (CONFIG.FEATURES.STATUS_EFFECTS && Math.random() < 0.2) {
+                    player.applyStatusEffect('blessed', CONFIG.BALANCE.STATUS_BLESSED_DURATION);
+                    return { message: `Blessed potion! Restored ${healed} HP and feel blessed!`, type: 'heal-msg' };
+                }
                 return { message: `Restored ${healed} HP!`, type: 'heal-msg' };
             case 'sword':
                 player.attack += this.value;
                 return { message: `Attack increased by ${this.value}!`, type: 'level-msg' };
+            case 'shield':
+                player.defense += this.value;
+                return { message: `Defense increased by ${this.value}!`, type: 'level-msg' };
+            case 'scroll':
+                // Random scroll effects
+                const scrollEffects = [
+                    () => {
+                        player.applyStatusEffect('confused', CONFIG.BALANCE.STATUS_CONFUSED_DURATION);
+                        return { message: 'Scroll of Confusion! You feel dizzy...', type: 'damage-msg' };
+                    },
+                    () => {
+                        // Teleport to random location
+                        const tiles = [];
+                        for (let y = 0; y < CONFIG.GRID_HEIGHT; y++) {
+                            for (let x = 0; x < CONFIG.GRID_WIDTH; x++) {
+                                if (!window.game.gameState.isWall(x, y) && !window.game.gameState.isOccupied(x, y)) {
+                                    tiles.push({x, y});
+                                }
+                            }
+                        }
+                        if (tiles.length > 0) {
+                            const target = tiles[Math.floor(Math.random() * tiles.length)];
+                            player.moveTo(target.x, target.y);
+                            return { message: 'Scroll of Teleportation!', type: 'level-msg' };
+                        }
+                        return { message: 'The scroll fizzles...', type: '' };
+                    },
+                    () => {
+                        player.energy = player.maxEnergy;
+                        return { message: 'Scroll of Energy! Full energy restored!', type: 'heal-msg' };
+                    }
+                ];
+                const effect = scrollEffects[Math.floor(Math.random() * scrollEffects.length)];
+                return effect();
             default:
                 return { message: 'Picked up an item!', type: '' };
         }

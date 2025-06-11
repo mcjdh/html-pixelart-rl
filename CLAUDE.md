@@ -1,146 +1,208 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## CRITICAL: AI-SPECIFIC IMPLEMENTATION PATTERNS
 
-## Project Overview
+### Script Loading Dependencies
+**ALWAYS CHECK** script loading order in index.html before any file modifications:
+```
+config.js → sprite files → sprites/index.js → entities.js → mapGenerator.js → gameState.js → renderer.js → combat.js → game.js
+```
+**FAILURE TO MAINTAIN ORDER = RUNTIME ERRORS**
 
-This is a browser-based pixel art roguelike RPG built with native HTML, CSS, and vanilla JavaScript. The game features turn-based combat, procedural dungeon generation, fog of war, auto-exploration, and a persistent save system. The entire game runs client-side with no server dependencies and works directly with the file:// protocol.
-
-## Development Commands
-
-### Running the Game
-```bash
-# Open index.html directly in any browser
-# Works with file:// protocol - no server required
-# No build process needed - pure HTML/CSS/JavaScript
-
-### Testing
-- Test by opening index.html in browser 
-- Game works offline and with file:// protocol
-- Consider game theory, balance, and system integration for quality assurance
-## Core Architecture
-
-### Main Entry Point
-- `index.html` - Classic 16-bit roguelike UI layout optimized for 640x480
-- `src/game.js` - Main Game class that orchestrates all systems
-
-### System Architecture (Native JavaScript)
-- **Model**: `gameState.js` - Central state management for player, enemies, items, map
-- **View**: `renderer.js` - Handles all canvas rendering and particle effects  
-- **Controller**: `game.js` - Input handling, game loop, UI updates
-- **Global Classes**: All classes are globally accessible without import/export
-
-### UI Layout (640x480 Classic Design)
-- **Game Canvas**: 480x320px main viewport (24x16 cells @ 20px each)
-- **Side Panel**: 160x320px character stats, actions, and message log
-- **Status Bar**: 640x80px bottom bar with key stats and controls
-- **Color Scheme**: Classic terminal colors (#c0c0c0 text, #000 background)
-
-### Key Systems
-
-#### Entity System (`entities.js`)
-- Base `Entity` class with position and movement
-- `Player` extends Entity with stats, level progression, energy system
-- `Enemy` extends Entity with AI pathfinding and type variants
-- `Item` class for collectibles with type-based effects
-
-#### Map Generation (`mapGenerator.js`)
-- Room-based dungeon generation algorithm
-- `Room` class for spatial management
-- `MapGenerator` creates connected rooms with corridors
-- Handles stairs placement and spawn point generation
-
-#### Combat System (`combat.js`)
-- `CombatSystem` - Damage calculation, critical hits, level scaling
-- `UpgradeSystem` - Player progression through gold spending
-- Turn-based with energy cost mechanics
-
-#### Sprite System (`src/sprites/`)
-Native JavaScript sprite organization:
-- `sprites/index.js` - Global sprite registries and utility functions
-- `sprites/player.js` - Player character variants (default, warrior, mage, rogue)
-- `sprites/enemies/` - Enemy types (goblin, skeleton with variants)
-- `sprites/items/` - Organized by category (consumables, equipment, treasure)
-- `sprites/environment/` - Terrain and decoration sprites
-- All sprite objects are globally accessible as constants
-- No imports needed - scripts loaded in dependency order
-
-#### Configuration (`config.js`)
-Centralized configuration with sections:
-- Grid dimensions and rendering settings
-- Color scheme definitions
-- Game timing and balance parameters
-- Entity stats and progression formulas
-
-### Data Flow
-
-1. **Initialization**: Scripts load → `Game.init()` → `GameState.init()` → Map generation → Entity spawning
-2. **Input**: Keyboard events → `Game.handleInput()` → `Game.movePlayer()`
-3. **Game Loop**: `Game.render()` → Updates all visual systems
-4. **Turn Processing**: Player action → Enemy turns → Fog of war update → UI refresh
-5. **Persistence**: `GameState.saveGame()` / `loadGame()` with localStorage
-
-### Key Design Patterns
-
-#### Native Script Loading
-- All scripts loaded via `<script>` tags in dependency order
-- No module bundling or build process required
-- All classes and constants are globally accessible
-- Compatible with file:// protocol for offline play
-
-#### Entity Class Hierarchy
-- Base Entity class with common position/movement behavior
-- Specialized classes (Player, Enemy, Item) extend with specific behaviors
-- Type-based variants handled through constructor parameters
-
-#### State Management
-- GameState acts as single source of truth
-- Immutable-style updates with explicit state changes
-- Save/load serializes essential state to localStorage
-
-#### Fog of War Implementation
-- Grid-based visibility system
-- Line-of-sight algorithm using Bresenham's line
-- Real-time updates based on player position
-
-## Important Development Notes
-
-### Sprite System Usage
-All sprites are globally accessible after script loading:
+### Global Namespace Pattern
 ```javascript
-// Use sprites directly - no imports needed
-SPRITES.player(ctx, x, y, size);
-playerSprites.warrior(ctx, x, y, size);
+// CORRECT: Direct global assignment
+const SPRITES = { player: function(ctx, x, y, size) {...} };
+// WRONG: Any form of import/export/require
 ```
 
-Sprite files must be loaded before sprites/index.js in the HTML.
+### Common Implementation Pitfalls
+1. **NEVER** use ES6 modules - breaks file:// protocol
+2. **NEVER** add external dependencies - pure vanilla JS only
+3. **NEVER** use async/await in core game loop - causes frame drops
+4. **AVOID** creating new files - extend existing systems
+5. **CHECK** CONFIG.BALANCE before hardcoding any numbers
 
-### Canvas Rendering
-- Uses pixel art rendering (imageSmoothingEnabled = false)
-- 16px cell size with configurable grid dimensions
-- All sprites expect (ctx, x, y, size) parameters
+## GAME BALANCE QUICK REFERENCE
 
-### Balance Configuration
-Game balance is centralized in `CONFIG.BALANCE` - modify values there rather than hardcoding throughout the codebase.
+### Energy System (Current Implementation)
+- Move cost: 1 energy
+- Combat cost: 5 energy  
+- Regen: 2 energy/800ms
+- Floor restore: 50 energy
 
-### Entity Type System
-New enemy/item types require:
-1. Sprite definition in appropriate sprites folder
-2. Type handling in spawn methods  
-3. Balance values in config.js
-4. Global constant declaration in sprites/index.js
+### Combat Formulas
+```javascript
+damage = max(1, attackerPower - defenderDefense)
+critChance = 0.1 + (level * 0.01)
+critDamage = baseDamage * 2
+levelUpHP = currentMaxHP + 5
+levelUpAttack = currentAttack + 1
+```
 
-### Script Loading Order
-Critical: Scripts must load in this order in index.html:
-1. config.js
-2. All sprite files (player, enemies, items, environment)
-3. sprites/index.js
-4. entities.js
-5. mapGenerator.js
-6. gameState.js
-7. renderer.js
-8. combat.js
-9. game.js
+### Entity Spawn Patterns
+- Enemies: `3 + floor * 2`
+- Items: `2 + floor(floor/2)`
+- Gold value: `5 + random(10) + floor * 2`
 
-### Save System
-Save data structure is versioned. When modifying save format, update the version number and handle migration in `loadGame()`.
+## ROGUELIKE-SPECIFIC PATTERNS
+
+### Turn Processing Order (CRITICAL)
+1. Player input validation
+2. Energy check
+3. Execute player action
+4. Update fog of war
+5. Process ALL enemy turns
+6. Update UI
+7. Check win/loss conditions
+
+### State Management Anti-Patterns
+```javascript
+// WRONG: Direct mutation
+gameState.player.hp -= damage;
+
+// CORRECT: Through methods
+player.takeDamage(damage);
+```
+
+### Performance Optimization Targets
+- Fog of war: Cache last state, only update on player move
+- Pathfinding: Limit A* to 100 nodes max
+- Rendering: Dirty rectangle tracking (not yet implemented)
+- Particles: Object pool with 100 particle limit
+
+## TESTING ROGUELIKE FEATURES
+
+### Balance Testing Checklist
+- [ ] Player can survive floor 1 with no upgrades
+- [ ] Player needs upgrades by floor 3
+- [ ] Gold economy allows 1 upgrade every 2 floors
+- [ ] Energy depletes during extended combat
+- [ ] Auto-explore doesn't break on edge cases
+
+### Edge Cases to Verify
+1. **Stairs spawn**: What if no valid room?
+2. **Enemy pathfinding**: Diagonal movement blocked?
+3. **Save/Load**: Mid-combat saves?
+4. **Fog of war**: Corner visibility?
+5. **Item spawning**: Full inventory?
+
+## FEATURE IMPLEMENTATION TEMPLATES
+
+### Adding New Enemy Type
+```javascript
+// 1. Add to gameState.js getEnemyTypesForFloor()
+if (this.floor >= X) types.push('newEnemy');
+
+// 2. Add to entities.js getStatsForType()
+case 'newEnemy':
+    return {
+        hp: CONFIG.BALANCE.NEWENEMY_HP_BASE + floorBonus,
+        attack: CONFIG.BALANCE.NEWENEMY_ATTACK_BASE + Math.floor(floorBonus/2),
+        expValue: CONFIG.BALANCE.NEWENEMY_EXP,
+        goldDrop: Math.floor(Math.random() * X) + Y + floorBonus
+    };
+
+// 3. Add sprite to sprites/enemies/newEnemy.js
+const newEnemySprites = {
+    default: function(ctx, x, y, size) {
+        const unit = size / 16;
+        // Draw using ctx.fillRect only
+    }
+};
+
+// 4. Register in sprites/index.js
+```
+
+### Adding Status Effect
+```javascript
+// 1. Add to entities.js
+this.statusEffects = []; // In constructor
+
+applyStatus(effect, duration) {
+    this.statusEffects.push({type: effect, remaining: duration});
+}
+
+// 2. Process in game.js processTurn()
+player.statusEffects = player.statusEffects.filter(s => {
+    s.remaining--;
+    if (s.type === 'poison') player.takeDamage(1);
+    return s.remaining > 0;
+});
+```
+
+## GAME THEORY INTEGRATION PRIORITIES
+
+### Quick Win Features (Low complexity, high impact)
+1. **Directional combat**: Check relative positions in combat.js
+2. **Status effects**: Add to Entity base class
+3. **Hunger system**: Replace energy regen with depletion
+
+### Medium Complexity Features
+1. **Item identification**: Add `identified` flag to Item class
+2. **Room events**: Extend Room class with `specialType` property
+3. **Weather effects**: Add to GameState with floor-wide modifier
+
+### High Complexity Features (Requires significant refactoring)
+1. **Ally system**: New AI controller, party management
+2. **Crafting**: Item combination logic, UI additions
+3. **Persistent progression**: Meta-game save system
+
+## CODEBASE HEALTH METRICS
+
+### Current Technical Debt
+- DungeonThemes class removed (was unused)
+- No unit tests (relies on manual testing)
+- Particle system could use object pooling
+- Some magic numbers still exist outside CONFIG
+
+### Performance Bottlenecks
+- Fog of war recalculates entire grid each update
+- No sprite caching/atlasing
+- Full map render each frame (no dirty rectangles)
+
+### Refactoring Opportunities
+- Extract UI updates into separate class
+- Consolidate duplicate pathfinding code
+- Create proper event system for combat messages
+
+## QUICK COMMAND REFERENCE
+
+### Add Feature Flag
+```javascript
+// In config.js
+FEATURES: {
+    HUNGER_SYSTEM: false,
+    STATUS_EFFECTS: false,
+    ITEM_IDENTIFICATION: false
+}
+
+// In relevant system
+if (CONFIG.FEATURES.HUNGER_SYSTEM) {
+    // Feature code
+}
+```
+
+### Debug Mode
+```javascript
+// Add to Game constructor
+this.debug = false; // Toggle with 'D' key
+
+// In render methods
+if (game.debug) {
+    // Draw collision boxes, enemy vision, etc
+}
+```
+
+### Performance Profiling
+```javascript
+// Wrap suspicious code
+const start = performance.now();
+// ... code to profile ...
+if (performance.now() - start > 16) {
+    console.warn('Frame budget exceeded:', performance.now() - start);
+}
+```
+
+## REMEMBER: GAME FEEL > FEATURE COUNT
+Every addition should enhance the core loop of exploration → combat → progression → exploration. If a feature doesn't directly improve this loop, it's probably not worth adding.

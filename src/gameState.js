@@ -80,14 +80,18 @@ class GameState {
         for (let i = 0; i < itemCount; i++) {
             const pos = this.findSpawnPosition(generator);
             if (pos) {
-                // Item spawn chances
+                // Item spawn chances (adjusted for more variety)
                 const roll = Math.random();
                 let type = 'gold';
                 
-                if (roll < 0.1) {
+                if (roll < 0.05) {
                     type = 'sword';
+                } else if (roll < 0.1) {
+                    type = 'shield';
                 } else if (roll < 0.25) {
                     type = 'potion';
+                } else if (roll < 0.35) {
+                    type = 'scroll';
                 }
                 
                 const value = type === 'gold' ? 
@@ -101,21 +105,59 @@ class GameState {
     }
     
     findSpawnPosition(generator, minDistanceFromPlayer = 0) {
-        for (let attempts = 0; attempts < 100; attempts++) {
+        for (let attempts = 0; attempts < 200; attempts++) {
             const pos = generator.getRandomFloorTile();
             if (pos) {
-                const dist = Math.sqrt(
-                    (pos.x - this.player.x) ** 2 + 
-                    (pos.y - this.player.y) ** 2
-                );
-                
-                if (dist >= minDistanceFromPlayer && 
-                    !this.isOccupied(pos.x, pos.y)) {
-                    return pos;
+                // Enhanced validation
+                if (!this.isValidSpawnPosition(pos.x, pos.y, minDistanceFromPlayer)) {
+                    continue;
                 }
+                
+                return pos;
             }
         }
         return null;
+    }
+    
+    isValidSpawnPosition(x, y, minDistanceFromPlayer = 0) {
+        // Check bounds
+        if (!this.inBounds(x, y)) return false;
+        
+        // Check if it's a floor tile
+        if (this.isWall(x, y)) return false;
+        
+        // Check if position is occupied
+        if (this.isOccupied(x, y)) return false;
+        
+        // Check if it's the stairs position
+        if (x === this.stairsX && y === this.stairsY) return false;
+        
+        // Check distance from player
+        if (this.player) {
+            const dist = Math.sqrt(
+                (x - this.player.x) ** 2 + 
+                (y - this.player.y) ** 2
+            );
+            if (dist < minDistanceFromPlayer) return false;
+        }
+        
+        // Make sure it's connected to the floor network (not isolated)
+        if (!this.isConnectedToFloor(x, y)) return false;
+        
+        return true;
+    }
+    
+    isConnectedToFloor(x, y) {
+        // Simple connectivity check - ensure there's at least one adjacent floor tile
+        const directions = [[-1,0], [1,0], [0,-1], [0,1]];
+        for (const [dx, dy] of directions) {
+            const checkX = x + dx;
+            const checkY = y + dy;
+            if (this.inBounds(checkX, checkY) && !this.isWall(checkX, checkY)) {
+                return true;
+            }
+        }
+        return false;
     }
     
     getEnemyTypesForFloor() {

@@ -17,6 +17,15 @@ class Game {
         this.gameOver = false;
         this.lastInputTime = 0;
         this.inputThrottle = 50; // 50ms between inputs
+        
+        // Debug mode
+        this.debug = CONFIG.FEATURES.DEBUG_MODE;
+        this.debugInfo = {
+            fps: 0,
+            frameTime: 0,
+            lastFrameTime: performance.now(),
+            frameCount: 0
+        };
     }
     
     init() {
@@ -98,6 +107,43 @@ class Game {
             case '?':
                 this.showHelpModal();
                 return;
+            // Debug keys
+            case 'd':
+            case 'D':
+                if (CONFIG.FEATURES.DEBUG_MODE) {
+                    this.debug = !this.debug;
+                    this.gameState.addMessage(`Debug mode: ${this.debug ? 'ON' : 'OFF'}`, 'level-msg');
+                }
+                return;
+            case 'g':
+            case 'G':
+                if (this.debug) {
+                    // Give gold
+                    this.gameState.player.gold += 100;
+                    this.gameState.addMessage('Debug: +100 gold', 'heal-msg');
+                }
+                return;
+            case 'l':
+            case 'L':
+                if (this.debug) {
+                    // Level up
+                    this.gameState.player.levelUp();
+                    this.gameState.addMessage('Debug: Level up!', 'level-msg');
+                }
+                return;
+            case 'r':
+            case 'R':
+                if (this.debug) {
+                    // Reveal map
+                    for (let y = 0; y < CONFIG.GRID_HEIGHT; y++) {
+                        for (let x = 0; x < CONFIG.GRID_WIDTH; x++) {
+                            this.gameState.fogOfWar[y][x] = false;
+                            this.gameState.explored[y][x] = true;
+                        }
+                    }
+                    this.gameState.addMessage('Debug: Map revealed', 'level-msg');
+                }
+                return;
             default:
                 return;
         }
@@ -108,6 +154,19 @@ class Game {
     
     movePlayer(dx, dy) {
         const player = this.gameState.player;
+        
+        // Handle confusion status
+        if (CONFIG.FEATURES.STATUS_EFFECTS && player.hasStatusEffect('confused')) {
+            if (Math.random() < 0.5) {
+                // Randomly change direction
+                const directions = [[0,1], [0,-1], [1,0], [-1,0]];
+                const randomDir = directions[Math.floor(Math.random() * directions.length)];
+                dx = randomDir[0];
+                dy = randomDir[1];
+                this.gameState.addMessage('You stumble in confusion!', 'damage-msg');
+            }
+        }
+        
         const newX = player.x + dx;
         const newY = player.y + dy;
         
@@ -148,6 +207,7 @@ class Game {
             
             // Process turn
             this.gameState.processTurn();
+            this.processStatusEffects();
             this.processEnemyTurns();
         }
     }
@@ -209,10 +269,44 @@ class Game {
     
     processEnemyTurns() {
         for (const enemy of this.gameState.enemies) {
+            // Update enemy status effects
+            if (CONFIG.FEATURES.STATUS_EFFECTS) {
+                enemy.updateStatusEffects();
+                
+                // Skip turn if stunned
+                if (enemy.hasStatusEffect('stun')) {
+                    continue;
+                }
+            }
+            
             if (enemy.canSeeEntity(this.gameState.player, this.gameState.fogOfWar)) {
                 this.processEnemyMove(enemy);
             }
         }
+    }
+    
+    processStatusEffects() {
+        if (!CONFIG.FEATURES.STATUS_EFFECTS) return;
+        
+        const player = this.gameState.player;
+        
+        // Process poison damage
+        if (player.hasStatusEffect('poison')) {
+            const damage = player.takeDamage(1);
+            this.gameState.addMessage(`Poison deals ${damage} damage!`, 'damage-msg');
+            
+            if (player.hp <= 0) {
+                this.handleGameOver();
+            }
+        }
+        
+        // Process blessed bonus (visual indicator only for now)
+        if (player.hasStatusEffect('blessed')) {
+            // Could add healing or damage bonus here
+        }
+        
+        // Update all status effect durations
+        player.updateStatusEffects();
     }
     
     processEnemyMove(enemy) {
@@ -282,11 +376,32 @@ class Game {
     }
     
     findAutoExploreTarget(player) {
-        // Priority 1: Visible items (cached check)
+        // Check for nearby enemies first
+        const nearbyEnemies = this.gameState.enemies.filter(enemy => {
+            const dist = player.distanceTo(enemy);
+            return dist <= 3 && !this.gameState.fogOfWar[enemy.y][enemy.x];
+        });
+        
+        // If enemies nearby and player is low health, prioritize escape
+        if (nearbyEnemies.length > 0 && player.hp < player.maxHp * 0.5) {
+            // Find safe direction away from enemies
+            const safeSpot = this.findSafeSpot(player, nearbyEnemies);
+            if (safeSpot) return safeSpot;
+        }
+        
+        // Priority 1: Visible items (but avoid if enemies are guarding)
         if (!this.cachedVisibleItems || this.lastVisibleItemsCheck !== this.gameState.turn) {
-            this.cachedVisibleItems = this.gameState.items.filter(item => 
-                !this.gameState.fogOfWar[item.y][item.x]
-            );
+            this.cachedVisibleItems = this.gameState.items.filter(item => {
+                if (this.gameState.fogOfWar[item.y][item.x]) return false;
+                
+                // Check if enemies are near the item
+                const enemiesNearItem = this.gameState.enemies.filter(e => 
+                    e.distanceTo(item) <= 2 && !this.gameState.fogOfWar[e.y][e.x]
+                );
+                
+                // Only go for item if we're healthy or no enemies guard it
+                return player.hp > player.maxHp * 0.7 || enemiesNearItem.length === 0;
+            });
             this.lastVisibleItemsCheck = this.gameState.turn;
         }
         
@@ -301,8 +416,58 @@ class Game {
         const unexplored = this.findClosestUnexplored(player.x, player.y);
         if (unexplored) return unexplored;
         
-        // Priority 3: Stairs
-        return { x: this.gameState.stairsX, y: this.gameState.stairsY };
+        // Priority 3: Stairs (only if healthy enough)
+        if (player.hp > player.maxHp * 0.3) {
+            return { x: this.gameState.stairsX, y: this.gameState.stairsY };
+        }
+        
+        // Priority 4: Find a safe corner to recover
+        return this.findSafeCorner(player);
+    }
+    
+    findSafeSpot(player, enemies) {
+        // Find the average enemy position
+        let enemyX = 0, enemyY = 0;
+        for (const enemy of enemies) {
+            enemyX += enemy.x;
+            enemyY += enemy.y;
+        }
+        enemyX /= enemies.length;
+        enemyY /= enemies.length;
+        
+        // Move in opposite direction
+        const dx = Math.sign(player.x - enemyX);
+        const dy = Math.sign(player.y - enemyY);
+        
+        // Try to find a valid spot in that direction
+        for (let dist = 1; dist <= 3; dist++) {
+            const targetX = player.x + dx * dist;
+            const targetY = player.y + dy * dist;
+            
+            if (this.gameState.inBounds(targetX, targetY) && 
+                !this.gameState.isWall(targetX, targetY)) {
+                return { x: targetX, y: targetY };
+            }
+        }
+        
+        return null;
+    }
+    
+    findSafeCorner(player) {
+        // Find a corner position to recover in
+        const corners = [
+            { x: 1, y: 1 },
+            { x: CONFIG.GRID_WIDTH - 2, y: 1 },
+            { x: 1, y: CONFIG.GRID_HEIGHT - 2 },
+            { x: CONFIG.GRID_WIDTH - 2, y: CONFIG.GRID_HEIGHT - 2 }
+        ];
+        
+        return corners
+            .filter(c => !this.gameState.isWall(c.x, c.y))
+            .reduce((closest, corner) => {
+                const dist = player.distanceTo(corner);
+                return dist < player.distanceTo(closest) ? corner : closest;
+            });
     }
     
     findClosestUnexplored(startX, startY) {
@@ -411,6 +576,85 @@ class Game {
         if (this.gameState.settings.particlesEnabled) {
             this.particles.update();
         }
+        
+        // Debug rendering
+        if (this.debug) {
+            this.renderDebugInfo();
+        }
+    }
+    
+    renderDebugInfo() {
+        const ctx = this.renderer.ctx;
+        
+        // Update FPS counter
+        const now = performance.now();
+        this.debugInfo.frameTime = now - this.debugInfo.lastFrameTime;
+        this.debugInfo.lastFrameTime = now;
+        this.debugInfo.frameCount++;
+        
+        if (this.debugInfo.frameCount % 30 === 0) {
+            this.debugInfo.fps = Math.round(1000 / this.debugInfo.frameTime);
+        }
+        
+        // Draw enemy vision ranges (only for visible enemies, less intrusive)
+        ctx.globalAlpha = 0.08;
+        ctx.strokeStyle = '#f44';
+        ctx.lineWidth = 1;
+        for (const enemy of this.gameState.enemies) {
+            // Only show vision for enemies that can see the player or are very close
+            if (!this.gameState.fogOfWar[enemy.y][enemy.x] && 
+                (enemy.canSeeEntity(this.gameState.player, this.gameState.fogOfWar) || 
+                 enemy.distanceTo(this.gameState.player) <= 3)) {
+                const centerX = enemy.x * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+                const centerY = enemy.y * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, enemy.viewRange * CONFIG.CELL_SIZE, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+        
+        // Draw pathfinding target
+        if (this.autoExploreTarget && this.gameState.settings.autoExplore) {
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = '#0f0';
+            ctx.fillRect(
+                this.autoExploreTarget.x * CONFIG.CELL_SIZE,
+                this.autoExploreTarget.y * CONFIG.CELL_SIZE,
+                CONFIG.CELL_SIZE,
+                CONFIG.CELL_SIZE
+            );
+        }
+        
+        ctx.globalAlpha = 1;
+        
+        // Draw debug text
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px monospace';
+        ctx.fillText(`FPS: ${this.debugInfo.fps}`, 5, 15);
+        ctx.fillText(`Turn: ${this.gameState.turn}`, 5, 25);
+        ctx.fillText(`Enemies: ${this.gameState.enemies.length}`, 5, 35);
+        ctx.fillText(`Items: ${this.gameState.items.length}`, 5, 45);
+        ctx.fillText(`Pos: ${this.gameState.player.x},${this.gameState.player.y}`, 5, 55);
+        ctx.fillText(`Facing: ${this.gameState.player.facing}`, 5, 65);
+        
+        // Show coordinates on hover (would need mouse tracking)
+        // Show grid lines
+        if (this.debug) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= CONFIG.GRID_WIDTH; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * CONFIG.CELL_SIZE, 0);
+                ctx.lineTo(x * CONFIG.CELL_SIZE, CONFIG.GRID_HEIGHT * CONFIG.CELL_SIZE);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= CONFIG.GRID_HEIGHT; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * CONFIG.CELL_SIZE);
+                ctx.lineTo(CONFIG.GRID_WIDTH * CONFIG.CELL_SIZE, y * CONFIG.CELL_SIZE);
+                ctx.stroke();
+            }
+        }
     }
     
     updateUI() {
@@ -511,9 +755,19 @@ class Game {
     }
     
     showHelpModal() {
+        let helpText = `MOVEMENT:\n↑↓←→ or WASD - Move character\n\nCOMBAT:\nMove into enemies to attack\nEnemies attack when adjacent\n\nGAME:\nZ - Toggle Auto-Explore\nESC - Stop Auto-Explore\nH or ? - Show this help\n\nGOAL:\nFind stairs to descend deeper\nDefeat enemies for XP and gold\nUpgrade your character\nSurvive as long as possible!`;
+        
+        if (CONFIG.FEATURES.DEBUG_MODE) {
+            helpText += `\n\nDEBUG COMMANDS:\nD - Toggle debug display\nG - Give 100 gold\nL - Level up\nR - Reveal entire map`;
+        }
+        
+        if (CONFIG.FEATURES.DIRECTIONAL_COMBAT) {
+            helpText += `\n\nCOMBAT TIPS:\nAttack from behind for +50% damage\nAttack from side for +25% damage\nFace enemies to block 25% damage`;
+        }
+        
         this.modal.show({
             title: 'PIXEL ROGUELIKE - HELP',
-            message: `MOVEMENT:\n↑↓←→ or WASD - Move character\n\nCOMBAT:\nMove into enemies to attack\nEnemies attack when adjacent\n\nGAME:\nZ - Toggle Auto-Explore\nESC - Stop Auto-Explore\nH or ? - Show this help\n\nGOAL:\nFind stairs to descend deeper\nDefeat enemies for XP and gold\nUpgrade your character\nSurvive as long as possible!`,
+            message: helpText,
             buttons: [
                 {
                     text: 'Got it!',
