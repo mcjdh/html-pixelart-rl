@@ -125,10 +125,6 @@ class GameState {
             types.push('skeleton');
         }
         
-        // Add more enemy types as floors progress
-        // if (this.floor >= 5) types.push('orc');
-        // if (this.floor >= 8) types.push('demon');
-        
         return types;
     }
     
