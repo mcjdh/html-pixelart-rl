@@ -21,6 +21,8 @@ class Renderer {
         // Camera tracking
         this.cameraX = 0;
         this.cameraY = 0;
+        this.lastCameraX = null;
+        this.lastCameraY = null;
         
         // Enable pixel art rendering
         this.ctx.imageSmoothingEnabled = false;
@@ -28,6 +30,8 @@ class Renderer {
         // Cache for dirty region tracking and sprite optimization
         this.dirtyRegions = new Set();
         this.lastFogState = null;
+        this.animatedTiles = new Set(); // Track tiles with animated sprites
+        this.hasRenderedOnce = false; // Ensure first frame renders
         
         // Sprite caching for performance
         this.spriteCache = new Map();
@@ -113,16 +117,69 @@ class Renderer {
         this.cameraX = Math.max(0, Math.min(CONFIG.GRID_WIDTH - CONFIG.VIEWPORT_WIDTH, this.cameraX));
         this.cameraY = Math.max(0, Math.min(CONFIG.GRID_HEIGHT - CONFIG.VIEWPORT_HEIGHT, this.cameraY));
         
-        // Mark regions as dirty if camera moved
+        // Efficiently mark only new regions as dirty when camera moves
         if (oldCameraX !== this.cameraX || oldCameraY !== this.cameraY) {
-            this.markViewportDirty();
+            this.markCameraMovementDirty(oldCameraX, oldCameraY);
         }
     }
     
-    // Mark viewport as needing redraw
+    // Efficiently mark only newly visible regions when camera moves
+    markCameraMovementDirty(oldCameraX, oldCameraY) {
+        const deltaX = this.cameraX - oldCameraX;
+        const deltaY = this.cameraY - oldCameraY;
+        
+        // If camera moved too far, mark entire viewport
+        if (Math.abs(deltaX) >= CONFIG.VIEWPORT_WIDTH || Math.abs(deltaY) >= CONFIG.VIEWPORT_HEIGHT) {
+            this.markViewportDirty();
+            return;
+        }
+        
+        const startX = this.cameraX;
+        const endX = Math.min(this.cameraX + CONFIG.VIEWPORT_WIDTH, CONFIG.GRID_WIDTH);
+        const startY = this.cameraY;
+        const endY = Math.min(this.cameraY + CONFIG.VIEWPORT_HEIGHT, CONFIG.GRID_HEIGHT);
+        
+        // Mark new columns if moved horizontally
+        if (deltaX > 0) {
+            // Moving right - mark new right edge
+            const newX = Math.min(endX - deltaX, endX - 1);
+            for (let x = newX; x < endX; x++) {
+                for (let y = startY; y < endY; y++) {
+                    this.dirtyRegions.add(`${x},${y}`);
+                }
+            }
+        } else if (deltaX < 0) {
+            // Moving left - mark new left edge
+            const newX = Math.max(startX - deltaX, startX);
+            for (let x = startX; x < newX; x++) {
+                for (let y = startY; y < endY; y++) {
+                    this.dirtyRegions.add(`${x},${y}`);
+                }
+            }
+        }
+        
+        // Mark new rows if moved vertically
+        if (deltaY > 0) {
+            // Moving down - mark new bottom edge
+            const newY = Math.min(endY - deltaY, endY - 1);
+            for (let y = newY; y < endY; y++) {
+                for (let x = startX; x < endX; x++) {
+                    this.dirtyRegions.add(`${x},${y}`);
+                }
+            }
+        } else if (deltaY < 0) {
+            // Moving up - mark new top edge
+            const newY = Math.max(startY - deltaY, startY);
+            for (let y = startY; y < newY; y++) {
+                for (let x = startX; x < endX; x++) {
+                    this.dirtyRegions.add(`${x},${y}`);
+                }
+            }
+        }
+    }
+    
+    // Mark viewport as needing redraw (used for major changes)
     markViewportDirty() {
-        this.dirtyRegions.clear();
-        // Mark entire viewport as dirty when camera moves
         const endY = Math.min(this.cameraY + CONFIG.VIEWPORT_HEIGHT, CONFIG.GRID_HEIGHT);
         const endX = Math.min(this.cameraX + CONFIG.VIEWPORT_WIDTH, CONFIG.GRID_WIDTH);
         for (let y = this.cameraY; y < endY; y++) {
@@ -136,44 +193,52 @@ class Renderer {
     markTileDirty(x, y) {
         this.dirtyRegions.add(`${x},${y}`);
     }
-    
-    renderMap(map, fogOfWar, explored, forceFullRender = false) {
+     renderMap(map, fogOfWar, explored, forceFullRender = false) {
         if (!this.ctx || !map || !fogOfWar || !explored) {
             console.warn('Renderer: Missing required data for renderMap');
             return;
         }
-        
+
         // Render only the viewport area
         const startX = this.cameraX;
         const endX = Math.min(this.cameraX + CONFIG.VIEWPORT_WIDTH, CONFIG.GRID_WIDTH);
         const startY = this.cameraY;
         const endY = Math.min(this.cameraY + CONFIG.VIEWPORT_HEIGHT, CONFIG.GRID_HEIGHT);
-        
-        // Performance optimization: only render if something changed or forced
-        const shouldRenderAll = true; // Temporarily disable dirty optimization for stability
-        
+
+        // Since we clear the canvas every frame, we need to render all visible tiles
+        // The dirty system is now used primarily for tracking changes and optimizations
+        // but we always render the full viewport to maintain visual consistency
         for (let y = startY; y < endY; y++) {
             for (let x = startX; x < endX; x++) {
-                // Skip if not dirty (unless forcing full render) - disabled for stability
-                // if (!shouldRenderAll && !this.dirtyRegions.has(`${x},${y}`)) {
-                //     continue;
-                // }
-                
-                // Bounds check before accessing arrays
                 if (y >= 0 && y < map.length && x >= 0 && x < map[y].length) {
                     this.renderTile(map, fogOfWar, explored, x, y);
                 }
             }
         }
-        
-        // Cache fog state for next frame
+
+        // Cache fog state for next frame (used for fog change detection)
         this.lastFogState = fogOfWar.map(row => [...row]);
+        
+        // Mark that we've completed at least one render
+        this.hasRenderedOnce = true;
+        
+        // Clear dirty regions but preserve animated tiles
+        const newDirtyRegions = new Set();
+        for (const tileKey of this.animatedTiles) {
+            newDirtyRegions.add(tileKey);
+        }
+        this.dirtyRegions = newDirtyRegions;
     }
     
     renderTile(map, fogOfWar, explored, x, y) {
         const tile = map[y][x];
         const pixelX = (x - this.cameraX) * CONFIG.CELL_SIZE;
         const pixelY = (y - this.cameraY) * CONFIG.CELL_SIZE;
+        
+        // Track animated tiles for continuous updates
+        if (tile === 5) { // Crystal tiles need animation
+            this.animatedTiles.add(`${x},${y}`);
+        }
         
         // Get theme-specific sprites if available
         const gameState = window.game && window.game.gameState;

@@ -1077,11 +1077,6 @@ class Game {
         if (this.debug && this.gameState.enemies) {
             this.renderDebugInfo();
         }
-        
-        // Clear dirty regions after complete frame render
-        if (this.renderer && this.renderer.dirtyRegions) {
-            this.renderer.dirtyRegions.clear();
-        }
     }
     
     renderDebugInfo() {

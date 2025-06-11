@@ -375,13 +375,12 @@ class GameState {
                 
                 if (distSquared <= viewRadiusSquared) {
                     if (this.hasLineOfSight(this.player.x, this.player.y, x, y)) {
-                        const wasVisible = !this.fogOfWar[y][x];
                         this.fogOfWar[y][x] = false;    // Currently visible
                         this.explored[y][x] = true;     // Mark as explored
                         this.lastVisibleTiles.push({x, y}); // Track for next frame
                         
                         // Mark newly visible tiles as dirty
-                        if (!wasVisible && this.renderer && this.renderer.markTileDirty) {
+                        if (this.renderer && this.renderer.markTileDirty) {
                             this.renderer.markTileDirty(x, y);
                         }
                     }
