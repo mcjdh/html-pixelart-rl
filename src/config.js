@@ -1,7 +1,7 @@
 const CONFIG = {
     CELL_SIZE: 20,
-    GRID_WIDTH: 24,
-    GRID_HEIGHT: 16,
+    GRID_WIDTH: 20,
+    GRID_HEIGHT: 14,
     TILE_SIZE: 20,
     VIEW_RADIUS: 6,
     

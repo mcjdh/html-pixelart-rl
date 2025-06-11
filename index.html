@@ -14,26 +14,31 @@
             font-size: 11px;
             overflow: hidden;
             line-height: 1.2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
         
         #game-container {
             width: 640px;
             height: 480px;
-            margin: 0 auto;
             background: #000;
             border: 2px solid #808080;
             display: grid;
-            grid-template-columns: 480px 160px;
-            grid-template-rows: 320px 160px;
+            grid-template-columns: 400px 240px;
+            grid-template-rows: 280px 200px;
             position: relative;
             box-sizing: border-box;
+            transform-origin: center;
+            transition: transform 0.3s ease;
         }
         
         #game-canvas {
             grid-column: 1;
             grid-row: 1;
-            width: 480px;
-            height: 320px;
+            width: 400px;
+            height: 280px;
             border-right: 1px solid #404040;
             border-bottom: 1px solid #404040;
             image-rendering: pixelated;
@@ -44,21 +49,22 @@
         
         #side-panel {
             grid-column: 2;
-            grid-row: 1;
-            width: 160px;
-            height: 320px;
+            grid-row: 1 / 3;
+            width: 240px;
+            height: 480px;
             background: #1a1a1a;
-            border-bottom: 1px solid #404040;
-            padding: 4px;
+            padding: 6px;
             box-sizing: border-box;
-            overflow-y: auto;
+            overflow-y: hidden;
+            display: flex;
+            flex-direction: column;
         }
         
         #console-area {
-            grid-column: 1 / 3;
+            grid-column: 1;
             grid-row: 2;
-            width: 640px;
-            height: 160px;
+            width: 400px;
+            height: 200px;
             background: #1a1a1a;
             display: flex;
             flex-direction: column;
@@ -69,16 +75,18 @@
             flex: 1;
             background: #0f0f0f;
             border: 2px inset #404040;
-            margin: 4px;
-            padding: 8px;
+            margin: 6px;
+            padding: 10px;
             overflow-y: auto;
-            font-size: 12px;
-            line-height: 1.3;
+            font-size: 13px;
+            line-height: 1.5;
             box-sizing: border-box;
+            min-height: 150px; /* Ensure minimum height to fill available space */
+            height: calc(200px - 38px); /* Fill the available space properly */
         }
         
         #status-bar {
-            height: 40px;
+            height: 28px;
             background: #1a1a1a;
             border-top: 1px solid #404040;
             display: flex;
@@ -86,6 +94,7 @@
             padding: 0 8px;
             font-size: 10px;
             box-sizing: border-box;
+            flex-shrink: 0;
         }
         
         /* Status Bar Styles */
@@ -125,51 +134,158 @@
         /* Side Panel Styles */
         .panel-section {
             border-bottom: 1px solid #333;
-            padding: 4px;
+            padding: 8px 6px;
+            margin-bottom: 3px;
+            flex-shrink: 0;
+        }
+        
+        .panel-section.flexible {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         
         .panel-title {
             color: #808080;
+            font-size: 11px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid #404040;
+            padding-bottom: 3px;
+        }
+        
+        /* Progress Bar Styles */
+        .stat-line-with-bar {
+            display: flex;
+            flex-direction: column;
+            margin: 2px 0;
+        }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
             font-size: 9px;
             margin-bottom: 2px;
-            text-transform: uppercase;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 1px;
+        }
+        
+        .health-bar { background: linear-gradient(90deg, #ff4444, #aa2222); }
+        .energy-bar { background: linear-gradient(90deg, #4444ff, #2222aa); }
+        .exp-bar { background: linear-gradient(90deg, #44ff44, #22aa22); }
+        
+        .health-bar.low { background: linear-gradient(90deg, #ff6666, #ff2222); animation: pulse-red 1s infinite; }
+        .energy-bar.low { background: linear-gradient(90deg, #6666ff, #4444ff); }
+        
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
         
         .compact-button {
-            background: #2a2a2a;
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
             color: #c0c0c0;
             border: 1px solid #404040;
-            padding: 2px 4px;
-            margin: 1px 0;
+            padding: 6px 8px;
+            margin: 2px 0;
             cursor: pointer;
-            font-size: 9px;
+            font-size: 10px;
             width: 100%;
-            text-align: left;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+            border-radius: 4px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
         }
         
-        .compact-button:hover:not(:disabled) {
-            background: #404040;
+        .compact-button:hover:not(:disabled),
+        .compact-button:focus:not(:disabled) {
+            background: linear-gradient(135deg, #404040, #303030);
             color: #ffffff;
+            outline: none;
+            border-color: #606060;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .compact-button:active:not(:disabled) {
+            background: linear-gradient(135deg, #555555, #404040);
+            transform: translateY(1px);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
         }
         
         .compact-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            background: linear-gradient(135deg, #1a1a1a, #0a0a0a);
+        }
+        
+        /* Mobile touch improvements */
+        @media (max-width: 768px) {
+            .compact-button {
+                padding: 8px 12px;
+                font-size: 10px;
+                margin: 3px 0;
+            }
+            
+            #game-container {
+                width: 100vw;
+                height: 100vh;
+                margin: 0;
+                border: none;
+                grid-template-columns: 1fr 200px;
+                grid-template-rows: 1fr 250px;
+            }
+            
+            #game-canvas {
+                width: 100%;
+                height: 100%;
+            }
+            
+            #side-panel {
+                width: 100%;
+                height: 100%;
+            }
+            
+            #console-area {
+                width: 100%;
+                height: 100%;
+            }
         }
         
         #message-log {
-            background: #000;
-            padding: 2px;
-            height: 60px;
+            background: transparent;
+            padding: 0;
+            height: 100%; /* Fill the entire console area */
             overflow-y: auto;
-            font-size: 8px;
-            border: 1px solid #333;
+            font-size: 13px; /* Match console font size */
+            border: none; /* Remove extra border since console already has one */
+            line-height: 1.5; /* Match console line height */
         }
         
         .message {
-            margin: 0;
-            padding: 0;
-            line-height: 1.1;
+            margin: 2px 0;
+            padding: 3px 0;
+            line-height: 1.4;
+            word-wrap: break-word;
         }
         
         .damage-msg { color: #ff6666; }
@@ -182,23 +298,24 @@
         .narrative-urgent { 
             color: #ff6666; 
             font-weight: bold; 
-            font-size: 13px;
+            font-size: 14px;
             text-shadow: 1px 1px 2px rgba(255, 102, 102, 0.3);
         }
         .narrative-important { 
             color: #ffaa44; 
             font-weight: bold; 
-            font-size: 12px;
+            font-size: 13px;
         }
         .narrative-story { 
             color: #66aaff; 
             font-style: italic; 
-            font-size: 12px;
+            font-size: 13px;
         }
         .narrative-atmospheric { 
             color: #aaaaaa; 
             font-style: italic; 
             opacity: 0.9;
+            font-size: 12px;
         }
         
         /* Lore-specific styling */
@@ -302,9 +419,16 @@
             min-width: 80px;
         }
         
-        .modal-button:hover {
+        .modal-button:hover,
+        .modal-button:focus {
             background: #404040;
             color: #ffffff;
+            outline: none;
+        }
+        
+        .modal-button:active {
+            background: #555555;
+            transform: translateY(1px);
         }
         
         .modal-button.primary {
@@ -313,8 +437,15 @@
             border-color: #666666;
         }
         
-        .modal-button.primary:hover {
+        .modal-button.primary:hover,
+        .modal-button.primary:focus {
             background: #555555;
+            outline: none;
+        }
+        
+        .modal-button.primary:active {
+            background: #666666;
+            transform: translateY(1px);
         }
         
         .ascii-border {
@@ -341,67 +472,97 @@
         <canvas id="game-canvas"></canvas>
         
         <div id="side-panel">
+            <!-- Character Stats Section -->
             <div class="panel-section">
-                <div class="panel-title">Character</div>
-                <div style="font-size: 9px;">
+                <div class="panel-title">⚔️ Character</div>
+                <div style="font-size: 10px;">
                     <div class="stat-line">
                         <span>Level</span>
                         <span id="player-level" class="stat-value">1</span>
                     </div>
-                    <div class="stat-line">
-                        <span>Health</span>
-                        <span id="player-hp" class="hp-value">10/10</span>
+                    <div class="stat-line-with-bar">
+                        <div class="stat-header">
+                            <span>Health</span>
+                            <span id="player-hp" class="hp-value">10/10</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="health-bar" class="progress-fill health-bar" style="width: 100%;"></div>
+                        </div>
                     </div>
-                    <div class="stat-line">
-                        <span>Energy</span>
-                        <span id="player-energy" class="mp-value">100/100</span>
+                    <div class="stat-line-with-bar">
+                        <div class="stat-header">
+                            <span>Energy</span>
+                            <span id="player-energy" class="mp-value">100/100</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="energy-bar" class="progress-fill energy-bar" style="width: 100%;"></div>
+                        </div>
                     </div>
-                    <div class="stat-line">
-                        <span>Experience</span>
-                        <span id="player-exp" class="exp-value">0/10</span>
+                    <div class="stat-line-with-bar">
+                        <div class="stat-header">
+                            <span>Experience</span>
+                            <span id="player-exp" class="exp-value">0/10</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="exp-bar" class="progress-fill exp-bar" style="width: 0%;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
             
+            <!-- Dungeon Info Section -->
             <div class="panel-section">
-                <div class="panel-title">Dungeon</div>
-                <div style="font-size: 9px;">
+                <div class="panel-title">🏰 Dungeon</div>
+                <div style="font-size: 10px;">
                     <div class="stat-line">
-                        <span>Floor</span>
+                        <span>📍 Floor</span>
                         <span id="floor-level" class="stat-value">1</span>
                     </div>
                     <div class="stat-line">
-                        <span>Gold</span>
+                        <span>💰 Gold</span>
                         <span id="player-gold" class="stat-value">0</span>
                     </div>
-                    </div>
-                </div>
-                
-                <div class="panel-section">
-                    <div class="panel-title">Actions</div>
-                    <button class="compact-button" id="upgrade-attack" onclick="game.upgradeAttack()">
-                        +Att (<span id="attack-cost">10</span>g)
-                    </button>
-                    <button class="compact-button" id="upgrade-defense" onclick="game.upgradeDefense()">
-                        +Def (<span id="defense-cost">10</span>g)
-                    </button>
-                    <button class="compact-button" id="auto-explore" onclick="game.toggleAutoExplore()">
-                        Auto: <span id="auto-explore-status">OFF</span>
-                    </button>
-                    <button class="compact-button" onclick="game.saveGame()">Save</button>
-                </div>
-                
-                <div class="panel-section">
-                    <div class="panel-title">Controls</div>
-                    <div style="font-size: 8px; line-height: 1.2;">
-                        <div>↑↓←→ / WASD: Move</div>
-                        <div>Z: Toggle Auto-Explore</div>
-                        <div>L: View Lore (Console)</div>
-                        <div>H: Help</div>
-                        <div>ESC: Stop Auto</div>
+                    <div class="stat-line-with-bar">
+                        <div class="stat-header">
+                            <span>🗺️ Explored</span>
+                            <span id="exploration-percent" class="stat-value">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="exploration-bar" class="progress-fill" style="width: 0%; background: linear-gradient(90deg, #44aa44, #226622);"></div>
+                        </div>
                     </div>
                 </div>
             </div>
+            
+            <!-- Actions Section - Flexible to fill space -->
+            <div class="panel-section flexible">
+                <div>
+                    <div class="panel-title">⚡ Actions</div>
+                    <button class="compact-button" id="upgrade-attack" onclick="game.upgradeAttack()">
+                        ⚔️ +Attack (<span id="attack-cost">10</span>g)
+                    </button>
+                    <button class="compact-button" id="upgrade-defense" onclick="game.upgradeDefense()">
+                        🛡️ +Defense (<span id="defense-cost">10</span>g)
+                    </button>
+                    <button class="compact-button" id="auto-explore" onclick="game.toggleAutoExplore()">
+                        🔍 Auto: <span id="auto-explore-status">OFF</span>
+                    </button>
+                    <button class="compact-button" onclick="game.saveGame()">💾 Save Game</button>
+                </div>
+                
+                <!-- Controls at bottom -->
+                <div style="margin-top: 8px;">
+                    <div class="panel-title">🎮 Controls</div>
+                    <div style="font-size: 9px; line-height: 1.4; color: #999;">
+                        <div><strong>🔄 ↑↓←→/WASD:</strong> Move</div>
+                        <div><strong>🔍 Z:</strong> Auto-Explore</div>
+                        <div><strong>📜 L:</strong> View Lore</div>
+                        <div><strong>❓ H:</strong> Help</div>
+                        <div><strong>⏹️ ESC:</strong> Stop Auto</div>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <div id="console-area">
             <div id="message-console">
@@ -411,13 +572,14 @@
             <div id="status-bar">
                 <div class="status-line">
                     <div class="status-group">
-                        <span class="stat-item">HP: <span id="status-hp" class="hp-value">10/10</span></span>
-                        <span class="stat-item">EN: <span id="status-energy" class="mp-value">100/100</span></span>
-                        <span class="stat-item">XP: <span id="status-exp" class="exp-value">0/10</span></span>
+                        <span class="stat-item">❤️ <span id="status-hp" class="hp-value">10/10</span></span>
+                        <span class="stat-item">⚡ <span id="status-energy" class="mp-value">100/100</span></span>
+                        <span class="stat-item">✨ <span id="status-exp" class="exp-value">0/10</span></span>
                     </div>
                     <div class="status-group">
-                        <span class="stat-item">Floor: <span id="status-floor" class="stat-value">1</span></span>
-                        <span class="stat-item">Gold: <span id="status-gold" class="stat-value">0</span></span>
+                        <span class="stat-item">📍 <span id="status-floor" class="stat-value">1</span></span>
+                        <span class="stat-item">💰 <span id="status-gold" class="stat-value">0</span></span>
+                        <span class="stat-item">⏱️ <span id="game-time" class="stat-value">0:00</span></span>
                     </div>
                 </div>
             </div>
@@ -451,14 +613,45 @@
     <script src="./src/combat.js"></script>
     <script src="./src/core/EventBus.js"></script>
     <script src="./src/ui/NarrativeUI.js"></script>
+    <script src="./src/cutscenes/CutsceneManager.js"></script>
     <script src="./src/core/CampaignSystem.js"></script>
     <script src="./src/ui/MenuSystem.js"></script>
     <script src="./src/game.js"></script>
     
     <script>
+        // Responsive scaling for game container
+        function scaleGameContainer() {
+            const container = document.getElementById('game-container');
+            if (!container) return;
+            
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            // Calculate scale to fit within window with padding
+            const scaleX = (windowWidth - 40) / 644; // Account for border (640 + 4px border)
+            const scaleY = (windowHeight - 40) / 484; // Account for border (480 + 4px border)
+            const scale = Math.min(scaleX, scaleY, 1.5); // Allow scaling up to 1.5x
+            
+            console.log(`Scaling to ${scale} (window: ${windowWidth}x${windowHeight})`);
+            container.style.transform = `scale(${scale})`;
+        }
+        
+        // Apply scaling immediately and on events
+        document.addEventListener('DOMContentLoaded', () => {
+            scaleGameContainer();
+            // Apply again after a short delay to ensure everything is loaded
+            setTimeout(scaleGameContainer, 100);
+        });
+        
+        window.addEventListener('resize', scaleGameContainer);
+        window.addEventListener('load', scaleGameContainer);
+        
         // Create and start game
         window.game = new Game();
         game.init();
+        
+        // Scale again after game initialization
+        setTimeout(scaleGameContainer, 200);
     </script>
 </body>
 </html>

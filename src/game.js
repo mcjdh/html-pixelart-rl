@@ -12,8 +12,12 @@ class Game {
         // Initialize event system and narrative UI
         this.events = GameEvents; // Use global event bus
         this.narrativeUI = new NarrativeUI(this.events);
+        this.cutsceneManager = new CutsceneManager(this.events, this.narrativeUI);
         this.campaignSystem = new CampaignSystem(this.events, this.gameState);
         this.menuSystem = new MenuSystem(this);
+        
+        // Expose cutscene manager for debugging
+        window.cutsceneManager = this.cutsceneManager;
         
         this.autoExploreTarget = null;
         this.animationFrame = null;
@@ -23,6 +27,7 @@ class Game {
         this.gameOver = false;
         this.lastInputTime = 0;
         this.inputThrottle = 50; // 50ms between inputs
+        this.gameStartTime = Date.now();
         
         // Debug mode
         this.debug = CONFIG.FEATURES.DEBUG_MODE;
@@ -34,6 +39,7 @@ class Game {
         };
         
         this.setupGameEventListeners();
+        this.setupVisibilityHandling();
     }
     
     init() {
@@ -64,6 +70,19 @@ class Game {
         this.events.emit('floor.entered', {
             floor: this.gameState.floor,
             player: this.gameState.player
+        });
+    }
+    
+    setupVisibilityHandling() {
+        // Pause auto-explore when tab becomes inactive (QoL improvement)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && this.gameState.settings.autoExplore) {
+                this.gameState.settings.autoExplore = false;
+                this.gameState.addMessage('Auto-explore paused (tab inactive)', 'level-msg');
+                if (document.getElementById('auto-explore-status')) {
+                    document.getElementById('auto-explore-status').textContent = 'OFF';
+                }
+            }
         });
     }
     
@@ -102,6 +121,101 @@ class Game {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
                 e.preventDefault();
             }
+        });
+        
+        // Add touch support to UI buttons
+        this.setupTouchSupport();
+    }
+    
+    setupTouchSupport() {
+        // Find all clickable buttons and add touch support
+        const buttons = document.querySelectorAll('.compact-button');
+        
+        buttons.forEach(button => {
+            // Add touch event handlers
+            button.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                button.style.backgroundColor = '#555555';
+            });
+            
+            button.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                button.style.backgroundColor = '';
+                
+                // Trigger the click event
+                if (button.onclick) {
+                    button.onclick();
+                }
+            });
+            
+            button.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                button.style.backgroundColor = '';
+            });
+            
+            // Enhanced hover effects for mouse users
+            button.addEventListener('mousedown', () => {
+                button.style.backgroundColor = '#555555';
+            });
+            
+            button.addEventListener('mouseup', () => {
+                button.style.backgroundColor = '';
+            });
+            
+            button.addEventListener('mouseleave', () => {
+                button.style.backgroundColor = '';
+            });
+        });
+        
+        // Add touch support to canvas for mobile gameplay
+        this.setupCanvasTouchControls();
+    }
+    
+    setupCanvasTouchControls() {
+        let touchStartX, touchStartY;
+        const canvas = this.canvas;
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (!touchStartX || !touchStartY) return;
+            
+            const touch = e.changedTouches[0];
+            const deltaX = touch.clientX - touchStartX;
+            const deltaY = touch.clientY - touchStartY;
+            
+            // Minimum swipe distance
+            const minSwipeDistance = 30;
+            
+            if (Math.abs(deltaX) > minSwipeDistance || Math.abs(deltaY) > minSwipeDistance) {
+                // Determine swipe direction
+                let dx = 0, dy = 0;
+                
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    // Horizontal swipe
+                    dx = deltaX > 0 ? 1 : -1;
+                } else {
+                    // Vertical swipe
+                    dy = deltaY > 0 ? 1 : -1;
+                }
+                
+                // Move player
+                this.movePlayer(dx, dy);
+            }
+            
+            // Reset touch coordinates
+            touchStartX = touchStartY = null;
+        });
+        
+        canvas.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            touchStartX = touchStartY = null;
         });
     }
     
@@ -164,6 +278,18 @@ class Game {
             case '?':
                 this.showHelpModal();
                 return;
+            case 'i':
+            case 'I':
+                // Quick info panel toggle (show player stats briefly)
+                this.showQuickInfo();
+                return;
+            case 'p':
+            case 'P':
+                // Pause/unpause auto-explore
+                if (this.gameState.settings.autoExplore) {
+                    this.toggleAutoExplore();
+                }
+                return;
             // Debug keys
             case 'd':
             case 'D':
@@ -211,6 +337,16 @@ class Game {
     
     movePlayer(dx, dy) {
         const player = this.gameState.player;
+        
+        // Input validation
+        if (!player || this.gameOver || !this.inputEnabled) {
+            return;
+        }
+        
+        // Validate movement direction
+        if (Math.abs(dx) > 1 || Math.abs(dy) > 1 || (dx === 0 && dy === 0)) {
+            return;
+        }
         
         // Handle confusion status
         if (CONFIG.FEATURES.STATUS_EFFECTS && player.hasStatusEffect('confused')) {
@@ -497,7 +633,7 @@ class Game {
     
     autoExploreStep() {
         if (!this.gameState.settings.autoExplore || 
-            this.gameState.player.energy <= 20 ||
+            this.gameState.player.energy < CONFIG.BALANCE.MOVE_ENERGY_COST ||
             this.gameOver) {
             return;
         }
@@ -643,12 +779,15 @@ class Game {
         return null;
     }
     
-    // Simple A* pathfinding
+    // Simple A* pathfinding with safety limits
     findPath(startX, startY, targetX, targetY) {
         const openSet = [{ x: startX, y: startY, g: 0, h: this.heuristic(startX, startY, targetX, targetY), f: 0, parent: null }];
         const closedSet = new Set();
+        const maxNodes = 100; // Prevent infinite loops
+        let nodesExpanded = 0;
         
-        while (openSet.length > 0) {
+        while (openSet.length > 0 && nodesExpanded < maxNodes) {
+            nodesExpanded++;
             // Find lowest f score
             openSet.sort((a, b) => a.f - b.f);
             const current = openSet.shift();
@@ -703,7 +842,7 @@ class Game {
     startEnergyRegeneration() {
         setInterval(() => {
             const player = this.gameState.player;
-            if (player && player.energy < player.maxEnergy) {
+            if (player && !this.gameOver && player.energy < player.maxEnergy) {
                 player.restoreEnergy(CONFIG.GAME.ENERGY_REGEN_AMOUNT);
                 this.updateUI();
             }
@@ -755,15 +894,14 @@ class Game {
             this.debugInfo.fps = Math.round(1000 / this.debugInfo.frameTime);
         }
         
-        // Draw enemy vision ranges (only for visible enemies, less intrusive)
+        // Draw enemy vision ranges (only for nearby visible enemies to reduce lag)
         ctx.globalAlpha = 0.08;
         ctx.strokeStyle = '#f44';
         ctx.lineWidth = 1;
         for (const enemy of this.gameState.enemies) {
-            // Only show vision for enemies that can see the player or are very close
+            // Only show vision for enemies that are visible and close to player (performance optimization)
             if (!this.gameState.fogOfWar[enemy.y][enemy.x] && 
-                (enemy.canSeeEntity(this.gameState.player, this.gameState.fogOfWar) || 
-                 enemy.distanceTo(this.gameState.player) <= 3)) {
+                enemy.distanceTo(this.gameState.player) <= 5) {
                 const centerX = enemy.x * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
                 const centerY = enemy.y * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
                 ctx.beginPath();
@@ -834,12 +972,52 @@ class Game {
         document.getElementById('floor-level').textContent = this.gameState.floor;
         document.getElementById('player-gold').textContent = player.gold;
         
+        // Update progress bars
+        const healthBar = document.getElementById('health-bar');
+        const energyBar = document.getElementById('energy-bar');
+        const expBar = document.getElementById('exp-bar');
+        
+        if (healthBar) {
+            const healthPercent = (player.hp / player.maxHp) * 100;
+            healthBar.style.width = `${healthPercent}%`;
+            
+            // Add warning class for low health
+            if (healthPercent <= 25) {
+                healthBar.classList.add('low');
+            } else {
+                healthBar.classList.remove('low');
+            }
+        }
+        
+        if (energyBar) {
+            const energyPercent = (player.energy / player.maxEnergy) * 100;
+            energyBar.style.width = `${energyPercent}%`;
+            
+            // Add warning class for low energy
+            if (energyPercent <= 20) {
+                energyBar.classList.add('low');
+            } else {
+                energyBar.classList.remove('low');
+            }
+        }
+        
+        if (expBar) {
+            const expPercent = (player.exp / player.expToNext) * 100;
+            expBar.style.width = `${expPercent}%`;
+        }
+        
         // Status bar (duplicate for classic feel)
         document.getElementById('status-hp').textContent = `${player.hp}/${player.maxHp}`;
         document.getElementById('status-exp').textContent = `${player.exp}/${player.expToNext}`;
         document.getElementById('status-energy').textContent = `${player.energy}/${player.maxEnergy}`;
         document.getElementById('status-floor').textContent = this.gameState.floor;
         document.getElementById('status-gold').textContent = player.gold;
+        
+        // Update game time
+        this.updateGameTime();
+        
+        // Update exploration progress
+        this.updateExplorationProgress();
         
         // Upgrade costs
         const upgradeInfo = this.upgrades.getUpgradeInfo();
@@ -850,6 +1028,41 @@ class Game {
         
         // Update message log
         this.updateMessageLog();
+    }
+    
+    updateGameTime() {
+        const gameTimeElement = document.getElementById('game-time');
+        if (gameTimeElement) {
+            const elapsed = Date.now() - this.gameStartTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            gameTimeElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+    }
+    
+    updateExplorationProgress() {
+        const explorationElement = document.getElementById('exploration-percent');
+        const explorationBar = document.getElementById('exploration-bar');
+        
+        if (explorationElement && explorationBar && this.gameState.explored) {
+            let exploredCount = 0;
+            let totalWalkable = 0;
+            
+            for (let y = 0; y < CONFIG.GRID_HEIGHT; y++) {
+                for (let x = 0; x < CONFIG.GRID_WIDTH; x++) {
+                    if (!this.gameState.isWall(x, y)) {
+                        totalWalkable++;
+                        if (this.gameState.explored[y][x]) {
+                            exploredCount++;
+                        }
+                    }
+                }
+            }
+            
+            const percent = totalWalkable > 0 ? Math.floor((exploredCount / totalWalkable) * 100) : 0;
+            explorationElement.textContent = `${percent}%`;
+            explorationBar.style.width = `${percent}%`;
+        }
     }
     
     updateMessageLog() {
@@ -889,20 +1102,37 @@ class Game {
     }
     
     saveGame() {
-        this.gameState.saveGame();
-        this.modal.show({
-            title: 'GAME SAVED',
-            message: 'Your progress has been saved successfully!',
-            buttons: [
-                {
-                    text: 'Continue',
-                    primary: true,
-                    callback: () => {
-                        this.modal.hide();
+        try {
+            this.gameState.saveGame();
+            this.modal.show({
+                title: 'GAME SAVED',
+                message: 'Your progress has been saved successfully!',
+                buttons: [
+                    {
+                        text: 'Continue',
+                        primary: true,
+                        callback: () => {
+                            this.modal.hide();
+                        }
                     }
-                }
-            ]
-        });
+                ]
+            });
+        } catch (error) {
+            console.error('Save failed:', error);
+            this.modal.show({
+                title: 'SAVE FAILED',
+                message: 'Could not save your progress. Please check your browser storage settings.',
+                buttons: [
+                    {
+                        text: 'OK',
+                        primary: true,
+                        callback: () => {
+                            this.modal.hide();
+                        }
+                    }
+                ]
+            });
+        }
     }
     
     showStatsModal() {
@@ -930,7 +1160,7 @@ class Game {
     }
     
     showHelpModal() {
-        let helpText = `MOVEMENT:\n↑↓←→ or WASD - Move character\n\nCOMBAT:\nMove into enemies to attack\nEnemies attack when adjacent\nPositional bonuses apply!\n\nGAME:\nZ - Toggle Auto-Explore\nESC - Stop Auto-Explore\nL - View Collected Lore\nH or ? - Show this help\n\nCAMPAIGN:\nConquer 3 cursed floors\nEach floor has unique lore\nDefeat the final evil\nSave the kingdom!`;
+        let helpText = `MOVEMENT:\n↑↓←→ or WASD - Move character\n\nCOMBAT:\nMove into enemies to attack\nEnemies attack when adjacent\nPositional bonuses apply!\n\nGAME CONTROLS:\nZ - Toggle Auto-Explore\nP - Pause Auto-Explore\nESC - Stop Auto-Explore\nL - View Collected Lore\nI - Quick Info Summary\nH or ? - Show this help\n\nCAMPAIGN:\nConquer 3 cursed floors\nEach floor has unique lore\nDefeat the final evil\nSave the kingdom!`;
         
         if (CONFIG.FEATURES.DEBUG_MODE) {
             helpText += `\n\nDEBUG COMMANDS:\nD - Toggle debug display\nG - Give 100 gold\nL - Level up\nR - Reveal entire map`;
@@ -953,6 +1183,19 @@ class Game {
                 }
             ]
         });
+    }
+    
+    showQuickInfo() {
+        const player = this.gameState.player;
+        if (!player) return;
+        
+        // Show a brief overlay with current player stats
+        const infoText = `📊 QUICK INFO\n\n` +
+            `Level ${player.level} • HP: ${player.hp}/${player.maxHp} • Energy: ${player.energy}/${player.maxEnergy}\n` +
+            `Attack: ${player.attack} • Defense: ${player.defense} • Gold: ${player.gold}\n` +
+            `Floor: ${this.gameState.floor} • Enemies: ${this.gameState.enemies.length} • Items: ${this.gameState.items.length}`;
+        
+        this.gameState.addMessage(infoText, 'level-msg');
     }
     
     showLoreInConsole() {
@@ -1052,17 +1295,39 @@ class ModalManager {
         // Clear previous buttons
         this.buttons.innerHTML = '';
         
-        // Add new buttons
+        // Add new buttons with enhanced interaction
         if (config.buttons) {
-            config.buttons.forEach(buttonConfig => {
+            config.buttons.forEach((buttonConfig, index) => {
                 const button = document.createElement('button');
                 button.className = `modal-button ${buttonConfig.primary ? 'primary' : ''}`;
                 button.textContent = buttonConfig.text;
-                button.onclick = () => {
+                
+                // Enhanced click/tap handling
+                const handleActivation = () => {
                     if (buttonConfig.callback) {
                         buttonConfig.callback();
                     }
                 };
+                
+                button.addEventListener('click', handleActivation);
+                button.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    handleActivation();
+                });
+                
+                // Keyboard navigation support
+                button.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleActivation();
+                    }
+                });
+                
+                // Focus first button or primary button
+                if (index === 0 || buttonConfig.primary) {
+                    setTimeout(() => button.focus(), 100);
+                }
+                
                 this.buttons.appendChild(button);
             });
         }

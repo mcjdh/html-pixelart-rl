@@ -246,34 +246,77 @@ class MenuSystem {
         this.renderOptions(options);
     }
     
+    updateOptionStyles() {
+        const optionElements = this.optionsContainer.querySelectorAll('.menu-option');
+        optionElements.forEach((element, index) => {
+            const isSelected = index === this.selectedOption;
+            element.style.backgroundColor = isSelected ? '#444' : 'transparent';
+            element.style.color = isSelected ? '#fff' : '#c0c0c0';
+            element.style.border = isSelected ? '1px solid #666' : '1px solid transparent';
+        });
+    }
+    
     renderOptions(options) {
         this.optionsContainer.innerHTML = '';
         this.options = options;
         
         options.forEach((option, index) => {
             const optionElement = this.createElement('div', 'menu-option', {
-                padding: '8px 16px',
+                padding: '12px 20px',
                 cursor: 'pointer',
                 backgroundColor: index === this.selectedOption ? '#444' : 'transparent',
                 color: index === this.selectedOption ? '#fff' : '#c0c0c0',
                 border: index === this.selectedOption ? '1px solid #666' : '1px solid transparent',
                 borderRadius: '4px',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation'
             });
             
             optionElement.textContent = option.text;
+            
+            // Add click/tap support
+            optionElement.addEventListener('click', () => {
+                this.selectedOption = index;
+                this.selectOption();
+            });
+            
+            // Add hover effects (update selection without re-rendering)
+            optionElement.addEventListener('mouseenter', () => {
+                if (this.selectedOption !== index) {
+                    this.selectedOption = index;
+                    this.updateOptionStyles();
+                }
+            });
+            
+            // Add touch support for mobile
+            optionElement.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (this.selectedOption !== index) {
+                    this.selectedOption = index;
+                    this.updateOptionStyles();
+                }
+            });
+            
+            optionElement.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                this.selectOption();
+            });
+            
             this.optionsContainer.appendChild(optionElement);
         });
     }
     
     navigateUp() {
         this.selectedOption = Math.max(0, this.selectedOption - 1);
-        this.renderOptions(this.options);
+        this.updateOptionStyles();
     }
     
     navigateDown() {
         this.selectedOption = Math.min(this.options.length - 1, this.selectedOption + 1);
-        this.renderOptions(this.options);
+        this.updateOptionStyles();
     }
     
     selectOption() {
@@ -314,8 +357,11 @@ class MenuSystem {
         // Initialize game state
         this.game.initGameState();
         
-        // Show opening cutscene
-        this.showOpeningCutscene();
+        // Trigger opening cutscene through new cutscene manager
+        this.game.events.emit('campaign.started', {
+            player: this.game.gameState.player,
+            startTime: Date.now()
+        });
     }
     
     loadGame() {
@@ -332,27 +378,6 @@ class MenuSystem {
         }
     }
     
-    showOpeningCutscene() {
-        // Show opening narrative in console
-        this.game.events.emit('narrative.triggered', {
-            narrative: "You stand at the entrance to the Cursed Depths. Ancient stones whisper warnings of the horrors below. Yet duty calls, and the kingdom's fate rests upon your shoulders. Steel yourself, brave adventurer...",
-            importance: 'important'
-        });
-        
-        // Add welcome message
-        setTimeout(() => {
-            this.game.events.emit('narrative.triggered', {
-                narrative: "Welcome to The Cursed Depths! Your quest begins now...",
-                importance: 'story'
-            });
-        }, 1000);
-        
-        // Emit campaign start event
-        this.game.events.emit('campaign.started', {
-            player: this.game.gameState.player,
-            startTime: Date.now()
-        });
-    }
     
     hide() {
         this.isVisible = false;

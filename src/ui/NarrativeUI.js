@@ -229,6 +229,11 @@ class NarrativeUI {
     }
     
     showUrgentBanner(text) {
+        // Only show banner if not already showing one to prevent rapid flashing
+        if (this.narrativeBanner.style.display !== 'none') {
+            return; // Don't show overlapping banners
+        }
+        
         // Show a brief, non-blocking banner for urgent messages
         this.narrativeBanner.textContent = `🔥 ${text}`;
         this.narrativeBanner.style.display = 'block';
@@ -236,7 +241,7 @@ class NarrativeUI {
         this.narrativeBanner.style.color = '#ff6666';
         this.narrativeBanner.style.borderBottomColor = '#ff6666';
         
-        // Auto-hide after 4 seconds
+        // Auto-hide after 2.5 seconds (shorter to reduce overlap)
         setTimeout(() => {
             this.fadeOut(this.narrativeBanner).then(() => {
                 this.narrativeBanner.style.display = 'none';
@@ -245,7 +250,7 @@ class NarrativeUI {
                 this.narrativeBanner.style.color = '#e0e0e0';
                 this.narrativeBanner.style.borderBottomColor = '#444';
             });
-        }, 4000);
+        }, 2500);
     }
     
     addToMessageConsole(text, className = '') {

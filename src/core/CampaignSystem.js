@@ -85,24 +85,14 @@ class CampaignSystem {
         
         if (!floorData) return;
         
-        // Show floor introduction
-        const introKey = `floor${floor}_enter`;
-        const introText = this.campaignData.storyBeats[introKey];
-        
-        if (introText) {
-            this.eventBus.emit('narrative.triggered', {
-                narrative: introText,
-                importance: 'high'
-            });
-        }
-        
-        // Add floor-specific atmospheric message
-        setTimeout(() => {
-            this.eventBus.emit('narrative.triggered', {
-                narrative: `Welcome to ${floorData.name}. ${floorData.description}`,
-                importance: 'normal'
-            });
-        }, 3000);
+        // Trigger floor intro cutscene
+        this.eventBus.emit('cutscene.play', {
+            type: 'floor_intro',
+            data: {
+                floor: floor,
+                floorData: floorData
+            }
+        });
         
         // Set floor-specific enemy spawning
         if (this.gameState && this.gameState.setFloorEnemyTypes) {
@@ -372,94 +362,23 @@ class CampaignSystem {
         this.gameState.campaignProgress.completed = true;
         this.gameState.campaignProgress.endTime = Date.now();
         
-        // Show victory cutscene
-        this.showVictoryCutscene();
-    }
-    
-    showVictoryCutscene() {
+        // Trigger victory cutscene through new cutscene manager
         const completionTime = this.gameState.campaignProgress.endTime - this.gameState.campaignProgress.startTime;
-        const minutes = Math.floor(completionTime / 60000);
-        const seconds = Math.floor((completionTime % 60000) / 1000);
-        
-        const stats = this.gameState.stats;
+        const stats = {
+            level: this.gameState.player.level,
+            gold: this.gameState.player.gold,
+            enemiesKilled: this.gameState.stats.enemiesKilled,
+            loreCount: this.getLoreCount()
+        };
         const finalScore = this.calculateCampaignScore();
         
-        // Show ending narrative immediately
-        this.eventBus.emit('narrative.triggered', {
-            narrative: this.campaignData.storyBeats.campaign_complete,
-            importance: 'urgent'
+        this.eventBus.emit('campaign.victory', {
+            stats: stats,
+            score: finalScore,
+            time: completionTime
         });
-        
-        // Add victory announcement
-        setTimeout(() => {
-            this.eventBus.emit('narrative.triggered', {
-                narrative: "🏆 CAMPAIGN COMPLETE! The kingdom is saved! 🏆",
-                importance: 'urgent'
-            });
-        }, 1500);
-        
-        // Show victory screen after brief pause
-        setTimeout(() => {
-            this.showVictoryScreen(finalScore, minutes, seconds);
-        }, 3000);
     }
     
-    showVictoryScreen(score, minutes, seconds) {
-        if (window.game && window.game.modal) {
-            const content = `
-                <div style="text-align: center; color: #d4af37; font-size: 16px; margin-bottom: 20px;">
-                    🏆 CAMPAIGN COMPLETE! 🏆
-                </div>
-                
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <strong>The Cursed Depths have been cleansed!</strong><br>
-                    Your heroic deeds will be remembered for generations.
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; text-align: left;">
-                    <div>
-                        <strong style="color: #8fbc8f;">Final Statistics:</strong><br>
-                        Final Level: ${this.gameState.player.level}<br>
-                        Gold Earned: ${this.gameState.player.gold}<br>
-                        Enemies Defeated: ${this.gameState.stats.enemiesKilled}<br>
-                        Floors Conquered: ${this.campaignData.totalFloors}
-                    </div>
-                    <div>
-                        <strong style="color: #daa520;">Campaign Results:</strong><br>
-                        Time: ${minutes}m ${seconds}s<br>
-                        Final Score: ${score}<br>
-                        Lore Collected: ${this.getLoreCount()}<br>
-                        Completion: 100%
-                    </div>
-                </div>
-                
-                <div style="text-align: center; margin-top: 20px; font-style: italic; color: #a0a0a0;">
-                    Thank you for playing The Cursed Depths!<br>
-                    Your legend lives on in the kingdom of Aethermoor.
-                </div>
-            `;
-            
-            window.game.modal.show({
-                title: 'VICTORY!',
-                content: content,
-                actions: [
-                    { 
-                        text: 'Play Again', 
-                        action: () => {
-                            location.reload();
-                        }
-                    },
-                    { 
-                        text: 'View Lore Collection', 
-                        action: () => {
-                            window.game.modal.hide();
-                            window.game.narrativeUI.showLoreModal();
-                        }
-                    }
-                ]
-            });
-        }
-    }
     
     calculateCampaignScore() {
         const stats = this.gameState.stats;
