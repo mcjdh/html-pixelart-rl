@@ -9,6 +9,12 @@ class Game {
         this.upgrades = new UpgradeSystem(this.gameState);
         this.modal = new ModalManager();
         
+        // Initialize event system and narrative UI
+        this.events = GameEvents; // Use global event bus
+        this.narrativeUI = new NarrativeUI(this.events);
+        this.campaignSystem = new CampaignSystem(this.events, this.gameState);
+        this.menuSystem = new MenuSystem(this);
+        
         this.autoExploreTarget = null;
         this.animationFrame = null;
         this.lastEnergyRegen = Date.now();
@@ -26,20 +32,66 @@ class Game {
             lastFrameTime: performance.now(),
             frameCount: 0
         };
+        
+        this.setupGameEventListeners();
     }
     
     init() {
-        this.gameState.init();
-        this.setupEventListeners();
+        // Show menu system first - game initialization happens when campaign starts
         this.startGameLoop();
         this.startEnergyRegeneration();
+        
+        // Don't initialize game state immediately - let menu system handle it
+        // Menu will call initGameState() when campaign starts
+    }
+    
+    initGameState() {
+        // Called by menu system when starting campaign
+        this.gameState.init();
+        this.setupEventListeners();
         this.updateUI();
         
-        // Try to load saved game
-        if (!this.gameState.loadGame()) {
-            this.gameState.addMessage('Welcome to Pixel Roguelike!', 'level-msg');
-            this.gameState.addMessage('Use arrow keys or WASD to move.', '');
-        }
+        this.gameState.addMessage('Welcome to The Cursed Depths!', 'level-msg');
+        this.gameState.addMessage('Use arrow keys or WASD to move.', '');
+        
+        // Emit game start event
+        this.events.emit('game.started', {
+            player: this.gameState.player,
+            floor: this.gameState.floor
+        });
+        
+        // Emit floor entered event
+        this.events.emit('floor.entered', {
+            floor: this.gameState.floor,
+            player: this.gameState.player
+        });
+    }
+    
+    setupGameEventListeners() {
+        // Listen for important game events to trigger narratives
+        this.events.on('player.died', () => {
+            this.narrativeUI.showDeathNarrative();
+        });
+        
+        this.events.on('player.levelup', (eventData) => {
+            this.events.emit('narrative.triggered', {
+                narrative: `Experience transforms you! You feel the power of level ${eventData.data.newLevel} coursing through your being!`,
+                importance: 'high'
+            });
+        });
+        
+        this.events.on('floor.completed', (eventData) => {
+            this.narrativeUI.showFloorCompletionNarrative(eventData.data);
+        });
+        
+        // Add keyboard shortcut for lore viewing
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'l' || e.key === 'L') {
+                if (!this.modal.isShowing()) {
+                    this.showLoreInConsole();
+                }
+            }
+        });
     }
     
     setupEventListeners() {
@@ -54,6 +106,11 @@ class Game {
     }
     
     handleInput(e) {
+        // Check if menu is active first
+        if (this.menuSystem && this.menuSystem.isMenuVisible()) {
+            return; // Let menu handle input
+        }
+        
         // Check if modal is open and handle modal input
         if (this.modal.isShowing()) {
             if (e.key === 'Escape') {
@@ -63,7 +120,7 @@ class Game {
         }
         
         if (!this.inputEnabled || this.gameOver) return;
-        if (this.gameState.player.energy <= 0) return;
+        if (!this.gameState.player || this.gameState.player.energy <= 0) return;
         
         // Throttle input to prevent spam
         const now = Date.now();
@@ -193,11 +250,34 @@ class Game {
             
             player.moveTo(newX, newY);
             
+            // Emit player moved event
+            this.events.emit('player.moved', {
+                player: player,
+                from: { x: player.x - dx, y: player.y - dy },
+                to: { x: newX, y: newY },
+                direction: { dx, dy }
+            });
+            
             // Check for item pickup
             const item = this.gameState.getItemAt(newX, newY);
             if (item) {
                 const result = item.apply(player);
                 this.gameState.addMessage(result.message, result.type);
+                
+                // Emit item collected event
+                this.events.emit('item.collected', {
+                    item: item,
+                    player: player,
+                    result: result
+                });
+                
+                // Check for rare items
+                if (item.rarity && (item.rarity === 'rare' || item.rarity === 'legendary')) {
+                    this.events.emit('item.rare_discovered', {
+                        item: item,
+                        player: player
+                    });
+                }
                 
                 if (item.type === 'gold') {
                     this.gameState.stats.goldCollected += item.value;
@@ -211,10 +291,26 @@ class Game {
                 this.handleStairs();
             }
             
+            // Check player health for warnings
+            const healthPercent = player.hp / player.maxHp;
+            if (healthPercent <= 0.25 && healthPercent > 0) {
+                this.events.emit('player.low_health', {
+                    player: player,
+                    healthPercent: healthPercent
+                });
+            }
+            
             // Process turn
             this.gameState.processTurn();
             this.processStatusEffects();
             this.processEnemyTurns();
+            
+            // Emit turn processed (for atmospheric events)
+            this.events.emit('turn.processed', {
+                player: player,
+                floor: this.gameState.floor,
+                turn: this.gameState.turn || 0
+            });
         }
     }
     
@@ -225,9 +321,36 @@ class Game {
         
         const result = this.combat.playerAttack(enemy);
         
-        if (result.killed && this.gameState.settings.particlesEnabled) {
-            this.particles.addExplosion(enemy.x, enemy.y, '#a44');
+        // Emit combat events
+        this.events.emit('combat.attack', {
+            attacker: this.gameState.player,
+            target: enemy,
+            damage: result.damage,
+            critical: result.critical,
+            killed: result.killed
+        });
+        
+        if (result.killed) {
+            // Emit enemy killed event
+            this.events.emit('enemy.killed', {
+                enemy: enemy,
+                killer: this.gameState.player,
+                floor: this.gameState.floor,
+                combat: result
+            });
+            
+            if (this.gameState.settings.particlesEnabled) {
+                this.particles.addExplosion(enemy.x, enemy.y, '#a44');
+            }
         }
+        
+        // Show floating combat text
+        this.narrativeUI.showCombatNarrative(
+            this.gameState.player, 
+            enemy, 
+            result.damage, 
+            result.critical
+        );
         
         if (this.gameState.player.hp <= 0) {
             this.handleGameOver();
@@ -235,7 +358,20 @@ class Game {
     }
     
     handleStairs() {
+        const previousFloor = this.gameState.floor;
         this.gameState.nextFloor();
+        
+        // Emit floor completion and entrance events
+        this.events.emit('floor.completed', {
+            floor: previousFloor,
+            player: this.gameState.player,
+            stats: this.gameState.stats
+        });
+        
+        this.events.emit('floor.entered', {
+            floor: this.gameState.floor,
+            player: this.gameState.player
+        });
         
         if (this.gameState.settings.particlesEnabled) {
             this.particles.addExplosion(
@@ -249,6 +385,14 @@ class Game {
     handleGameOver() {
         this.gameOver = true;
         this.inputEnabled = false;
+        
+        // Emit player death event
+        this.events.emit('player.died', {
+            player: this.gameState.player,
+            floor: this.gameState.floor,
+            stats: this.gameState.stats,
+            finalScore: this.calculateFinalScore()
+        });
         
         setTimeout(() => {
             this.modal.show({
@@ -559,7 +703,7 @@ class Game {
     startEnergyRegeneration() {
         setInterval(() => {
             const player = this.gameState.player;
-            if (player.energy < player.maxEnergy) {
+            if (player && player.energy < player.maxEnergy) {
                 player.restoreEnergy(CONFIG.GAME.ENERGY_REGEN_AMOUNT);
                 this.updateUI();
             }
@@ -568,6 +712,12 @@ class Game {
     
     render() {
         this.renderer.clear();
+        
+        // Only render if game state is initialized
+        if (!this.gameState.map || !this.gameState.fogOfWar || !this.gameState.explored) {
+            return;
+        }
+        
         this.renderer.renderMap(this.gameState.map, this.gameState.fogOfWar, this.gameState.explored);
         this.renderer.renderStairs(
             this.gameState.stairsX, 
@@ -576,7 +726,10 @@ class Game {
         );
         this.renderer.renderItems(this.gameState.items, this.gameState.fogOfWar);
         this.renderer.renderEnemies(this.gameState.enemies, this.gameState.fogOfWar);
-        this.renderer.renderPlayer(this.gameState.player);
+        
+        if (this.gameState.player) {
+            this.renderer.renderPlayer(this.gameState.player);
+        }
         
         // Update particles
         if (this.gameState.settings.particlesEnabled) {
@@ -584,7 +737,7 @@ class Game {
         }
         
         // Debug rendering
-        if (this.debug) {
+        if (this.debug && this.gameState.enemies) {
             this.renderDebugInfo();
         }
     }
@@ -637,11 +790,13 @@ class Game {
         ctx.fillStyle = '#fff';
         ctx.font = '10px monospace';
         ctx.fillText(`FPS: ${this.debugInfo.fps}`, 5, 15);
-        ctx.fillText(`Turn: ${this.gameState.turn}`, 5, 25);
-        ctx.fillText(`Enemies: ${this.gameState.enemies.length}`, 5, 35);
-        ctx.fillText(`Items: ${this.gameState.items.length}`, 5, 45);
-        ctx.fillText(`Pos: ${this.gameState.player.x},${this.gameState.player.y}`, 5, 55);
-        ctx.fillText(`Facing: ${this.gameState.player.facing}`, 5, 65);
+        ctx.fillText(`Turn: ${this.gameState.turn || 0}`, 5, 25);
+        ctx.fillText(`Enemies: ${this.gameState.enemies?.length || 0}`, 5, 35);
+        ctx.fillText(`Items: ${this.gameState.items?.length || 0}`, 5, 45);
+        if (this.gameState.player) {
+            ctx.fillText(`Pos: ${this.gameState.player.x},${this.gameState.player.y}`, 5, 55);
+            ctx.fillText(`Facing: ${this.gameState.player.facing}`, 5, 65);
+        }
         
         // Show coordinates on hover (would need mouse tracking)
         // Show grid lines
@@ -665,6 +820,11 @@ class Game {
     
     updateUI() {
         const player = this.gameState.player;
+        
+        // Don't update UI if player doesn't exist yet
+        if (!player) {
+            return;
+        }
         
         // Side panel stats
         document.getElementById('player-level').textContent = player.level;
@@ -693,10 +853,19 @@ class Game {
     }
     
     updateMessageLog() {
+        // Update the new message console
         const log = document.getElementById('message-log');
-        log.innerHTML = this.gameState.messages.map(m => 
-            `<div class="message ${m.className}">${m.text}</div>`
-        ).join('');
+        if (log) {
+            log.innerHTML = this.gameState.messages.map(m => 
+                `<div class="message ${m.className}">${m.text}</div>`
+            ).join('');
+            
+            // Auto-scroll to bottom
+            const messageConsole = document.getElementById('message-console');
+            if (messageConsole) {
+                messageConsole.scrollTop = messageConsole.scrollHeight;
+            }
+        }
     }
     
     startGameLoop() {
@@ -761,7 +930,7 @@ class Game {
     }
     
     showHelpModal() {
-        let helpText = `MOVEMENT:\n↑↓←→ or WASD - Move character\n\nCOMBAT:\nMove into enemies to attack\nEnemies attack when adjacent\n\nGAME:\nZ - Toggle Auto-Explore\nESC - Stop Auto-Explore\nH or ? - Show this help\n\nGOAL:\nFind stairs to descend deeper\nDefeat enemies for XP and gold\nUpgrade your character\nSurvive as long as possible!`;
+        let helpText = `MOVEMENT:\n↑↓←→ or WASD - Move character\n\nCOMBAT:\nMove into enemies to attack\nEnemies attack when adjacent\nPositional bonuses apply!\n\nGAME:\nZ - Toggle Auto-Explore\nESC - Stop Auto-Explore\nL - View Collected Lore\nH or ? - Show this help\n\nCAMPAIGN:\nConquer 3 cursed floors\nEach floor has unique lore\nDefeat the final evil\nSave the kingdom!`;
         
         if (CONFIG.FEATURES.DEBUG_MODE) {
             helpText += `\n\nDEBUG COMMANDS:\nD - Toggle debug display\nG - Give 100 gold\nL - Level up\nR - Reveal entire map`;
@@ -784,6 +953,80 @@ class Game {
                 }
             ]
         });
+    }
+    
+    showLoreInConsole() {
+        // Get all collected lore from the event bus
+        const allLore = this.events.getAllLore();
+        
+        if (allLore.length === 0) {
+            this.events.emit('narrative.triggered', {
+                narrative: "📜 No lore has been discovered yet. Explore to uncover the secrets of the depths!",
+                importance: 'normal'
+            });
+            return;
+        }
+        
+        // Show lore summary in console
+        this.events.emit('narrative.triggered', {
+            narrative: `📜 LORE COLLECTION (${allLore.length} entries discovered)`,
+            importance: 'important'
+        });
+        
+        // Group lore by category
+        const categories = {};
+        allLore.forEach(entry => {
+            if (!categories[entry.category]) {
+                categories[entry.category] = [];
+            }
+            categories[entry.category].push(entry);
+        });
+        
+        // Display each category
+        Object.entries(categories).forEach(([category, entries]) => {
+            this.events.emit('narrative.triggered', {
+                narrative: `📚 ${category.toUpperCase()} (${entries.length})`,
+                importance: 'story'
+            });
+            
+            // Show first few entries from each category
+            entries.slice(0, 3).forEach(entry => {
+                const raritySymbol = {
+                    common: '○',
+                    uncommon: '◐', 
+                    rare: '●',
+                    legendary: '★'
+                }[entry.rarity] || '○';
+                
+                this.events.emit('narrative.triggered', {
+                    narrative: `  ${raritySymbol} ${entry.content}`,
+                    importance: 'atmospheric'
+                });
+            });
+            
+            if (entries.length > 3) {
+                this.events.emit('narrative.triggered', {
+                    narrative: `  ... and ${entries.length - 3} more entries`,
+                    importance: 'atmospheric'
+                });
+            }
+        });
+        
+        this.events.emit('narrative.triggered', {
+            narrative: "📜 Press L again to view your lore collection",
+            importance: 'normal'
+        });
+    }
+    
+    calculateFinalScore() {
+        const player = this.gameState.player;
+        const stats = this.gameState.stats;
+        
+        return (player.level * 100) + 
+               (this.gameState.floor * 50) + 
+               (stats.enemiesKilled * 10) + 
+               (player.gold * 1) + 
+               (stats.goldCollected * 0.5);
     }
 }
 

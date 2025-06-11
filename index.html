@@ -22,63 +22,100 @@
             margin: 0 auto;
             background: #000;
             border: 2px solid #808080;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 480px 160px;
+            grid-template-rows: 320px 160px;
             position: relative;
-        }
-        
-        #main-area {
-            display: flex;
-            height: 400px;
+            box-sizing: border-box;
         }
         
         #game-canvas {
+            grid-column: 1;
+            grid-row: 1;
             width: 480px;
             height: 320px;
-            border: 1px solid #404040;
+            border-right: 1px solid #404040;
+            border-bottom: 1px solid #404040;
             image-rendering: pixelated;
             image-rendering: crisp-edges;
             background: #000;
+            box-sizing: border-box;
         }
         
         #side-panel {
-            width: 158px;
+            grid-column: 2;
+            grid-row: 1;
+            width: 160px;
             height: 320px;
             background: #1a1a1a;
-            border-left: 1px solid #404040;
-            padding: 0;
+            border-bottom: 1px solid #404040;
+            padding: 4px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        
+        #console-area {
+            grid-column: 1 / 3;
+            grid-row: 2;
+            width: 640px;
+            height: 160px;
+            background: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+        
+        #message-console {
+            flex: 1;
+            background: #0f0f0f;
+            border: 2px inset #404040;
+            margin: 4px;
+            padding: 8px;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.3;
+            box-sizing: border-box;
         }
         
         #status-bar {
-            height: 78px;
+            height: 40px;
             background: #1a1a1a;
             border-top: 1px solid #404040;
             display: flex;
-            flex-direction: column;
-            padding: 2px;
+            align-items: center;
+            padding: 0 8px;
+            font-size: 10px;
+            box-sizing: border-box;
         }
         
         /* Status Bar Styles */
         .status-line {
             display: flex;
             justify-content: space-between;
-            padding: 1px 4px;
-            font-size: 10px;
-            border-bottom: 1px solid #333;
+            width: 100%;
         }
         
         .status-group {
             display: flex;
-            gap: 12px;
+            gap: 16px;
         }
         
         .stat-item {
             color: #c0c0c0;
+            white-space: nowrap;
         }
         
         .stat-value {
             color: #ffffff;
             font-weight: bold;
+        }
+        
+        /* Side Panel Enhanced Styles */
+        .stat-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 1px 0;
+            font-size: 10px;
         }
         
         .hp-value { color: #ff4444; }
@@ -138,6 +175,46 @@
         .damage-msg { color: #ff6666; }
         .heal-msg { color: #66ff66; }
         .level-msg { color: #6666ff; font-weight: bold; }
+        .gold-msg { color: #ffcc66; }
+        
+        /* Enhanced narrative message styles */
+        .narrative-msg { color: #dda0dd; font-style: italic; }
+        .narrative-urgent { 
+            color: #ff6666; 
+            font-weight: bold; 
+            font-size: 13px;
+            text-shadow: 1px 1px 2px rgba(255, 102, 102, 0.3);
+        }
+        .narrative-important { 
+            color: #ffaa44; 
+            font-weight: bold; 
+            font-size: 12px;
+        }
+        .narrative-story { 
+            color: #66aaff; 
+            font-style: italic; 
+            font-size: 12px;
+        }
+        .narrative-atmospheric { 
+            color: #aaaaaa; 
+            font-style: italic; 
+            opacity: 0.9;
+        }
+        
+        /* Lore-specific styling */
+        .lore-discovery {
+            color: #ffd700;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(255, 215, 0, 0.3);
+        }
+        
+        .lore-content {
+            color: #e6e6fa;
+            font-style: italic;
+            background: rgba(75, 0, 130, 0.1);
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
         
         .controls {
             padding: 2px;
@@ -261,24 +338,42 @@
 </head>
 <body>
     <div id="game-container">
-        <div id="main-area">
-            <canvas id="game-canvas"></canvas>
-            <div id="side-panel">
-                <div class="panel-section">
-                    <div class="panel-title">Character</div>
-                    <div style="font-size: 9px;">
-                        <div>Lvl <span id="player-level" class="stat-value">1</span></div>
-                        <div>HP <span id="player-hp" class="hp-value">10/10</span></div>
-                        <div>En <span id="player-energy" class="mp-value">100/100</span></div>
-                        <div>XP <span id="player-exp" class="exp-value">0/10</span></div>
+        <canvas id="game-canvas"></canvas>
+        
+        <div id="side-panel">
+            <div class="panel-section">
+                <div class="panel-title">Character</div>
+                <div style="font-size: 9px;">
+                    <div class="stat-line">
+                        <span>Level</span>
+                        <span id="player-level" class="stat-value">1</span>
+                    </div>
+                    <div class="stat-line">
+                        <span>Health</span>
+                        <span id="player-hp" class="hp-value">10/10</span>
+                    </div>
+                    <div class="stat-line">
+                        <span>Energy</span>
+                        <span id="player-energy" class="mp-value">100/100</span>
+                    </div>
+                    <div class="stat-line">
+                        <span>Experience</span>
+                        <span id="player-exp" class="exp-value">0/10</span>
                     </div>
                 </div>
-                
-                <div class="panel-section">
-                    <div class="panel-title">Dungeon</div>
-                    <div style="font-size: 9px;">
-                        <div>Floor <span id="floor-level" class="stat-value">1</span></div>
-                        <div>Gold <span id="player-gold" class="stat-value">0</span></div>
+            </div>
+            
+            <div class="panel-section">
+                <div class="panel-title">Dungeon</div>
+                <div style="font-size: 9px;">
+                    <div class="stat-line">
+                        <span>Floor</span>
+                        <span id="floor-level" class="stat-value">1</span>
+                    </div>
+                    <div class="stat-line">
+                        <span>Gold</span>
+                        <span id="player-gold" class="stat-value">0</span>
+                    </div>
                     </div>
                 </div>
                 
@@ -296,30 +391,35 @@
                     <button class="compact-button" onclick="game.saveGame()">Save</button>
                 </div>
                 
-                <div class="panel-section" style="flex-grow: 1;">
-                    <div class="panel-title">Messages</div>
-                    <div id="message-log"></div>
+                <div class="panel-section">
+                    <div class="panel-title">Controls</div>
+                    <div style="font-size: 8px; line-height: 1.2;">
+                        <div>↑↓←→ / WASD: Move</div>
+                        <div>Z: Toggle Auto-Explore</div>
+                        <div>L: View Lore (Console)</div>
+                        <div>H: Help</div>
+                        <div>ESC: Stop Auto</div>
+                    </div>
                 </div>
             </div>
-        </div>
         
-        <div id="status-bar">
-            <div class="status-line">
-                <div class="status-group">
-                    <span class="stat-item">HP: <span id="status-hp" class="hp-value">10/10</span></span>
-                    <span class="stat-item">EN: <span id="status-energy" class="mp-value">100/100</span></span>
-                    <span class="stat-item">XP: <span id="status-exp" class="exp-value">0/10</span></span>
-                </div>
-                <div class="status-group">
-                    <span class="stat-item">Floor: <span id="status-floor" class="stat-value">1</span></span>
-                    <span class="stat-item">Gold: <span id="status-gold" class="stat-value">0</span></span>
-                </div>
+        <div id="console-area">
+            <div id="message-console">
+                <div id="message-log"></div>
             </div>
-            <div class="controls">
-                <span class="key-hint">↑↓←→/WASD:Move</span>
-                <span class="key-hint">Z:Auto</span>
-                <span class="key-hint">H:Help</span>
-                <span class="key-hint">ESC:Stop</span>
+            
+            <div id="status-bar">
+                <div class="status-line">
+                    <div class="status-group">
+                        <span class="stat-item">HP: <span id="status-hp" class="hp-value">10/10</span></span>
+                        <span class="stat-item">EN: <span id="status-energy" class="mp-value">100/100</span></span>
+                        <span class="stat-item">XP: <span id="status-exp" class="exp-value">0/10</span></span>
+                    </div>
+                    <div class="status-group">
+                        <span class="stat-item">Floor: <span id="status-floor" class="stat-value">1</span></span>
+                        <span class="stat-item">Gold: <span id="status-gold" class="stat-value">0</span></span>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -349,6 +449,10 @@
     <script src="./src/gameState.js"></script>
     <script src="./src/renderer.js"></script>
     <script src="./src/combat.js"></script>
+    <script src="./src/core/EventBus.js"></script>
+    <script src="./src/ui/NarrativeUI.js"></script>
+    <script src="./src/core/CampaignSystem.js"></script>
+    <script src="./src/ui/MenuSystem.js"></script>
     <script src="./src/game.js"></script>
     
     <script>

@@ -25,7 +25,13 @@ const CONFIG = {
         CRIT: '#ff4',
         HEAL: '#4f4',
         DAMAGE: '#f44',
-        BLOCK: '#44f'
+        BLOCK: '#44f',
+        
+        // Narrative UI colors
+        NARRATIVE_PRIMARY: '#c0c0c0',
+        NARRATIVE_URGENT: '#ff6666',
+        NARRATIVE_DISCOVERY: '#d4af37',
+        NARRATIVE_LORE: '#dda0dd'
     },
     
     GAME: {

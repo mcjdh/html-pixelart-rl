@@ -292,6 +292,14 @@ class GameState {
     nextFloor() {
         this.floor++;
         this.stats.floorsCompleted++;
+        
+        // Check for campaign completion before generating new floor
+        if (this.campaignMode && this.floor > 3) {
+            // Campaign complete - don't generate new floor
+            this.addMessage('The depths have been conquered!', 'level-msg');
+            return;
+        }
+        
         this.addMessage(`Descending to floor ${this.floor}...`, 'level-msg');
         
         this.generateFloor();
@@ -306,6 +314,14 @@ class GameState {
         this.messages.unshift({ text, className, turn: this.turn });
         if (this.messages.length > CONFIG.GAME.MAX_MESSAGES) {
             this.messages.pop();
+        }
+        
+        // Emit message event for narrative UI
+        if (window.GameEvents) {
+            window.GameEvents.emit('message.added', {
+                text: text,
+                className: className
+            });
         }
     }
     
