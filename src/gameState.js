@@ -1,5 +1,10 @@
+/**
+ * Manages the core game state including player, enemies, map, and progression
+ * @class GameState
+ */
 class GameState {
-    constructor() {
+    constructor(renderer = null) {
+        this.renderer = renderer; // For dirty region tracking
         this.player = null;
         this.floor = 1;
         this.areaManager = new AreaManager();
@@ -348,6 +353,10 @@ class GameState {
         if (this.lastVisibleTiles) {
             for (const {x, y} of this.lastVisibleTiles) {
                 this.fogOfWar[y][x] = true;
+                // Mark previously visible tiles as dirty for fog overlay changes
+                if (this.renderer && this.renderer.markTileDirty) {
+                    this.renderer.markTileDirty(x, y);
+                }
             }
         }
         this.lastVisibleTiles = [];
@@ -366,9 +375,15 @@ class GameState {
                 
                 if (distSquared <= viewRadiusSquared) {
                     if (this.hasLineOfSight(this.player.x, this.player.y, x, y)) {
+                        const wasVisible = !this.fogOfWar[y][x];
                         this.fogOfWar[y][x] = false;    // Currently visible
                         this.explored[y][x] = true;     // Mark as explored
                         this.lastVisibleTiles.push({x, y}); // Track for next frame
+                        
+                        // Mark newly visible tiles as dirty
+                        if (!wasVisible && this.renderer && this.renderer.markTileDirty) {
+                            this.renderer.markTileDirty(x, y);
+                        }
                     }
                 }
             }
@@ -505,7 +520,7 @@ class GameState {
         }
         
         // Emit message event for narrative UI
-        if (window.GameEvents) {
+        if (typeof window !== 'undefined' && window.GameEvents) {
             window.GameEvents.emit('message.added', {
                 text: text,
                 className: className

@@ -1,3 +1,7 @@
+/**
+ * Defines a modular level/area with floors, enemies, sprites, and narrative
+ * @class LevelDefinition
+ */
 class LevelDefinition {
     constructor(config) {
         this.id = config.id;

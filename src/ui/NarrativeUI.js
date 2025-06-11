@@ -106,8 +106,8 @@ class NarrativeUI {
             position: 'absolute',
             top: '0',
             left: '0',
-            width: '100%',
-            height: '100%',
+            width: '400px',  // Match canvas width
+            height: '280px', // Match canvas height
             pointerEvents: 'none',
             zIndex: '997'
         });
@@ -466,14 +466,26 @@ class NarrativeUI {
     }
     
     showCombatNarrative(attacker, target, damage, critical = false) {
-        const x = target.x * 20 + 10; // Convert grid to pixel coordinates
-        const y = target.y * 20 + 10;
+        // Get camera position from renderer to calculate screen coordinates
+        const renderer = window.game && window.game.renderer;
+        if (!renderer) {
+            return; // No renderer available
+        }
         
-        if (critical) {
-            this.showFloatingCombatText(x, y, `CRITICAL! ${damage}`, '#ffff00', '14px');
-            this.showCustomNarrative(`A devastating critical strike!`, 'normal');
-        } else {
-            this.showFloatingCombatText(x, y, `${damage}`, '#ff6666');
+        // Convert world coordinates to screen coordinates accounting for camera
+        const screenX = (target.x - renderer.cameraX) * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+        const screenY = (target.y - renderer.cameraY) * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+        
+        // Only show floating text if target is visible on screen
+        if (screenX >= 0 && screenX <= CONFIG.VIEWPORT_WIDTH * CONFIG.CELL_SIZE &&
+            screenY >= 0 && screenY <= CONFIG.VIEWPORT_HEIGHT * CONFIG.CELL_SIZE) {
+            
+            if (critical) {
+                this.showFloatingCombatText(screenX, screenY, `CRITICAL! ${damage}`, '#ffff00', '14px');
+                this.showCustomNarrative(`A devastating critical strike!`, 'normal');
+            } else {
+                this.showFloatingCombatText(screenX, screenY, `${damage}`, '#ff6666');
+            }
         }
     }
     

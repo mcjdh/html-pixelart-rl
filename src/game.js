@@ -1,10 +1,19 @@
+/**
+ * Main game controller that manages all game systems and the game loop
+ * @class Game
+ */
 class Game {
     constructor() {
-        this.canvas = document.getElementById('game-canvas');
-        this.renderer = new Renderer(this.canvas);
-        this.particles = new ParticleSystem(this.renderer);
+        try {
+            this.canvas = document.getElementById('game-canvas');
+            if (!this.canvas) {
+                throw new Error('Game canvas element not found');
+            }
+            
+            this.renderer = new Renderer(this.canvas);
+            this.particles = new ParticleSystem(this.renderer);
         
-        this.gameState = new GameState();
+        this.gameState = new GameState(this.renderer);
         this.combat = new CombatSystem(this.gameState);
         this.upgrades = new UpgradeSystem(this.gameState);
         this.modal = new ModalManager();
@@ -43,37 +52,63 @@ class Game {
         
         this.setupGameEventListeners();
         this.setupVisibilityHandling();
+        } catch (error) {
+            console.error('Game constructor failed:', error);
+            this.showErrorMessage('Failed to initialize game. Please refresh the page.');
+            throw error;
+        }
     }
     
+    /**
+     * Initialize the game systems and start the game loop
+     * Called when the page loads
+     */
     init() {
-        // Show menu system first - game initialization happens when campaign starts
-        this.startGameLoop();
-        this.startEnergyRegeneration();
-        
-        // Don't initialize game state immediately - let menu system handle it
-        // Menu will call initGameState() when campaign starts
+        try {
+            // Show menu system first - game initialization happens when campaign starts
+            this.startGameLoop();
+            this.startEnergyRegeneration();
+            
+            // Don't initialize game state immediately - let menu system handle it
+            // Menu will call initGameState() when campaign starts
+        } catch (error) {
+            console.error('Game initialization failed:', error);
+            this.showErrorMessage('Failed to start game. Please refresh the page.');
+            throw error;
+        }
     }
     
+    /**
+     * Initialize game state when starting a campaign
+     * Called by menu system when user starts a new game
+     */
     initGameState() {
-        // Called by menu system when starting campaign
-        this.gameState.init();
-        this.setupEventListeners();
-        this.updateUI();
-        
-        this.gameState.addMessage('Welcome to Memory Cavern!', 'level-msg');
-        this.gameState.addMessage('Use arrow keys or WASD to move.', '');
-        
-        // Emit game start event
-        this.events.emit('game.started', {
-            player: this.gameState.player,
-            floor: this.gameState.floor
-        });
-        
-        // Emit floor entered event
-        this.events.emit('floor.entered', {
-            floor: this.gameState.floor,
-            player: this.gameState.player
-        });
+        try {
+            // Called by menu system when starting campaign
+            this.gameState.init();
+            this.setupEventListeners();
+            this.setupDebugCommands();
+            this.updateUI();
+            
+            this.gameState.addMessage('Welcome to Memory Cavern!', 'level-msg');
+            this.gameState.addMessage('Use arrow keys or WASD to move.', '');
+            
+            // Emit game start event
+            this.events.emit('game.started', {
+                player: this.gameState.player,
+                floor: this.gameState.floor
+            });
+            
+            // Emit floor entered event
+            this.events.emit('floor.entered', {
+                floor: this.gameState.floor,
+                player: this.gameState.player
+            });
+        } catch (error) {
+            console.error('Game state initialization failed:', error);
+            this.showErrorMessage('Failed to start campaign. Please try again or refresh the page.');
+            throw error;
+        }
     }
     
     setupVisibilityHandling() {
@@ -394,12 +429,19 @@ class Game {
             else if (dy > 0) player.facing = 'down';
             else if (dy < 0) player.facing = 'up';
             
+            const oldX = player.x;
+            const oldY = player.y;
+            
             player.moveTo(newX, newY);
+            
+            // Mark dirty regions for rendering optimization
+            this.renderer.markTileDirty(oldX, oldY); // Old position
+            this.renderer.markTileDirty(newX, newY); // New position
             
             // Emit player moved event
             this.events.emit('player.moved', {
                 player: player,
-                from: { x: player.x - dx, y: player.y - dy },
+                from: { x: oldX, y: oldY },
                 to: { x: newX, y: newY },
                 direction: { dx, dy }
             });
@@ -631,7 +673,14 @@ class Game {
         // Check if move is valid
         if (!this.gameState.isWall(newX, newY) && 
             !this.gameState.isOccupied(newX, newY)) {
+            const oldX = enemy.x;
+            const oldY = enemy.y;
+            
             enemy.moveTo(newX, newY);
+            
+            // Mark dirty regions for rendering optimization
+            this.renderer.markTileDirty(oldX, oldY); // Old position
+            this.renderer.markTileDirty(newX, newY); // New position
         }
     }
     
@@ -1028,6 +1077,11 @@ class Game {
         if (this.debug && this.gameState.enemies) {
             this.renderDebugInfo();
         }
+        
+        // Clear dirty regions after complete frame render
+        if (this.renderer && this.renderer.dirtyRegions) {
+            this.renderer.dirtyRegions.clear();
+        }
     }
     
     renderDebugInfo() {
@@ -1043,33 +1097,35 @@ class Game {
             this.debugInfo.fps = Math.round(1000 / this.debugInfo.frameTime);
         }
         
-        // Draw enemy vision ranges (only for nearby visible enemies to reduce lag)
-        ctx.globalAlpha = 0.08;
-        ctx.strokeStyle = '#f44';
-        ctx.lineWidth = 1;
-        
-        // Only show vision for up to 3 closest visible enemies to improve performance
-        const visibleEnemies = this.gameState.enemies
-            .filter(enemy => !this.gameState.fogOfWar[enemy.y][enemy.x] && 
-                           enemy.distanceTo(this.gameState.player) <= 6)
-            .sort((a, b) => a.distanceTo(this.gameState.player) - b.distanceTo(this.gameState.player))
-            .slice(0, 3);
+        // Draw enemy vision ranges (configurable)
+        if (CONFIG.DEBUG.SHOW_ENEMY_VISION) {
+            ctx.globalAlpha = 0.08;
+            ctx.strokeStyle = '#f44';
+            ctx.lineWidth = 1;
             
-        for (const enemy of visibleEnemies) {
-            const centerX = enemy.x * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
-            const centerY = enemy.y * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, enemy.viewRange * CONFIG.CELL_SIZE, 0, Math.PI * 2);
-            ctx.stroke();
+            // Only show vision for up to 3 closest visible enemies to improve performance
+            const visibleEnemies = this.gameState.enemies
+                .filter(enemy => !this.gameState.fogOfWar[enemy.y][enemy.x] && 
+                               enemy.distanceTo(this.gameState.player) <= 6)
+                .sort((a, b) => a.distanceTo(this.gameState.player) - b.distanceTo(this.gameState.player))
+                .slice(0, 3);
+                
+            for (const enemy of visibleEnemies) {
+                const centerX = (enemy.x - this.renderer.cameraX) * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+                const centerY = (enemy.y - this.renderer.cameraY) * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, enemy.viewRange * CONFIG.CELL_SIZE, 0, Math.PI * 2);
+                ctx.stroke();
+            }
         }
         
-        // Draw pathfinding target
-        if (this.autoExploreTarget && this.gameState.settings.autoExplore) {
+        // Draw pathfinding target (configurable)
+        if (CONFIG.DEBUG.SHOW_PATHFINDING && this.autoExploreTarget && this.gameState.settings.autoExplore) {
             ctx.globalAlpha = 0.5;
             ctx.fillStyle = '#0f0';
             ctx.fillRect(
-                this.autoExploreTarget.x * CONFIG.CELL_SIZE,
-                this.autoExploreTarget.y * CONFIG.CELL_SIZE,
+                (this.autoExploreTarget.x - this.renderer.cameraX) * CONFIG.CELL_SIZE,
+                (this.autoExploreTarget.y - this.renderer.cameraY) * CONFIG.CELL_SIZE,
                 CONFIG.CELL_SIZE,
                 CONFIG.CELL_SIZE
             );
@@ -1089,21 +1145,27 @@ class Game {
             ctx.fillText(`Facing: ${this.gameState.player.facing}`, 5, 65);
         }
         
-        // Show coordinates on hover (would need mouse tracking)
-        // Show grid lines
-        if (this.debug) {
+        // Show grid lines (configurable)
+        if (CONFIG.DEBUG.SHOW_GRID_LINES) {
             ctx.strokeStyle = 'rgba(255,255,255,0.1)';
             ctx.lineWidth = 1;
-            for (let x = 0; x <= CONFIG.GRID_WIDTH; x++) {
+            
+            // Only draw grid lines for visible viewport
+            const startX = this.renderer.cameraX;
+            const endX = Math.min(this.renderer.cameraX + CONFIG.VIEWPORT_WIDTH, CONFIG.GRID_WIDTH);
+            const startY = this.renderer.cameraY;
+            const endY = Math.min(this.renderer.cameraY + CONFIG.VIEWPORT_HEIGHT, CONFIG.GRID_HEIGHT);
+            
+            for (let x = startX; x <= endX; x++) {
                 ctx.beginPath();
-                ctx.moveTo(x * CONFIG.CELL_SIZE, 0);
-                ctx.lineTo(x * CONFIG.CELL_SIZE, CONFIG.GRID_HEIGHT * CONFIG.CELL_SIZE);
+                ctx.moveTo((x - this.renderer.cameraX) * CONFIG.CELL_SIZE, 0);
+                ctx.lineTo((x - this.renderer.cameraX) * CONFIG.CELL_SIZE, CONFIG.VIEWPORT_HEIGHT * CONFIG.CELL_SIZE);
                 ctx.stroke();
             }
-            for (let y = 0; y <= CONFIG.GRID_HEIGHT; y++) {
+            for (let y = startY; y <= endY; y++) {
                 ctx.beginPath();
-                ctx.moveTo(0, y * CONFIG.CELL_SIZE);
-                ctx.lineTo(CONFIG.GRID_WIDTH * CONFIG.CELL_SIZE, y * CONFIG.CELL_SIZE);
+                ctx.moveTo(0, (y - this.renderer.cameraY) * CONFIG.CELL_SIZE);
+                ctx.lineTo(CONFIG.VIEWPORT_WIDTH * CONFIG.CELL_SIZE, (y - this.renderer.cameraY) * CONFIG.CELL_SIZE);
                 ctx.stroke();
             }
         }
@@ -1556,6 +1618,133 @@ class Game {
                (stats.enemiesKilled * 10) + 
                (player.gold * 1) + 
                (stats.goldCollected * 0.5);
+    }
+    
+    showErrorMessage(message) {
+        // Fallback error handling if modal system fails
+        try {
+            if (this.modal) {
+                this.modal.show({
+                    title: 'ERROR',
+                    message: message,
+                    buttons: [
+                        {
+                            text: 'Refresh Page',
+                            primary: true,
+                            callback: () => {
+                                location.reload();
+                            }
+                        },
+                        {
+                            text: 'Continue',
+                            callback: () => {
+                                this.modal.hide();
+                            }
+                        }
+                    ]
+                });
+            } else {
+                // Fallback to browser alert if modal system unavailable
+                alert('ERROR: ' + message);
+            }
+        } catch (error) {
+            console.error('Failed to show error message:', error);
+            alert('CRITICAL ERROR: ' + message);
+        }
+    }
+    
+    setupDebugCommands() {
+        if (CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS) {
+            window.debugCommands = {
+                giveGold: (amount = 100) => {
+                    if (this.gameState.player) {
+                        this.gameState.player.gold += amount;
+                        this.updateUI();
+                        console.log(`Added ${amount} gold. Total: ${this.gameState.player.gold}`);
+                    }
+                },
+                
+                teleport: (x, y) => {
+                    if (this.gameState.player && this.gameState.inBounds(x, y) && !this.gameState.isWall(x, y)) {
+                        this.gameState.player.moveTo(x, y);
+                        this.gameState.updateFogOfWar();
+                        console.log(`Teleported to ${x}, ${y}`);
+                    } else {
+                        console.log('Invalid teleport coordinates');
+                    }
+                },
+                
+                nextFloor: () => {
+                    if (this.gameState) {
+                        this.gameState.completeFloor();
+                        console.log('Advanced to next floor');
+                    }
+                },
+                
+                godMode: () => {
+                    if (this.gameState.player) {
+                        this.gameState.player.hp = 999;
+                        this.gameState.player.maxHp = 999;
+                        this.gameState.player.energy = 999;
+                        this.gameState.player.maxEnergy = 999;
+                        this.updateUI();
+                        console.log('God mode activated');
+                    }
+                },
+                
+                levelUp: () => {
+                    if (this.gameState.player) {
+                        this.gameState.player.gainExp(this.gameState.player.expToNext);
+                        this.updateUI();
+                        console.log('Level up!');
+                    }
+                },
+                
+                revealMap: () => {
+                    if (this.gameState.explored) {
+                        for (let y = 0; y < CONFIG.GRID_HEIGHT; y++) {
+                            for (let x = 0; x < CONFIG.GRID_WIDTH; x++) {
+                                this.gameState.explored[y][x] = true;
+                                this.gameState.fogOfWar[y][x] = false;
+                            }
+                        }
+                        console.log('Map revealed');
+                    }
+                },
+                
+                toggleDebugRender: () => {
+                    this.debug = !this.debug;
+                    console.log(`Debug rendering: ${this.debug ? 'ON' : 'OFF'}`);
+                },
+                
+                spawnEnemy: (type = 'goblin') => {
+                    if (this.gameState.player) {
+                        const x = this.gameState.player.x + 1;
+                        const y = this.gameState.player.y;
+                        if (this.gameState.inBounds(x, y) && !this.gameState.isWall(x, y)) {
+                            const enemy = createEnemy(type, x, y, this.gameState.floor);
+                            this.gameState.enemies.push(enemy);
+                            console.log(`Spawned ${type} at ${x}, ${y}`);
+                        }
+                    }
+                },
+                
+                help: () => {
+                    console.log(`Debug Commands:
+giveGold(amount) - Add gold to player
+teleport(x, y) - Move player to coordinates
+nextFloor() - Complete current floor
+godMode() - Max health and energy
+levelUp() - Gain a level
+revealMap() - Reveal entire map
+toggleDebugRender() - Toggle debug overlays
+spawnEnemy(type) - Spawn enemy near player
+help() - Show this help`);
+                }
+            };
+            
+            console.log('Debug commands loaded! Type debugCommands.help() for list');
+        }
     }
 }
 

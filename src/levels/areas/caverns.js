@@ -65,7 +65,7 @@ const cavernsLevel = new LevelDefinition({
                 enter: "The Heart of Darkness throbs with malevolent energy. This is where your true test begins...",
                 complete: "The ancient evil is vanquished! Light returns to the cavern, and the kingdom is saved!"
             },
-            enemies: ["skeleton"],
+            enemies: ["skeleton", "skeletonLord"],
             enemyCount: { base: 7, perFloor: 2 },
             itemCount: { base: 4, perFloor: 0.5 },
             mapOverrides: {
@@ -118,6 +118,11 @@ const cavernsLevel = new LevelDefinition({
                 "The skeletal warrior collapses into a pile of ancient bones.",
                 "Freed from its cursed duty, the skeleton finally finds peace.",
                 "The bone guardian's eternal vigil comes to an end."
+            ],
+            skeletonLord: [
+                "The Skeleton Lord's dark crown clatters to the ground as ancient evil is finally vanquished.",
+                "With a thunderous roar, the lord of bones crumbles to dust, his reign of terror ended.",
+                "The darkness lifts as the Skeleton Lord's malevolent spirit is banished forever."
             ]
         }
     },

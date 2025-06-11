@@ -11,6 +11,7 @@ const SPRITES = {
     goblinWarrior: goblinSprites.warrior,
     goblinShaman: goblinSprites.shaman,
     skeleton: skeletonSprites.default,
+    skeletonLord: window.skeletonLordSprites ? window.skeletonLordSprites.default : skeletonSprites.default,
     wolf: wolfSprites.default,
     treant: treantSprites.default,
     
@@ -30,6 +31,7 @@ const SPRITE_CATEGORIES = {
     enemies: {
         goblin: goblinSprites,
         skeleton: skeletonSprites,
+        skeletonLord: window.skeletonLordSprites,
         wolf: wolfSprites,
         treant: treantSprites
     },
@@ -50,6 +52,7 @@ const SPRITE_CATEGORIES = {
 const ENEMY_SPRITES = {
     goblin: goblinSprites.default,
     skeleton: skeletonSprites.default,
+    skeletonLord: window.skeletonLordSprites ? window.skeletonLordSprites.default : skeletonSprites.default,
     wolf: wolfSprites.default,
     treant: treantSprites.default
 };

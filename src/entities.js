@@ -212,6 +212,15 @@ class Enemy extends Entity {
                     viewRange: 5,
                     moveSpeed: 0.8
                 };
+            case 'skeletonLord':
+                return {
+                    hp: CONFIG.BALANCE.SKELETON_LORD_HP_BASE + floorBonus * 3,
+                    attack: CONFIG.BALANCE.SKELETON_LORD_ATTACK_BASE + Math.floor(floorBonus / 2),
+                    expValue: CONFIG.BALANCE.SKELETON_LORD_EXP,
+                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.SKELETON_LORD_GOLD_RANGE) + CONFIG.BALANCE.SKELETON_LORD_GOLD_BASE + floorBonus * 5,
+                    viewRange: 8,
+                    moveSpeed: 0.9
+                };
             default:
                 return {
                     hp: 5,

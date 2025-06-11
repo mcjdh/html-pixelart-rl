@@ -84,6 +84,10 @@ const CONFIG = {
         TREANT_ATTACK_BASE: 6,
         TREANT_EXP: 12,
         
+        SKELETON_LORD_HP_BASE: 25,
+        SKELETON_LORD_ATTACK_BASE: 8,
+        SKELETON_LORD_EXP: 50,
+        
         GOLD_VALUE_BASE: 5,
         GOLD_VALUE_RANGE: 10,
         
@@ -123,6 +127,8 @@ const CONFIG = {
         WOLF_GOLD_RANGE: 6,
         TREANT_GOLD_BASE: 15,
         TREANT_GOLD_RANGE: 10,
+        SKELETON_LORD_GOLD_BASE: 100,
+        SKELETON_LORD_GOLD_RANGE: 50,
         
         // Other balance values
         ENEMY_DEFENSE_DIVISOR: 10,
@@ -146,31 +152,27 @@ const CONFIG = {
     },
     
     UI: {
-        // Typewriter and timing
-        TYPEWRITER_SPEED: 30,
-        NARRATIVE_DISPLAY_DURATION: 4000,
-        BANNER_AUTO_HIDE_DURATION: 3000,
-        URGENT_BANNER_DURATION: 2500,
-        FADE_OUT_DURATION: 500,
-        LORE_CONTENT_DELAY: 500,
-        LORE_NOTIFICATION_DURATION: 3000,
-        DEATH_EPITAPH_DELAY: 2000,
-        FLOATING_TEXT_DURATION: 1500,
+        // Semantic timing presets (simplified from 8 specific values)
+        TIMING: {
+            INSTANT: 0,
+            QUICK: 500,     // Fade transitions, lore delays
+            NORMAL: 1500,   // Floating text, standard displays  
+            SLOW: 3000,     // Banners, notifications
+            STORY: 4000     // Narrative displays, death epitaphs
+        },
         
-        // Font sizes
-        NARRATIVE_FONT_SIZE: 14,
-        BANNER_FONT_SIZE: 12,
-        LORE_NOTIFICATION_FONT_SIZE: 10,
-        URGENT_NARRATIVE_FONT_SIZE: 16,
-        NORMAL_NARRATIVE_FONT_SIZE: 14,
-        MENU_TITLE_FONT_SIZE: 24,
-        MENU_SUBTITLE_FONT_SIZE: 12,
+        // Font size presets (simplified from 7 specific values)
+        FONTS: {
+            SMALL: 10,      // Lore notifications
+            NORMAL: 12,     // Banners, UI text
+            LARGE: 14,      // Main narrative
+            URGENT: 16,     // Important messages
+            TITLE: 24       // Menu titles
+        },
         
-        // Layout dimensions
-        NARRATIVE_BANNER_HEIGHT: 40,
-        NARRATIVE_BANNER_LINE_HEIGHT: 40,
-        LORE_NOTIFICATION_TOP: 50,
-        LORE_NOTIFICATION_WIDTH: 200,
+        // Essential layout (kept only critical dimensions)
+        BANNER_HEIGHT: 40,
+        NOTIFICATION_WIDTH: 200,
         FLOATING_TEXT_DISTANCE: 30,
         MENU_MIN_WIDTH: 300,
         MENU_OPTIONS_GAP: 8,
@@ -178,26 +180,22 @@ const CONFIG = {
     },
     
     RENDERING: {
-        // Health and status indicators
-        HEALTH_BAR_Y_OFFSET: 4,
-        HEALTH_BAR_HEIGHT: 3,
-        PLAYER_HEALTH_BAR_Y_OFFSET: 6,
-        STATUS_EFFECT_SIZE: 4,
-        STATUS_EFFECT_SPACING: 5,
+        // Health and status indicators (consolidated)
+        HEALTH_BAR: { HEIGHT: 3, Y_OFFSET: 4, PLAYER_Y_OFFSET: 6 },
+        STATUS_EFFECTS: { SIZE: 4, SPACING: 5 },
         
-        // Drawing settings
-        STROKE_LINE_WIDTH: 1,
-        DAMAGE_NUMBER_FONT_SIZE: 12,
-        DAMAGE_NUMBER_STROKE_WIDTH: 2,
+        // Drawing presets (simplified)
+        STROKE_WIDTH: 1,
+        DAMAGE_TEXT: { SIZE: 12, STROKE: 2 },
         
-        // Particles
-        PARTICLE_DEFAULT_SIZE: 2,
-        PARTICLE_POOL_MAX_SIZE: 100,
-        EXPLOSION_PARTICLE_COUNT: 10,
-        EXPLOSION_SPEED_RANGE: 2,
-        EXPLOSION_PARTICLE_LIFETIME: 20,
-        EXPLOSION_PARTICLE_LIFETIME_VARIANCE: 10,
-        PARTICLE_GRAVITY: 0.2
+        // Particle system (essential values only)
+        PARTICLES: { 
+            SIZE: 2, 
+            POOL_MAX: 100, 
+            EXPLOSION_COUNT: 10,
+            LIFETIME: 20,
+            GRAVITY: 0.2 
+        }
     },
     
     MAP: {
@@ -222,17 +220,19 @@ const CONFIG = {
     },
     
     DEBUG: {
-        GOLD_AMOUNT: 100
+        // Essential debug features (only what's actually used)
+        GOLD_AMOUNT: 100,
+        ENABLE_CONSOLE_COMMANDS: true,
+        
+        // Visual debug overlays
+        SHOW_ENEMY_VISION: false,
+        SHOW_PATHFINDING: false,
+        SHOW_GRID_LINES: false
     },
     
-    // Feature flags for easy development
+    // Core game features (only implemented features)
     FEATURES: {
         DIRECTIONAL_COMBAT: true,
-        STATUS_EFFECTS: true,
-        HUNGER_SYSTEM: false,
-        ITEM_IDENTIFICATION: false,
-        ROOM_EVENTS: false,
-        WEATHER_EFFECTS: false,
-        DEBUG_MODE: true
+        STATUS_EFFECTS: true
     }
 };
