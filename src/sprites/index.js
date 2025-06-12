@@ -14,6 +14,9 @@ const SPRITES = {
     skeletonLord: window.skeletonLordSprites ? window.skeletonLordSprites.default : skeletonSprites.default,
     wolf: wolfSprites.default,
     treant: treantSprites.default,
+    sporeling: window.sporelingSprites ? window.sporelingSprites.default : goblinSprites.default,
+    fungalKnight: window.fungalKnightSprites ? window.fungalKnightSprites.default : skeletonSprites.default,
+    sporeMother: window.sporeMotherSprites ? window.sporeMotherSprites.default : skeletonSprites.default,
     
     // Item sprites
     gold: treasureSprites.gold,
@@ -33,7 +36,10 @@ const SPRITE_CATEGORIES = {
         skeleton: skeletonSprites,
         skeletonLord: window.skeletonLordSprites,
         wolf: wolfSprites,
-        treant: treantSprites
+        treant: treantSprites,
+        sporeling: window.sporelingSprites,
+        fungalKnight: window.fungalKnightSprites,
+        sporeMother: window.sporeMotherSprites
     },
     items: {
         consumables: consumableSprites,
@@ -54,7 +60,10 @@ const ENEMY_SPRITES = {
     skeleton: skeletonSprites.default,
     skeletonLord: window.skeletonLordSprites ? window.skeletonLordSprites.default : skeletonSprites.default,
     wolf: wolfSprites.default,
-    treant: treantSprites.default
+    treant: treantSprites.default,
+    sporeling: window.sporelingSprites ? window.sporelingSprites.default : goblinSprites.default,
+    fungalKnight: window.fungalKnightSprites ? window.fungalKnightSprites.default : skeletonSprites.default,
+    sporeMother: window.sporeMotherSprites ? window.sporeMotherSprites.default : skeletonSprites.default
 };
 
 const ITEM_SPRITES = {

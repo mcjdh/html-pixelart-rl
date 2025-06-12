@@ -88,6 +88,22 @@ const CONFIG = {
         SKELETON_LORD_ATTACK_BASE: 8,
         SKELETON_LORD_EXP: 50,
         
+        // Mushroom Island enemies
+        SPORELING_HP_BASE: 12,
+        SPORELING_ATTACK_BASE: 5,
+        SPORELING_DEFENSE_BASE: 2,
+        SPORELING_EXP: 10,
+        
+        FUNGAL_KNIGHT_HP_BASE: 18,
+        FUNGAL_KNIGHT_ATTACK_BASE: 7,
+        FUNGAL_KNIGHT_DEFENSE_BASE: 4,
+        FUNGAL_KNIGHT_EXP: 15,
+        
+        SPORE_MOTHER_HP_BASE: 40,
+        SPORE_MOTHER_ATTACK_BASE: 10,
+        SPORE_MOTHER_DEFENSE_BASE: 5,
+        SPORE_MOTHER_EXP: 75,
+        
         GOLD_VALUE_BASE: 5,
         GOLD_VALUE_RANGE: 10,
         
@@ -129,6 +145,14 @@ const CONFIG = {
         TREANT_GOLD_RANGE: 10,
         SKELETON_LORD_GOLD_BASE: 100,
         SKELETON_LORD_GOLD_RANGE: 50,
+        
+        // Mushroom Island gold drops
+        SPORELING_GOLD_BASE: 15,
+        SPORELING_GOLD_RANGE: 10,
+        FUNGAL_KNIGHT_GOLD_BASE: 25,
+        FUNGAL_KNIGHT_GOLD_RANGE: 15,
+        SPORE_MOTHER_GOLD_BASE: 150,
+        SPORE_MOTHER_GOLD_RANGE: 75,
         
         // Other balance values
         ENEMY_DEFENSE_DIVISOR: 10,

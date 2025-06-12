@@ -221,6 +221,36 @@ class Enemy extends Entity {
                     viewRange: 8,
                     moveSpeed: 0.9
                 };
+            case 'sporeling':
+                return {
+                    hp: CONFIG.BALANCE.SPORELING_HP_BASE + floorBonus,
+                    attack: CONFIG.BALANCE.SPORELING_ATTACK_BASE + Math.floor(floorBonus / 2),
+                    defense: CONFIG.BALANCE.SPORELING_DEFENSE_BASE,
+                    expValue: CONFIG.BALANCE.SPORELING_EXP,
+                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.SPORELING_GOLD_RANGE) + CONFIG.BALANCE.SPORELING_GOLD_BASE + floorBonus,
+                    viewRange: 6,
+                    moveSpeed: 1.0
+                };
+            case 'fungalKnight':
+                return {
+                    hp: CONFIG.BALANCE.FUNGAL_KNIGHT_HP_BASE + floorBonus * 2,
+                    attack: CONFIG.BALANCE.FUNGAL_KNIGHT_ATTACK_BASE + Math.floor(floorBonus / 2),
+                    defense: CONFIG.BALANCE.FUNGAL_KNIGHT_DEFENSE_BASE,
+                    expValue: CONFIG.BALANCE.FUNGAL_KNIGHT_EXP,
+                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.FUNGAL_KNIGHT_GOLD_RANGE) + CONFIG.BALANCE.FUNGAL_KNIGHT_GOLD_BASE + floorBonus * 2,
+                    viewRange: 6,
+                    moveSpeed: 0.9
+                };
+            case 'sporeMother':
+                return {
+                    hp: CONFIG.BALANCE.SPORE_MOTHER_HP_BASE + floorBonus * 5,
+                    attack: CONFIG.BALANCE.SPORE_MOTHER_ATTACK_BASE + Math.floor(floorBonus / 2),
+                    defense: CONFIG.BALANCE.SPORE_MOTHER_DEFENSE_BASE,
+                    expValue: CONFIG.BALANCE.SPORE_MOTHER_EXP,
+                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.SPORE_MOTHER_GOLD_RANGE) + CONFIG.BALANCE.SPORE_MOTHER_GOLD_BASE + floorBonus * 10,
+                    viewRange: 8,
+                    moveSpeed: 0.7
+                };
             default:
                 return {
                     hp: 5,

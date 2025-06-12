@@ -37,6 +37,7 @@ class Game {
         
         this.inputEnabled = true;
         this.gameOver = false;
+        this.gameVictory = false;
         this.lastInputTime = 0;
         this.inputThrottle = CONFIG.GAME.INPUT_THROTTLE;
         this.gameStartTime = Date.now();
@@ -131,6 +132,11 @@ class Game {
                 narrative: `Experience transforms you! You feel the power of level ${eventData.data.newLevel} coursing through your being!`,
                 importance: 'high'
             });
+        });
+        
+        // Listen for campaign victory
+        this.events.on('campaign.victory', (eventData) => {
+            this.handleVictory(eventData.data);
         });
         
         // Add keyboard shortcut for lore viewing
@@ -278,7 +284,7 @@ class Game {
             return;
         }
         
-        if (!this.inputEnabled || this.gameOver) return;
+        if (!this.inputEnabled || this.gameOver || this.gameVictory) return;
         if (!this.gameState.player || this.gameState.player.energy <= 0) return;
         
         // Enhanced input throttling to prevent accidental double-inputs
@@ -546,6 +552,12 @@ class Game {
     }
     
     handleStairs() {
+        // Don't allow stairs if game is won
+        if (this.gameState.gameVictory) {
+            this.gameState.addMessage('You have already conquered all areas!', 'level-msg');
+            return;
+        }
+        
         const previousFloor = this.gameState.floor;
         
         // Reset stairs message flag for new floor
@@ -607,6 +619,88 @@ class Game {
                 ]
             });
         }, 1000);
+    }
+    
+    handleVictory(victoryData) {
+        // Disable input and set game as completed
+        this.inputEnabled = false;
+        this.gameVictory = true;
+        
+        // Stop auto-explore if active
+        if (this.gameState.settings.autoExplore) {
+            this.gameState.settings.autoExplore = false;
+        }
+        
+        // Calculate final score
+        const finalScore = this.calculateFinalScore();
+        
+        // Create victory message with all stats
+        const victoryMessage = `
+🎉 CONGRATULATIONS! 🎉
+
+You have conquered all areas and brought peace to the realm!
+
+Final Statistics:
+▪ Level: ${victoryData.player.level}
+▪ Gold Collected: ${victoryData.stats.goldCollected}
+▪ Enemies Defeated: ${victoryData.stats.enemiesKilled}
+▪ Floors Completed: ${victoryData.stats.floorsCompleted}
+▪ Final Score: ${finalScore}
+
+Areas Conquered:
+${victoryData.completedAreas.map(areaId => {
+    const area = this.gameState.areaManager.areas.get(areaId);
+    return area ? `▪ ${area.name}` : `▪ ${areaId}`;
+}).join('\n')}
+
+Thank you for playing!
+        `.trim();
+        
+        // Show victory modal after a short delay
+        setTimeout(() => {
+            this.modal.show({
+                title: '🏆 VICTORY! 🏆',
+                message: victoryMessage,
+                buttons: [
+                    {
+                        text: 'New Game',
+                        primary: true,
+                        callback: () => {
+                            location.reload();
+                        }
+                    },
+                    {
+                        text: 'Continue Playing',
+                        callback: () => {
+                            // Allow continued exploration but game is already won
+                            this.inputEnabled = true;
+                            this.gameState.addMessage('Feel free to continue exploring the conquered realms!', 'level-msg');
+                        }
+                    }
+                ]
+            });
+        }, 1500);
+        
+        // Emit narrative event for victory
+        this.events.emit('narrative.triggered', {
+            narrative: 'The darkness has been vanquished! You stand victorious, having conquered all the challenges that lay before you. The realm is at peace once more.',
+            importance: 'high'
+        });
+        
+        // Trigger victory particles if enabled
+        if (this.gameState.settings.particlesEnabled) {
+            // Multiple celebration explosions
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    const colors = ['#ffd700', '#ffcc00', '#ffaa00', '#ff8800', '#ffffff'];
+                    this.particles.addExplosion(
+                        this.gameState.player.x,
+                        this.gameState.player.y,
+                        colors[i % colors.length]
+                    );
+                }, i * 200);
+            }
+        }
     }
     
     processEnemyTurns() {

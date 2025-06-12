@@ -38,6 +38,9 @@ class GameState {
             totalDamageDealt: 0,
             totalDamageTaken: 0
         };
+        
+        // Victory flag to prevent actions after winning
+        this.gameVictory = false;
     }
     
     init() {
@@ -63,9 +66,13 @@ class GameState {
             this.areaManager.registerArea(window.forestLevel);
         }
         
-        // Future areas will be registered here
-        // if (window.castleLevel) this.areaManager.registerArea(window.castleLevel);
-        // if (window.swampLevel) this.areaManager.registerArea(window.swampLevel);
+        // Register the mushroom level
+        if (window.mushroomLevel) {
+            this.areaManager.registerArea(window.mushroomLevel);
+            console.log("Mushroom level registered:", window.mushroomLevel.id);
+        } else {
+            console.warn("Mushroom level not found in window.mushroomLevel");
+        }
     }
     
     loadArea(areaId) {
@@ -88,6 +95,8 @@ class GameState {
             generator = new CavernGenerator();
         } else if (this.currentArea && this.currentArea.theme === 'forest' && window.ForestGenerator) {
             generator = new ForestGenerator();
+        } else if (this.currentArea && this.currentArea.theme === 'mushroom' && window.MushroomGenerator) {
+            generator = new MushroomGenerator();
         } else {
             generator = new MapGenerator();
         }
@@ -468,6 +477,10 @@ class GameState {
             this.addMessage(`${this.currentArea.name} completed!`, 'level-msg');
             const transitions = this.areaManager.getAvailableTransitions();
             
+            if (CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS) {
+                console.log('Available transitions after completing', this.currentArea.id, ':', transitions.map(t => `${t.id} (newly unlocked: ${t.isNewlyUnlocked}, completed: ${t.isCompleted})`));
+            }
+            
             if (transitions.length > 0) {
                 // Transition to next area
                 const nextAreaTransition = transitions[0];
@@ -478,8 +491,21 @@ class GameState {
                 this.initFogOfWar();
                 this.updateFogOfWar();
             } else {
-                // No more areas - game complete
+                // No more areas - game complete!
                 this.addMessage('All areas conquered! Victory!', 'level-msg');
+                
+                // Trigger victory event for proper handling
+                if (typeof window !== 'undefined' && window.GameEvents) {
+                    window.GameEvents.emit('campaign.victory', {
+                        player: this.player,
+                        stats: this.stats,
+                        floor: this.floor,
+                        completedAreas: Array.from(this.areaManager.completedAreas.keys())
+                    });
+                }
+                
+                // Set victory flag to prevent further actions
+                this.gameVictory = true;
                 return;
             }
         } else {

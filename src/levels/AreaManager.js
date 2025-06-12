@@ -51,6 +51,7 @@ class AreaManager {
         if (progression.unlocks) {
             progression.unlocks.forEach(unlockedAreaId => {
                 this.unlockedAreas.add(unlockedAreaId);
+                console.log(`Area unlocked: ${unlockedAreaId} (from completing ${areaId})`);
             });
         }
     }
@@ -74,16 +75,42 @@ class AreaManager {
         const transitions = [];
         const progression = this.currentArea.getProgressionOptions();
         
+        console.log(`Getting transitions for ${this.currentArea.id}:`, {
+            unlocks: progression.unlocks,
+            connections: progression.connections,
+            unlockedAreas: Array.from(this.unlockedAreas)
+        });
+        
         if (progression.connections) {
             progression.connections.forEach(targetAreaId => {
-                if (this.unlockedAreas.has(targetAreaId)) {
+                const isUnlocked = this.unlockedAreas.has(targetAreaId);
+                const areaExists = this.areas.has(targetAreaId);
+                console.log(`  Checking ${targetAreaId}: unlocked=${isUnlocked}, exists=${areaExists}`);
+                
+                if (isUnlocked && areaExists) {
                     transitions.push({
                         id: targetAreaId,
-                        area: this.areas.get(targetAreaId)
+                        area: this.areas.get(targetAreaId),
+                        isNewlyUnlocked: progression.unlocks && progression.unlocks.includes(targetAreaId),
+                        isCompleted: this.isAreaComplete(targetAreaId)
                     });
                 }
             });
         }
+        
+        // Sort transitions to prioritize newly unlocked areas and avoid completed areas for auto-progression
+        transitions.sort((a, b) => {
+            // Newly unlocked areas first
+            if (a.isNewlyUnlocked && !b.isNewlyUnlocked) return -1;
+            if (!a.isNewlyUnlocked && b.isNewlyUnlocked) return 1;
+            
+            // Incomplete areas before completed areas
+            if (!a.isCompleted && b.isCompleted) return -1;
+            if (a.isCompleted && !b.isCompleted) return 1;
+            
+            // Default order
+            return 0;
+        });
         
         return transitions;
     }

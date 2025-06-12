@@ -104,8 +104,8 @@ const forestLevel = new LevelDefinition({
     },
     
     progression: {
-        unlocks: ["castle", "swamp"],
-        connections: ["caverns"],
+        unlocks: ["mushroom"],  // Unlock the final fungal depths
+        connections: ["caverns", "mushroom"],
         victoryCondition: "complete_all_floors"
     },
     
