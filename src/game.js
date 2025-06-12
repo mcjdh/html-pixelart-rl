@@ -31,8 +31,8 @@ class Game {
         this.animationFrame = null;
         this.lastEnergyRegen = Date.now();
         
-        // Initialize auto-exploration system (completely rewritten)
-        this.autoExplorer = new AutoExplorerNew(this.gameState, this);
+        // Initialize auto-exploration system (final ultra-simple version)
+        this.autoExplorer = new AutoExplorerFinal(this.gameState, this);
         
         this.inputEnabled = true;
         this.gameOver = false;
