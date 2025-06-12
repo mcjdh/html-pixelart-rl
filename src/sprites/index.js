@@ -17,6 +17,9 @@ const SPRITES = {
     sporeling: window.sporelingSprites ? window.sporelingSprites.default : goblinSprites.default,
     fungalKnight: window.fungalKnightSprites ? window.fungalKnightSprites.default : skeletonSprites.default,
     sporeMother: window.sporeMotherSprites ? window.sporeMotherSprites.default : skeletonSprites.default,
+    stardustSprite: window.stardustSpriteSprites ? window.stardustSpriteSprites.default : goblinSprites.default,
+    cosmicGuardian: window.cosmicGuardianSprites ? window.cosmicGuardianSprites.default : skeletonSprites.default,
+    stellarArchitect: window.stellarArchitectSprites ? window.stellarArchitectSprites.default : skeletonSprites.default,
     
     // Item sprites
     gold: treasureSprites.gold,
@@ -39,7 +42,10 @@ const SPRITE_CATEGORIES = {
         treant: treantSprites,
         sporeling: window.sporelingSprites,
         fungalKnight: window.fungalKnightSprites,
-        sporeMother: window.sporeMotherSprites
+        sporeMother: window.sporeMotherSprites,
+        stardustSprite: window.stardustSpriteSprites,
+        cosmicGuardian: window.cosmicGuardianSprites,
+        stellarArchitect: window.stellarArchitectSprites
     },
     items: {
         consumables: consumableSprites,
@@ -63,7 +69,10 @@ const ENEMY_SPRITES = {
     treant: treantSprites.default,
     sporeling: window.sporelingSprites ? window.sporelingSprites.default : goblinSprites.default,
     fungalKnight: window.fungalKnightSprites ? window.fungalKnightSprites.default : skeletonSprites.default,
-    sporeMother: window.sporeMotherSprites ? window.sporeMotherSprites.default : skeletonSprites.default
+    sporeMother: window.sporeMotherSprites ? window.sporeMotherSprites.default : skeletonSprites.default,
+    stardustSprite: window.stardustSpriteSprites ? window.stardustSpriteSprites.default : goblinSprites.default,
+    cosmicGuardian: window.cosmicGuardianSprites ? window.cosmicGuardianSprites.default : skeletonSprites.default,
+    stellarArchitect: window.stellarArchitectSprites ? window.stellarArchitectSprites.default : skeletonSprites.default
 };
 
 const ITEM_SPRITES = {

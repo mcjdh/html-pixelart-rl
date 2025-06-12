@@ -73,6 +73,14 @@ class GameState {
         } else {
             console.warn("Mushroom level not found in window.mushroomLevel");
         }
+        
+        // Register the stellar level
+        if (window.stellarLevel) {
+            this.areaManager.registerArea(window.stellarLevel);
+            console.log("Stellar level registered:", window.stellarLevel.id);
+        } else {
+            console.warn("Stellar level not found in window.stellarLevel");
+        }
     }
     
     loadArea(areaId) {
@@ -97,6 +105,11 @@ class GameState {
             generator = new ForestGenerator();
         } else if (this.currentArea && this.currentArea.theme === 'mushroom' && window.MushroomGenerator) {
             generator = new MushroomGenerator();
+        } else if (this.currentArea && this.currentArea.theme === 'stellar' && window.StellarGenerator) {
+            generator = new StellarGenerator();
+        } else if (this.currentArea && this.currentArea.theme === 'stellar') {
+            // Fallback to BaseGenerator for stellar if StellarGenerator not available
+            generator = new BaseGenerator();
         } else {
             generator = new MapGenerator();
         }

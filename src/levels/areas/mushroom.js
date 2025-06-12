@@ -84,9 +84,9 @@ const mushroomLevel = new LevelDefinition({
     },
     
     progression: {
-        unlocks: [],
-        connections: [],
-        victoryCondition: "game_complete"
+        unlocks: ["stellar"],
+        connections: ["stellar"],
+        victoryCondition: "complete_all_floors"
     },
     
     narrative: {

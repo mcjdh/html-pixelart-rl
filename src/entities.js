@@ -251,6 +251,36 @@ class Enemy extends Entity {
                     viewRange: 8,
                     moveSpeed: 0.7
                 };
+            case 'stardustSprite':
+                return {
+                    hp: CONFIG.BALANCE.STARDUST_SPRITE_HP_BASE + floorBonus,
+                    attack: CONFIG.BALANCE.STARDUST_SPRITE_ATTACK_BASE + Math.floor(floorBonus / 2),
+                    defense: CONFIG.BALANCE.STARDUST_SPRITE_DEFENSE_BASE,
+                    expValue: CONFIG.BALANCE.STARDUST_SPRITE_EXP,
+                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.STARDUST_SPRITE_GOLD_RANGE) + CONFIG.BALANCE.STARDUST_SPRITE_GOLD_BASE + floorBonus,
+                    viewRange: 7,
+                    moveSpeed: 1.2
+                };
+            case 'cosmicGuardian':
+                return {
+                    hp: CONFIG.BALANCE.COSMIC_GUARDIAN_HP_BASE + floorBonus * 2,
+                    attack: CONFIG.BALANCE.COSMIC_GUARDIAN_ATTACK_BASE + Math.floor(floorBonus / 2),
+                    defense: CONFIG.BALANCE.COSMIC_GUARDIAN_DEFENSE_BASE,
+                    expValue: CONFIG.BALANCE.COSMIC_GUARDIAN_EXP,
+                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.COSMIC_GUARDIAN_GOLD_RANGE) + CONFIG.BALANCE.COSMIC_GUARDIAN_GOLD_BASE + floorBonus * 3,
+                    viewRange: 8,
+                    moveSpeed: 0.8
+                };
+            case 'stellarArchitect':
+                return {
+                    hp: CONFIG.BALANCE.STELLAR_ARCHITECT_HP_BASE + floorBonus * 8,
+                    attack: CONFIG.BALANCE.STELLAR_ARCHITECT_ATTACK_BASE + Math.floor(floorBonus / 2),
+                    defense: CONFIG.BALANCE.STELLAR_ARCHITECT_DEFENSE_BASE,
+                    expValue: CONFIG.BALANCE.STELLAR_ARCHITECT_EXP,
+                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.STELLAR_ARCHITECT_GOLD_RANGE) + CONFIG.BALANCE.STELLAR_ARCHITECT_GOLD_BASE + floorBonus * 15,
+                    viewRange: 10,
+                    moveSpeed: 0.6
+                };
             default:
                 return {
                     hp: 5,
