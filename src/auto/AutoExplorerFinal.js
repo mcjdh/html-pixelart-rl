@@ -15,6 +15,8 @@ class AutoExplorerFinal {
         this.gameInstance = gameInstance;
         this.enabled = false;
         this.stepDelay = 180; // Slightly faster
+        this.isWaitingForFloorChange = false; // Track if we're waiting for floor progression
+        this.lastFloorCompleteMessage = 0; // Timestamp of last completion message
     }
     
     toggle() {
@@ -46,6 +48,13 @@ class AutoExplorerFinal {
             return;
         }
         
+        // Additional safety check for game over conditions
+        if (this.gameState.gameOver || this.gameState.player?.hp <= 0) {
+            console.log('Auto-explorer: Game over detected, stopping');
+            this.disable();
+            return;
+        }
+        
         // Auto-pause/resume for energy (simple)
         if (this.gameState.player.energy < CONFIG.BALANCE.MOVE_ENERGY_COST) {
             setTimeout(() => this.step(), 400);
@@ -56,51 +65,93 @@ class AutoExplorerFinal {
         
         // 1. Attack adjacent enemies (including diagonals)
         if (this.attackAdjacent(player)) {
+            this.isWaitingForFloorChange = false; // Reset waiting state
             setTimeout(() => this.step(), this.stepDelay);
             return;
         }
         
         // 2. Pick up nearby items (within 2 tiles)
         if (this.pickupNearby(player)) {
+            this.isWaitingForFloorChange = false; // Reset waiting state
             setTimeout(() => this.step(), this.stepDelay);
             return;
         }
         
         // 3. Seek and attack visible enemies (exploration behavior)
         if (this.seekAndAttackEnemy(player)) {
+            this.isWaitingForFloorChange = false; // Reset waiting state
             setTimeout(() => this.step(), this.stepDelay);
             return;
         }
         
         // 4. Look for items further away (within 6 tiles)
         if (this.seekItems(player)) {
+            this.isWaitingForFloorChange = false; // Reset waiting state
             setTimeout(() => this.step(), this.stepDelay);
             return;
         }
         
-        // 5. Check if floor is "complete enough" - if so, go to stairs
-        if (this.isFloorCompleteEnough()) {
-            if (this.moveToStairs(player)) {
+        // 5. Explore unexplored areas (continue exploration)
+        if (this.exploreUnknown(player)) {
+            this.isWaitingForFloorChange = false; // Reset waiting state
+            setTimeout(() => this.step(), this.stepDelay);
+            return;
+        }
+        
+        // 6. Check if floor is TRULY complete before going to stairs
+        if (!this.isFloorTrulyComplete()) {
+            // Floor not complete but no obvious action - try a broader search
+            console.log('Auto-explorer: No immediate action but floor not complete, expanding search...');
+            if (this.expandedSearch(player)) {
+                this.isWaitingForFloorChange = false;
                 setTimeout(() => this.step(), this.stepDelay);
                 return;
             }
         }
         
-        // 6. Explore unexplored areas (only if floor not complete enough)
-        if (this.exploreUnknown(player)) {
-            setTimeout(() => this.step(), this.stepDelay);
-            return;
-        }
-        
-        // 7. Move toward stairs (fallback)
+        // 7. Move toward stairs (only when truly complete)
         if (this.moveToStairs(player)) {
+            this.isWaitingForFloorChange = false; // Reset waiting state
             setTimeout(() => this.step(), this.stepDelay);
             return;
         }
         
-        // Nothing to do - floor complete, but keep enabled for next floor
-        console.log('Auto-explorer: Floor complete, waiting for next floor');
-        this.gameState.addMessage('Auto-explore: Floor complete', 'level-msg');
+        // Absolutely nothing to do - check if floor is complete or if we should go to stairs
+        if (this.isFloorTrulyComplete()) {
+            // Floor is complete - try to go to stairs immediately
+            console.log('Auto-explorer: Floor verified complete, moving to stairs');
+            if (this.moveToStairs(player)) {
+                this.isWaitingForFloorChange = false;
+                setTimeout(() => this.step(), this.stepDelay);
+                return;
+            } else {
+                // Can't reach stairs - wait for transition
+                if (!this.isWaitingForFloorChange) {
+                    const now = Date.now();
+                    if (now - this.lastFloorCompleteMessage > 5000) {
+                        const currentFloor = this.gameState.floor;
+                        const currentArea = this.gameState.currentArea?.name || 'Unknown';
+                        console.log(`Auto-explorer: Floor ${currentFloor} (${currentArea}) complete but cannot reach stairs`);
+                        this.gameState.addMessage('Auto-explore: Floor complete, cannot reach stairs', 'level-msg');
+                        this.lastFloorCompleteMessage = now;
+                    }
+                    this.isWaitingForFloorChange = true;
+                }
+                
+                setTimeout(() => {
+                    if (this.enabled && this.isWaitingForFloorChange) {
+                        this.step();
+                    }
+                }, 2000);
+            }
+        } else {
+            // Something is wrong - we couldn't find anything to do but floor isn't complete
+            console.error('Auto-explorer: CRITICAL - No actions found but floor not complete! Possible pathfinding issue.');
+            console.log(`Enemies: ${this.gameState.enemies.length}, Items: ${this.gameState.items.length}`);
+            
+            // Try again after a short delay
+            setTimeout(() => this.step(), 1000);
+        }
     }
     
     attackAdjacent(player) {
@@ -225,27 +276,34 @@ class AutoExplorerFinal {
         return false;
     }
     
-    isFloorCompleteEnough() {
-        // Floor is "complete enough" if:
+    isFloorTrulyComplete() {
+        // Floor is complete when:
         // 1. No visible enemies remain, AND
-        // 2. No visible items remain (within reasonable range), AND
-        // 3. At least 60% of walkable area has been explored
+        // 2. No visible items remain (anywhere on map), AND
+        // 3. At least 85% of walkable area has been explored
         
-        // Check for visible enemies
+        let visibleEnemyCount = 0;
+        let visibleItemCount = 0;
+        
+        // Check for ANY visible enemies on the entire map
         for (const enemy of this.gameState.enemies) {
             if (!this.gameState.fogOfWar[enemy.y][enemy.x]) {
-                return false; // Still have visible enemies
+                visibleEnemyCount++;
+                console.log(`Auto-explorer: Found visible enemy at (${enemy.x},${enemy.y}), floor not complete`);
             }
         }
         
-        // Check for visible items (within 8 tiles)
+        // Check for ANY visible items on the entire map
         for (const item of this.gameState.items) {
             if (!this.gameState.fogOfWar[item.y][item.x]) {
-                const distance = Math.abs(item.x - this.gameState.player.x) + Math.abs(item.y - this.gameState.player.y);
-                if (distance <= 8) {
-                    return false; // Still have visible items nearby
-                }
+                visibleItemCount++;
+                console.log(`Auto-explorer: Found visible item at (${item.x},${item.y}), floor not complete`);
             }
+        }
+        
+        if (visibleEnemyCount > 0 || visibleItemCount > 0) {
+            console.log(`Auto-explorer: Floor incomplete - ${visibleEnemyCount} enemies, ${visibleItemCount} items still visible`);
+            return false;
         }
         
         // Check exploration percentage
@@ -264,9 +322,90 @@ class AutoExplorerFinal {
         }
         
         const explorationPercent = totalWalkable > 0 ? (exploredCount / totalWalkable) : 1;
-        console.log(`Floor exploration: ${Math.round(explorationPercent * 100)}%`);
+        console.log(`Auto-explorer: Floor exploration: ${Math.round(explorationPercent * 100)}% (need 85%)`);
         
-        return explorationPercent >= 0.6; // 60% exploration threshold
+        // Require 85% exploration to ensure thoroughness
+        if (explorationPercent < 0.85) {
+            console.log(`Auto-explorer: Exploration incomplete (${Math.round(explorationPercent * 100)}% < 85%)`);
+            return false;
+        }
+        
+        console.log('Auto-explorer: Floor truly complete - all enemies defeated, all items collected, exploration sufficient');
+        return true;
+    }
+    
+    expandedSearch(player) {
+        // When normal search fails, try a more exhaustive approach
+        console.log('Auto-explorer: Performing expanded search...');
+        
+        // First, try to find ANY enemy on the map, even further away
+        for (const enemy of this.gameState.enemies) {
+            if (!this.gameState.fogOfWar[enemy.y][enemy.x]) {
+                const distance = Math.abs(enemy.x - player.x) + Math.abs(enemy.y - player.y);
+                console.log(`Expanded search: Found enemy at (${enemy.x},${enemy.y}), distance: ${distance}`);
+                
+                const path = this.findPath(player.x, player.y, enemy.x, enemy.y);
+                if (path && path.length > 1) {
+                    const next = path[1];
+                    const dx = next.x - player.x;
+                    const dy = next.y - player.y;
+                    console.log('Expanded search: Moving toward distant enemy');
+                    this.executeMove(dx, dy);
+                    return true;
+                }
+            }
+        }
+        
+        // Next, try to find ANY item on the map
+        for (const item of this.gameState.items) {
+            if (!this.gameState.fogOfWar[item.y][item.x]) {
+                const distance = Math.abs(item.x - player.x) + Math.abs(item.y - player.y);
+                console.log(`Expanded search: Found item at (${item.x},${item.y}), distance: ${distance}`);
+                
+                const path = this.findPath(player.x, player.y, item.x, item.y);
+                if (path && path.length > 1) {
+                    const next = path[1];
+                    const dx = next.x - player.x;
+                    const dy = next.y - player.y;
+                    console.log('Expanded search: Moving toward distant item');
+                    this.executeMove(dx, dy);
+                    return true;
+                }
+            }
+        }
+        
+        // Finally, try exploring with a much larger search range
+        const expandedSearchRange = 20;
+        let closestUnexplored = null;
+        let minDistance = Infinity;
+        
+        for (let y = Math.max(0, player.y - expandedSearchRange); y < Math.min(this.gameState.map.length, player.y + expandedSearchRange); y++) {
+            for (let x = Math.max(0, player.x - expandedSearchRange); x < Math.min(this.gameState.map[0].length, player.x + expandedSearchRange); x++) {
+                if (!this.gameState.explored[y][x] && !this.gameState.isWall(x, y)) {
+                    const distance = Math.abs(x - player.x) + Math.abs(y - player.y);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestUnexplored = {x, y};
+                    }
+                }
+            }
+        }
+        
+        if (closestUnexplored) {
+            console.log(`Expanded search: Found unexplored area at (${closestUnexplored.x},${closestUnexplored.y})`);
+            const path = this.findPath(player.x, player.y, closestUnexplored.x, closestUnexplored.y);
+            if (path && path.length > 1) {
+                const next = path[1];
+                const dx = next.x - player.x;
+                const dy = next.y - player.y;
+                console.log('Expanded search: Moving toward distant unexplored area');
+                this.executeMove(dx, dy);
+                return true;
+            }
+        }
+        
+        console.log('Expanded search: No targets found anywhere on map');
+        return false;
     }
     
     exploreUnknown(player) {
@@ -310,9 +449,29 @@ class AutoExplorerFinal {
         const stairsX = this.gameState.stairsX;
         const stairsY = this.gameState.stairsY;
         
-        // Validate stairs
-        if (!this.gameState.inBounds(stairsX, stairsY)) {
+        // Validate stairs exist and are in bounds
+        if (stairsX === undefined || stairsY === undefined || 
+            !this.gameState.inBounds(stairsX, stairsY)) {
+            console.warn('Auto-explorer: Stairs not found or invalid position');
             return false;
+        }
+        
+        // Check if already at stairs
+        if (player.x === stairsX && player.y === stairsY) {
+            console.log('Auto-explorer: Already at stairs - triggering floor transition');
+            // Manually trigger the stairs by calling game handleStairs
+            if (this.gameInstance && this.gameInstance.handleStairs) {
+                this.gameInstance.handleStairs();
+                console.log('Auto-explorer: Floor transition triggered');
+                return true;
+            } else if (window.game && window.game.handleStairs) {
+                window.game.handleStairs();
+                console.log('Auto-explorer: Floor transition triggered via window.game');
+                return true;
+            } else {
+                console.warn('Auto-explorer: Cannot trigger stairs - handleStairs method not found');
+                return false;
+            }
         }
         
         // Simple pathfinding to stairs
@@ -324,18 +483,68 @@ class AutoExplorerFinal {
             console.log(`Moving toward stairs: (${player.x},${player.y}) → (${next.x},${next.y})`);
             this.executeMove(dx, dy);
             return true;
+        } else {
+            console.warn(`Auto-explorer: No path to stairs at (${stairsX},${stairsY}) from (${player.x},${player.y})`);
+            console.log('Auto-explorer: Attempting to get closer to stairs...');
+            
+            // Try to move in the general direction of stairs
+            const directionToStairs = {
+                x: Math.sign(stairsX - player.x),
+                y: Math.sign(stairsY - player.y)
+            };
+            
+            const directions = [
+                [directionToStairs.x, directionToStairs.y], // Diagonal toward stairs
+                [directionToStairs.x, 0], // Horizontal toward stairs
+                [0, directionToStairs.y], // Vertical toward stairs
+                [1, 0], [-1, 0], [0, 1], [0, -1] // All cardinal directions
+            ];
+            
+            for (const [dx, dy] of directions) {
+                if (dx === 0 && dy === 0) continue;
+                
+                const newX = player.x + dx;
+                const newY = player.y + dy;
+                
+                if (this.gameState.inBounds(newX, newY) && 
+                    !this.gameState.isWall(newX, newY) && 
+                    !this.gameState.getEnemyAt(newX, newY)) {
+                    console.log(`Auto-explorer: Moving ${dx},${dy} to try to reach stairs`);
+                    this.executeMove(dx, dy);
+                    return true;
+                }
+            }
+            
+            // If no movement possible, manually trigger stairs
+            console.error('Auto-explorer: Cannot reach stairs by walking - manually triggering floor transition');
+            if (this.gameInstance && this.gameInstance.handleStairs) {
+                this.gameInstance.handleStairs();
+                console.log('Auto-explorer: Forced floor transition');
+                return true;
+            } else if (window.game && window.game.handleStairs) {
+                window.game.handleStairs();
+                console.log('Auto-explorer: Forced floor transition via window.game');
+                return true;
+            }
+            
+            return false;
         }
-        
-        return false;
     }
     
-    // Ultra-simple BFS pathfinding
+    // Enhanced BFS pathfinding with better configuration
     findPath(startX, startY, targetX, targetY) {
         const queue = [{x: startX, y: startY, path: [{x: startX, y: startY}]}];
         const visited = new Set([`${startX},${startY}`]);
         
         let iterations = 0;
-        const maxIterations = 500; // Keep it simple
+        const maxIterations = CONFIG.PATHFINDING.MAX_NODES; // Use config value
+        
+        // Early distance check to avoid expensive pathfinding for very distant targets
+        const distance = Math.abs(targetX - startX) + Math.abs(targetY - startY);
+        if (distance > CONFIG.PATHFINDING.MAX_DISTANCE) {
+            console.log(`AutoExplorerFinal: Target too distant (${distance} > ${CONFIG.PATHFINDING.MAX_DISTANCE}), skipping pathfinding`);
+            return null;
+        }
         
         while (queue.length > 0 && iterations < maxIterations) {
             iterations++;
@@ -345,7 +554,7 @@ class AutoExplorerFinal {
                 return current.path;
             }
             
-            // Check 4 directions only (simpler)
+            // Check 4 directions only (simpler and more reliable)
             for (const [dx, dy] of [[0,1], [0,-1], [1,0], [-1,0]]) {
                 const x = current.x + dx;
                 const y = current.y + dy;
@@ -353,7 +562,8 @@ class AutoExplorerFinal {
                 
                 if (!visited.has(key) && 
                     this.gameState.inBounds(x, y) && 
-                    !this.gameState.isWall(x, y)) {
+                    !this.gameState.isWall(x, y) &&
+                    !this.gameState.getEnemyAt(x, y)) { // Also avoid enemies in pathfinding
                     
                     visited.add(key);
                     queue.push({
@@ -363,6 +573,10 @@ class AutoExplorerFinal {
                     });
                 }
             }
+        }
+        
+        if (iterations >= maxIterations) {
+            console.log(`AutoExplorerFinal: Pathfinding reached max iterations (${maxIterations}), no path found`);
         }
         
         return null;
@@ -387,18 +601,35 @@ class AutoExplorerFinal {
     }
     
     onFloorChange() {
-        // Nothing to reset - no state to track!
-        console.log('Auto-explorer: New floor, continuing...');
+        // Reset floor completion state
+        this.isWaitingForFloorChange = false;
+        this.lastFloorCompleteMessage = 0;
+        
+        const currentFloor = this.gameState.floor;
+        const currentArea = this.gameState.currentArea?.name || 'Unknown';
+        console.log(`Auto-explorer: Floor change detected - now on floor ${currentFloor} in ${currentArea}`);
         
         // If auto-explorer was enabled, continue on new floor
         if (this.enabled) {
-            console.log('Auto-explorer: Resuming on new floor');
-            // Small delay to let floor initialization complete
+            console.log('Auto-explorer: Continuing automation on new floor/area');
+            // Longer delay to ensure floor/area initialization is complete
             setTimeout(() => {
-                if (this.enabled) {
+                if (this.enabled && this.gameState.player && this.gameState.map && this.gameState.map.length > 0) {
+                    console.log('Auto-explorer: Floor initialization verified, resuming...');
                     this.step();
+                } else if (this.enabled) {
+                    // If not ready, try again after another delay
+                    console.log('Auto-explorer: Floor not ready, retrying in 1 second...');
+                    setTimeout(() => {
+                        if (this.enabled) {
+                            console.log('Auto-explorer: Retry - resuming on floor', this.gameState.floor);
+                            this.step();
+                        }
+                    }, 1000);
                 }
-            }, 500);
+            }, 800); // Increased from 500ms to 800ms
+        } else {
+            console.log('Auto-explorer: Not enabled, no action taken');
         }
     }
 }

@@ -693,9 +693,16 @@
     <script src="./src/cutscenes/CutsceneManager.js"></script>
     <script src="./src/core/CampaignSystem.js"></script>
     <script src="./src/ui/MenuSystem.js"></script>
-    <!-- Auto-exploration system (final ultra-simple version) -->
-    <script src="./src/auto/AutoExplorerFinal.js"></script>
+    
     <script src="./src/game.js"></script>
+    
+    <!-- Unified Auto-Completion System (load after game) -->
+    <script src="./src/auto/AutoExplorerFinal.js"></script>
+    <script src="./src/auto/AutoExplorerEnhanced.js"></script>
+    <script src="./src/auto/AutoExplorerManager.js"></script>
+    <script src="./src/auto/AutoGameRunner.js"></script>
+    <script src="./src/auto/AutoSystem.js"></script>
+    <script src="./src/auto/index.js"></script>
     
     <script>
         // Responsive scaling for game container
@@ -728,6 +735,11 @@
         // Create and start game
         window.game = new Game();
         game.init();
+        
+        // Initialize auto system after game is ready
+        if (window.initAutoSystem) {
+            setTimeout(window.initAutoSystem, 300);
+        }
         
         // Scale again after game initialization
         setTimeout(scaleGameContainer, 200);

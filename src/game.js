@@ -31,8 +31,8 @@ class Game {
         this.animationFrame = null;
         this.lastEnergyRegen = Date.now();
         
-        // Initialize auto-exploration system (final ultra-simple version)
-        this.autoExplorer = new AutoExplorerFinal(this.gameState, this);
+        // Initialize unified auto-completion system
+        this.autoSystem = null; // Will be initialized by the auto system loader
         
         this.inputEnabled = true;
         this.gameOver = false;
@@ -114,8 +114,8 @@ class Game {
     setupVisibilityHandling() {
         // Pause auto-explore when tab becomes inactive (QoL improvement)
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden && this.autoExplorer && this.autoExplorer.enabled) {
-                this.autoExplorer.disable();
+            if (document.hidden && this.autoSystem && this.autoSystem.getSystemStatus().explorerManager.enabled) {
+                this.autoSystem.pauseAutomation();
                 this.gameState.addMessage('Auto-explore paused (tab inactive)', 'level-msg');
             }
         });
@@ -316,8 +316,8 @@ class Game {
                 this.toggleAutoExplore();
                 return;
             case 'Escape':
-                if (this.autoExplorer && this.autoExplorer.enabled) {
-                    this.toggleAutoExplore();
+                if (this.autoSystem && this.autoSystem.getSystemStatus().explorerManager.enabled) {
+                    this.autoSystem.stopAllAutomation();
                 }
                 return;
             case 'h':
@@ -333,8 +333,8 @@ class Game {
             case 'p':
             case 'P':
                 // Pause/unpause auto-explore
-                if (this.autoExplorer && this.autoExplorer.enabled) {
-                    this.autoExplorer.toggle();
+                if (this.autoSystem && this.autoSystem.getSystemStatus().explorerManager.enabled) {
+                    this.autoSystem.pauseAutomation();
                 }
                 return;
             // Debug keys
@@ -556,9 +556,9 @@ class Game {
         
         const previousFloor = this.gameState.floor;
         
-        // Notify auto-explorer of floor change
-        if (this.autoExplorer) {
-            this.autoExplorer.onFloorChange();
+        // Notify auto-system of floor change
+        if (this.autoSystem) {
+            this.autoSystem.onFloorChange();
         }
         
         this.gameState.nextFloor();
@@ -624,9 +624,9 @@ class Game {
         this.inputEnabled = false;
         this.gameVictory = true;
         
-        // Stop auto-explore if active
-        if (this.autoExplorer) {
-            this.autoExplorer.disable();
+        // Stop auto-system if active
+        if (this.autoSystem) {
+            this.autoSystem.stopAllAutomation();
         }
         
         // Calculate final score
@@ -777,8 +777,21 @@ Thank you for playing!
     }
     
     toggleAutoExplore() {
-        if (this.autoExplorer) {
-            this.autoExplorer.toggle();
+        if (this.autoSystem) {
+            // Use enhanced AI with balanced mode as default
+            const currentStatus = this.autoSystem.getSystemStatus();
+            if (currentStatus.explorerManager.enabled) {
+                // Stop if already running
+                this.autoSystem.stopAllAutomation();
+                this.gameState.addMessage('Auto-exploration stopped', 'level-msg');
+            } else {
+                // Start with enhanced AI in balanced mode
+                this.autoSystem.startFloorExploration('enhanced', 'balanced');
+                this.gameState.addMessage('Auto-exploration started (Enhanced AI, Balanced mode)', 'level-msg');
+            }
+        } else {
+            console.warn('Auto system not available');
+            this.gameState.addMessage('Auto-exploration not available', 'level-msg');
         }
     }
     
@@ -871,8 +884,8 @@ Thank you for playing!
             }
         }
         
-        // Draw pathfinding target (configurable) - simplified for new auto-explorer
-        if (CONFIG.DEBUG.SHOW_PATHFINDING && this.autoExplorer && this.autoExplorer.enabled && this.autoExplorer.lastPosition) {
+        // Draw pathfinding target (configurable) - for auto-system
+        if (CONFIG.DEBUG.SHOW_PATHFINDING && this.autoSystem && this.autoSystem.getSystemStatus().explorerManager.enabled) {
             ctx.globalAlpha = 0.5;
             ctx.fillStyle = '#0f0';
             ctx.fillRect(
@@ -1579,3 +1592,6 @@ class ModalManager {
         return this.isVisible;
     }
 }
+
+// Make Game class available globally for auto system
+window.Game = Game;

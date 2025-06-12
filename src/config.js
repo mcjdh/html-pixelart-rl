@@ -37,8 +37,8 @@ const CONFIG = {
     },
     
     GAME: {
-        ENERGY_REGEN_RATE: 750, // Slightly faster energy regen for better flow
-        ENERGY_REGEN_AMOUNT: 2,
+        ENERGY_REGEN_RATE: 600, // Faster energy regen for better auto-explore flow
+        ENERGY_REGEN_AMOUNT: 3, // More energy per tick
         AUTO_EXPLORE_DELAY: 150,
         MAX_MESSAGES: 15,
         INPUT_THROTTLE: 50,
@@ -52,6 +52,43 @@ const CONFIG = {
         DAMAGE_NUMBER_DURATION: 1000,
         STATUS_EFFECT_BLINK_RATE: 500,
         SCREEN_SHAKE_DURATION: 200
+    },
+    
+    AUTO_EXPLORE: {
+        ENABLED: true,
+        DEFAULT_MODE: 'balanced', // speedrun, balanced, complete
+        SHOW_DECISION_VISUALS: false,
+        
+        // Mode configurations
+        MODES: {
+            speedrun: {
+                STEP_DELAY: 120,
+                ITEM_RADIUS: 1,
+                THREAT_CAUTION: 0.7,
+                EXPLORATION_THRESHOLD: 0.75,  // Increased for better completion
+                PRIORITIZE_STAIRS: true
+            },
+            balanced: {
+                STEP_DELAY: 180,
+                ITEM_RADIUS: 2,
+                THREAT_CAUTION: 1.0,
+                EXPLORATION_THRESHOLD: 0.85,  // Fixed to match implementation
+                PRIORITIZE_STAIRS: false
+            },
+            complete: {
+                STEP_DELAY: 220,
+                ITEM_RADIUS: 3,
+                THREAT_CAUTION: 1.3,
+                EXPLORATION_THRESHOLD: 0.95,  // Increased for thorough exploration
+                PRIORITIZE_STAIRS: false
+            }
+        },
+        
+        // Tactical settings
+        TACTICAL_POSITIONING: true,
+        THREAT_ASSESSMENT: true,
+        ITEM_VALUE_PRIORITY: true,
+        ENERGY_WAIT_DELAY: 400
     },
     
     BALANCE: {
@@ -186,7 +223,7 @@ const CONFIG = {
         SWORD_ATTACK_BONUS: 1,
         CONFUSION_CHANCE: 0.5,
         LOW_HEALTH_THRESHOLD: 0.25,
-        // Auto-exploration configs removed - simplified approach in AutoExplorerSimple
+        // Auto-exploration configs handled in AUTO_EXPLORE section above
         CORNER_WALL_COUNT: 6,
         
         // Scoring
@@ -256,7 +293,10 @@ const CONFIG = {
     },
     
     PATHFINDING: {
-        MAX_NODES: 100
+        MAX_NODES: 1000,  // Increased for better pathfinding in complex maps
+        MAX_DISTANCE: 50, // Maximum pathfinding distance
+        DIAGONAL_MOVEMENT: false, // Keep pathfinding simple
+        FALLBACK_SEARCH_RADIUS: 15 // Radius for fallback exploration
     },
     
     SPRITES: {
@@ -280,3 +320,6 @@ const CONFIG = {
         STATUS_EFFECTS: true
     }
 };
+
+// Ensure CONFIG is available globally
+window.CONFIG = CONFIG;
