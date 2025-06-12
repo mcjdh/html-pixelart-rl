@@ -8,10 +8,8 @@ const skeletonLordSprites = {
         const darkPulse = Math.sin(time + seed) * 0.3 + 0.7; // 0.4 to 1.0
         const energyFlicker = Math.sin(time * 2 + seed) * 0.5 + 0.5; // 0 to 1
         
-        // Dark aura emanating from the boss (contained within sprite bounds)
-        const auraAlpha = Math.floor(darkPulse * 60);
-        ctx.fillStyle = `rgba(120, 0, 120, ${auraAlpha})`;
-        ctx.fillRect(x + 1*unit, y + 1*unit, size - 2*unit, size - 2*unit);
+        // Dark energy wisps around the boss (no background fill)
+        // Only draw contained energy effects, no background aura
         
         // Larger, more imposing skull (boss is bigger)
         ctx.fillStyle = '#e8e8e8'; // Slightly brighter bone
@@ -25,8 +23,8 @@ const skeletonLordSprites = {
         ctx.fillRect(x + 9*unit, y + 0*unit, 2*unit, 2*unit); // Right horn
         ctx.fillRect(x + 7*unit, y + 0*unit, 2*unit, 1*unit); // Center spike (within bounds)
         
-        // Boss crown jewel
-        ctx.fillStyle = '#ff0080';
+        // Boss crown jewel (dark energy gem)
+        ctx.fillStyle = '#800040';
         ctx.fillRect(x + 7*unit, y + 0*unit, 2*unit, 1*unit);
         
         // Larger ribcage (more imposing)
@@ -81,19 +79,11 @@ const skeletonLordSprites = {
         
         // Dark energy crackling around the boss (contained within bounds)
         if (darkPulse > 0.8) {
-            ctx.fillStyle = 'rgba(160, 0, 160, 0.7)';
-            // Energy sparks at safe positions within sprite bounds
-            const spark1X = x + Math.floor((5 + Math.sin(time * 3) * 2) * unit);
-            const spark1Y = y + Math.floor((6 + Math.cos(time * 2.7) * 2) * unit);
-            if (spark1X >= x && spark1X < x + size - unit && spark1Y >= y && spark1Y < y + size - unit) {
-                ctx.fillRect(spark1X, spark1Y, 1*unit, 1*unit);
-            }
-            
-            const spark2X = x + Math.floor((9 + Math.sin(time * 2.3) * 2) * unit);
-            const spark2Y = y + Math.floor((8 + Math.cos(time * 3.1) * 2) * unit);
-            if (spark2X >= x && spark2X < x + size - unit && spark2Y >= y && spark2Y < y + size - unit) {
-                ctx.fillRect(spark2X, spark2Y, 1*unit, 1*unit);
-            }
+            ctx.fillStyle = 'rgba(80, 0, 80, 0.9)';
+            // Small energy sparks only in specific safe positions
+            ctx.fillRect(x + 4*unit, y + 6*unit, 1*unit, 1*unit);
+            ctx.fillRect(x + 11*unit, y + 8*unit, 1*unit, 1*unit);
+            ctx.fillRect(x + 6*unit, y + 12*unit, 1*unit, 1*unit);
         }
         
         // Tattered ancient cloak/cape flowing behind

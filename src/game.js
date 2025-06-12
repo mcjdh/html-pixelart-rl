@@ -28,12 +28,11 @@ class Game {
         // Expose cutscene manager for debugging
         window.cutsceneManager = this.cutsceneManager;
         
-        this.autoExploreTarget = null;
         this.animationFrame = null;
         this.lastEnergyRegen = Date.now();
         
-        // Auto-path to stairs message flag
-        this.hasShownStairsMessage = false;
+        // Initialize auto-exploration system (completely rewritten)
+        this.autoExplorer = new AutoExplorerNew(this.gameState, this);
         
         this.inputEnabled = true;
         this.gameOver = false;
@@ -115,12 +114,9 @@ class Game {
     setupVisibilityHandling() {
         // Pause auto-explore when tab becomes inactive (QoL improvement)
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden && this.gameState.settings.autoExplore) {
-                this.gameState.settings.autoExplore = false;
+            if (document.hidden && this.autoExplorer && this.autoExplorer.enabled) {
+                this.autoExplorer.disable();
                 this.gameState.addMessage('Auto-explore paused (tab inactive)', 'level-msg');
-                if (document.getElementById('auto-explore-status')) {
-                    document.getElementById('auto-explore-status').textContent = 'OFF';
-                }
             }
         });
     }
@@ -320,7 +316,7 @@ class Game {
                 this.toggleAutoExplore();
                 return;
             case 'Escape':
-                if (this.gameState.settings.autoExplore) {
+                if (this.autoExplorer && this.autoExplorer.enabled) {
                     this.toggleAutoExplore();
                 }
                 return;
@@ -337,8 +333,8 @@ class Game {
             case 'p':
             case 'P':
                 // Pause/unpause auto-explore
-                if (this.gameState.settings.autoExplore) {
-                    this.toggleAutoExplore();
+                if (this.autoExplorer && this.autoExplorer.enabled) {
+                    this.autoExplorer.toggle();
                 }
                 return;
             // Debug keys
@@ -560,8 +556,10 @@ class Game {
         
         const previousFloor = this.gameState.floor;
         
-        // Reset stairs message flag for new floor
-        this.hasShownStairsMessage = false;
+        // Notify auto-explorer of floor change
+        if (this.autoExplorer) {
+            this.autoExplorer.onFloorChange();
+        }
         
         this.gameState.nextFloor();
         
@@ -627,8 +625,8 @@ class Game {
         this.gameVictory = true;
         
         // Stop auto-explore if active
-        if (this.gameState.settings.autoExplore) {
-            this.gameState.settings.autoExplore = false;
+        if (this.autoExplorer) {
+            this.autoExplorer.disable();
         }
         
         // Calculate final score
@@ -779,105 +777,9 @@ Thank you for playing!
     }
     
     toggleAutoExplore() {
-        this.gameState.settings.autoExplore = !this.gameState.settings.autoExplore;
-        document.getElementById('auto-explore-status').textContent = 
-            this.gameState.settings.autoExplore ? 'ON' : 'OFF';
-        
-        if (this.gameState.settings.autoExplore) {
-            this.autoExploreStep();
+        if (this.autoExplorer) {
+            this.autoExplorer.toggle();
         }
-    }
-    
-    autoExploreStep() {
-        if (!this.gameState.settings.autoExplore || 
-            this.gameState.player.energy < CONFIG.BALANCE.MOVE_ENERGY_COST ||
-            this.gameOver) {
-            return;
-        }
-        
-        const player = this.gameState.player;
-        let target = this.findAutoExploreTarget(player);
-        
-        if (target) {
-            // Check if target is an enemy (for combat)
-            const targetEnemy = this.gameState.getEnemyAt(target.x, target.y);
-            
-            // Smart movement logic
-            if (targetEnemy) {
-                // Combat movement: move adjacent to enemy to attack
-                const adjacentPositions = [
-                    {x: target.x + 1, y: target.y},
-                    {x: target.x - 1, y: target.y},
-                    {x: target.x, y: target.y + 1},
-                    {x: target.x, y: target.y - 1}
-                ].filter(pos => 
-                    this.gameState.inBounds(pos.x, pos.y) && 
-                    !this.gameState.isWall(pos.x, pos.y) &&
-                    !this.gameState.isOccupied(pos.x, pos.y)
-                );
-                
-                if (adjacentPositions.length > 0) {
-                    // Choose the closest adjacent position
-                    const bestPos = adjacentPositions.reduce((closest, pos) => {
-                        const dist = Math.abs(pos.x - player.x) + Math.abs(pos.y - player.y);
-                        const closestDist = Math.abs(closest.x - player.x) + Math.abs(closest.y - player.y);
-                        return dist < closestDist ? pos : closest;
-                    });
-                    
-                    target = bestPos;
-                }
-            }
-            
-            // Anti-stuck mechanism with better detection
-            if (this.lastAutoTarget && 
-                this.lastAutoTarget.x === target.x && 
-                this.lastAutoTarget.y === target.y &&
-                this.lastPlayerPosition &&
-                this.lastPlayerPosition.x === player.x &&
-                this.lastPlayerPosition.y === player.y) {
-                
-                this.autoTargetAttempts = (this.autoTargetAttempts || 0) + 1;
-                
-                // If stuck for more than 5 attempts, find a different approach
-                if (this.autoTargetAttempts > 5) {
-                    // Try a different target or add some randomness
-                    target = this.findAlternativeTarget(player, target);
-                    this.autoTargetAttempts = 0;
-                    this.gameState.addMessage('Auto-explore: Finding alternative path...', '');
-                }
-            } else {
-                this.autoTargetAttempts = 0;
-            }
-            
-            this.lastAutoTarget = target;
-            this.lastPlayerPosition = {x: player.x, y: player.y};
-            
-            // Use A* pathfinding for smart movement
-            const path = this.findPath(player.x, player.y, target.x, target.y);
-            if (path && path.length > 1) {
-                const nextStep = path[1];
-                const dx = nextStep.x - player.x;
-                const dy = nextStep.y - player.y;
-                this.movePlayer(dx, dy);
-            } else {
-                // Fallback to direct movement with bounds checking
-                const dx = Math.sign(target.x - player.x);
-                const dy = Math.sign(target.y - player.y);
-                
-                // Try primary direction first
-                if (dx !== 0 && this.canMoveTo(player.x + dx, player.y)) {
-                    this.movePlayer(dx, 0);
-                } else if (dy !== 0 && this.canMoveTo(player.x, player.y + dy)) {
-                    this.movePlayer(0, dy);
-                } else {
-                    // Can't move toward target, try alternative
-                    this.autoTargetAttempts = 10; // Force alternative target next time
-                }
-            }
-        }
-        
-        // Continue auto-exploring with slightly longer delay for better performance
-        setTimeout(() => this.autoExploreStep(), CONFIG.GAME.AUTO_EXPLORE_DELAY);
     }
     
     // Helper method to check if movement is valid
@@ -885,245 +787,6 @@ Thank you for playing!
         return this.gameState.inBounds(x, y) && 
                !this.gameState.isWall(x, y) && 
                !this.gameState.getEnemyAt(x, y);
-    }
-    
-    findAutoExploreTarget(player) {
-        // Priority 0: Combat - Always prioritize clearing visible enemies first
-        const visibleEnemies = this.gameState.enemies.filter(enemy => 
-            !this.gameState.fogOfWar[enemy.y][enemy.x]
-        );
-        
-        if (visibleEnemies.length > 0) {
-            // If player is critically low on health, try to escape first
-            if (player.hp <= 2) {
-                const nearbyEnemies = visibleEnemies.filter(enemy => 
-                    player.distanceTo(enemy) <= 2
-                );
-                if (nearbyEnemies.length > 0) {
-                    const safeSpot = this.findSafeSpot(player, nearbyEnemies);
-                    if (safeSpot) return safeSpot;
-                }
-            }
-            
-            // Otherwise, target the closest visible enemy
-            const closestEnemy = visibleEnemies.reduce((closest, enemy) => {
-                const dist = player.distanceTo(enemy);
-                const closestDist = player.distanceTo(closest);
-                return dist < closestDist ? enemy : closest;
-            });
-            
-            return { x: closestEnemy.x, y: closestEnemy.y };
-        }
-        
-        // Priority 1: Auto-path to stairs if all enemies are cleared
-        if (CONFIG.BALANCE.AUTO_PATH_TO_STAIRS && this.gameState.enemies.length === 0) {
-            // Check if there are any visible items to collect first
-            if (!this.cachedVisibleItems || this.lastVisibleItemsCheck !== this.gameState.turn) {
-                this.cachedVisibleItems = this.gameState.items.filter(item => 
-                    !this.gameState.fogOfWar[item.y][item.x]
-                );
-                this.lastVisibleItemsCheck = this.gameState.turn;
-            }
-            
-            // If there are visible items, collect them first
-            if (this.cachedVisibleItems.length > 0) {
-                return this.cachedVisibleItems.reduce((closest, item) => {
-                    const dist = player.distanceTo(item);
-                    return dist < player.distanceTo(closest) ? item : closest;
-                });
-            }
-            
-            // No items left, head to stairs
-            if (!this.hasShownStairsMessage) {
-                this.gameState.addMessage('🎯 All enemies cleared! Auto-pathing to stairs...', 'level-msg');
-                this.hasShownStairsMessage = true;
-            }
-            return { x: this.gameState.stairsX, y: this.gameState.stairsY };
-        }
-        
-        // Priority 2: Explore to find more enemies or items
-        const unexplored = this.findClosestUnexplored(player.x, player.y);
-        if (unexplored) return unexplored;
-        
-        // Priority 3: Collect any remaining visible items while exploring
-        if (!this.cachedVisibleItems || this.lastVisibleItemsCheck !== this.gameState.turn) {
-            this.cachedVisibleItems = this.gameState.items.filter(item => 
-                !this.gameState.fogOfWar[item.y][item.x]
-            );
-            this.lastVisibleItemsCheck = this.gameState.turn;
-        }
-        
-        if (this.cachedVisibleItems.length > 0) {
-            return this.cachedVisibleItems.reduce((closest, item) => {
-                const dist = player.distanceTo(item);
-                return dist < player.distanceTo(closest) ? item : closest;
-            });
-        }
-        
-        // Priority 4: Stairs (fallback if nothing else to do)
-        return { x: this.gameState.stairsX, y: this.gameState.stairsY };
-    }
-    
-    findSafeSpot(player, enemies) {
-        // Find the average enemy position
-        let enemyX = 0, enemyY = 0;
-        for (const enemy of enemies) {
-            enemyX += enemy.x;
-            enemyY += enemy.y;
-        }
-        enemyX /= enemies.length;
-        enemyY /= enemies.length;
-        
-        // Move in opposite direction
-        const dx = Math.sign(player.x - enemyX);
-        const dy = Math.sign(player.y - enemyY);
-        
-        // Try to find a valid spot in that direction
-        for (let dist = 1; dist <= 3; dist++) {
-            const targetX = player.x + dx * dist;
-            const targetY = player.y + dy * dist;
-            
-            if (this.gameState.inBounds(targetX, targetY) && 
-                !this.gameState.isWall(targetX, targetY)) {
-                return { x: targetX, y: targetY };
-            }
-        }
-        
-        return null;
-    }
-    
-    findSafeCorner(player) {
-        // Find a corner position to recover in
-        const corners = [
-            { x: 1, y: 1 },
-            { x: CONFIG.GRID_WIDTH - 2, y: 1 },
-            { x: 1, y: CONFIG.GRID_HEIGHT - 2 },
-            { x: CONFIG.GRID_WIDTH - 2, y: CONFIG.GRID_HEIGHT - 2 }
-        ];
-        
-        return corners
-            .filter(c => !this.gameState.isWall(c.x, c.y))
-            .reduce((closest, corner) => {
-                const dist = player.distanceTo(corner);
-                return dist < player.distanceTo(closest) ? corner : closest;
-            });
-    }
-    
-    findAlternativeTarget(player) {
-        // When stuck, try to find a different unexplored area
-        const alternatives = [];
-        
-        // Look for unexplored areas in different directions
-        const directions = [
-            { dx: 5, dy: 0 }, { dx: -5, dy: 0 },
-            { dx: 0, dy: 5 }, { dx: 0, dy: -5 },
-            { dx: 3, dy: 3 }, { dx: -3, dy: -3 },
-            { dx: 3, dy: -3 }, { dx: -3, dy: 3 }
-        ];
-        
-        for (const dir of directions) {
-            const testX = player.x + dir.dx;
-            const testY = player.y + dir.dy;
-            
-            if (this.gameState.inBounds(testX, testY) && 
-                !this.gameState.isWall(testX, testY) &&
-                this.gameState.fogOfWar[testY][testX]) {
-                alternatives.push({ x: testX, y: testY });
-            }
-        }
-        
-        // Return closest alternative, or fallback to stairs
-        if (alternatives.length > 0) {
-            return alternatives.reduce((closest, alt) => {
-                const dist = player.distanceTo(alt);
-                return dist < player.distanceTo(closest) ? alt : closest;
-            });
-        }
-        
-        return { x: this.gameState.stairsX, y: this.gameState.stairsY };
-    }
-    
-    findClosestUnexplored(startX, startY) {
-        const maxRadius = Math.max(CONFIG.GRID_WIDTH, CONFIG.GRID_HEIGHT);
-        
-        for (let radius = 1; radius <= maxRadius; radius++) {
-            for (let dx = -radius; dx <= radius; dx++) {
-                for (let dy = -radius; dy <= radius; dy++) {
-                    if (Math.abs(dx) === radius || Math.abs(dy) === radius) {
-                        const x = startX + dx;
-                        const y = startY + dy;
-                        
-                        if (this.gameState.inBounds(x, y) && 
-                            !this.gameState.isWall(x, y) && 
-                            this.gameState.fogOfWar[y][x]) {
-                            return { x, y };
-                        }
-                    }
-                }
-            }
-        }
-        
-        return null;
-    }
-    
-    // Simple A* pathfinding with safety limits
-    findPath(startX, startY, targetX, targetY) {
-        const openSet = [{ x: startX, y: startY, g: 0, h: this.heuristic(startX, startY, targetX, targetY), f: 0, parent: null }];
-        const closedSet = new Set();
-        const maxNodes = 100; // Prevent infinite loops
-        let nodesExpanded = 0;
-        
-        while (openSet.length > 0 && nodesExpanded < maxNodes) {
-            nodesExpanded++;
-            // Find lowest f score
-            openSet.sort((a, b) => a.f - b.f);
-            const current = openSet.shift();
-            
-            if (current.x === targetX && current.y === targetY) {
-                // Reconstruct path
-                const path = [];
-                let node = current;
-                while (node) {
-                    path.unshift({ x: node.x, y: node.y });
-                    node = node.parent;
-                }
-                return path;
-            }
-            
-            closedSet.add(`${current.x},${current.y}`);
-            
-            // Check neighbors
-            for (const [dx, dy] of [[-1,0], [1,0], [0,-1], [0,1]]) {
-                const nx = current.x + dx;
-                const ny = current.y + dy;
-                
-                if (!this.gameState.inBounds(nx, ny) || 
-                    this.gameState.isWall(nx, ny) ||
-                    closedSet.has(`${nx},${ny}`)) {
-                    continue;
-                }
-                
-                const g = current.g + 1;
-                const h = this.heuristic(nx, ny, targetX, targetY);
-                const f = g + h;
-                
-                const existing = openSet.find(n => n.x === nx && n.y === ny);
-                if (!existing || g < existing.g) {
-                    const neighbor = { x: nx, y: ny, g, h, f, parent: current };
-                    if (existing) {
-                        Object.assign(existing, neighbor);
-                    } else {
-                        openSet.push(neighbor);
-                    }
-                }
-            }
-        }
-        
-        return null; // No path found
-    }
-    
-    heuristic(x1, y1, x2, y2) {
-        return Math.abs(x1 - x2) + Math.abs(y1 - y2);
     }
     
     startEnergyRegeneration() {
@@ -1208,13 +871,13 @@ Thank you for playing!
             }
         }
         
-        // Draw pathfinding target (configurable)
-        if (CONFIG.DEBUG.SHOW_PATHFINDING && this.autoExploreTarget && this.gameState.settings.autoExplore) {
+        // Draw pathfinding target (configurable) - simplified for new auto-explorer
+        if (CONFIG.DEBUG.SHOW_PATHFINDING && this.autoExplorer && this.autoExplorer.enabled && this.autoExplorer.lastPosition) {
             ctx.globalAlpha = 0.5;
             ctx.fillStyle = '#0f0';
             ctx.fillRect(
-                (this.autoExploreTarget.x - this.renderer.cameraX) * CONFIG.CELL_SIZE,
-                (this.autoExploreTarget.y - this.renderer.cameraY) * CONFIG.CELL_SIZE,
+                (this.gameState.stairsX - this.renderer.cameraX) * CONFIG.CELL_SIZE,
+                (this.gameState.stairsY - this.renderer.cameraY) * CONFIG.CELL_SIZE,
                 CONFIG.CELL_SIZE,
                 CONFIG.CELL_SIZE
             );

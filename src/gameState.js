@@ -26,7 +26,6 @@ class GameState {
         };
         
         this.settings = {
-            autoExplore: false,
             particlesEnabled: true,
             soundEnabled: false
         };
