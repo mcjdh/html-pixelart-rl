@@ -18,251 +18,199 @@ const playerSprites = {
     
     // Player facing down (front view)
     down: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Skin tone
-        ctx.fillStyle = '#dca';
         // Head
-        ctx.fillRect(x + 6*unit, y + 2*unit, 4*unit, 4*unit);
+        SpriteUtils.drawHead(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_HUMAN, 6, 2, 4, 4);
         
-        // Long brown hair
-        ctx.fillStyle = '#643';
-        // Hair sides
-        ctx.fillRect(x + 4*unit, y + 2*unit, 2*unit, 6*unit);
-        ctx.fillRect(x + 10*unit, y + 2*unit, 2*unit, 6*unit);
-        // Hair top
-        ctx.fillRect(x + 5*unit, y + 1*unit, 6*unit, 2*unit);
-        // Hair back flow
-        ctx.fillRect(x + 5*unit, y + 6*unit, 6*unit, 3*unit);
+        // Long brown hair (flowing style)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_BROWN, 4, 2, 2, 6); // Left side
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_BROWN, 10, 2, 2, 6); // Right side
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_BROWN, 5, 1, 6, 2); // Top
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_BROWN, 5, 6, 6, 3); // Back flow
         
         // Eyes
-        ctx.fillStyle = '#444';
-        ctx.fillRect(x + 7*unit, y + 4*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 8*unit, y + 4*unit, 1*unit, 1*unit);
+        SpriteUtils.drawEyes(ctx, x, y, unit, CONFIG.COLORS.SPRITES.EYES_HUMAN, 7, 4, 1);
         
-        // Tunic (green-brown)
-        ctx.fillStyle = '#684';
-        ctx.fillRect(x + 5*unit, y + 7*unit, 6*unit, 5*unit);
+        // Tunic
+        SpriteUtils.drawBody(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_GREEN, 5, 7, 6, 5);
         
-        // Arms
-        ctx.fillStyle = '#dca';
-        ctx.fillRect(x + 4*unit, y + 8*unit, 1*unit, 3*unit);
-        ctx.fillRect(x + 11*unit, y + 8*unit, 1*unit, 3*unit);
+        // Arms (skin + sleeves)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_HUMAN, 4, 8, 1, 3); // Left arm
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_HUMAN, 11, 8, 1, 3); // Right arm
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_GREEN, 3, 8, 2, 2); // Left sleeve
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_GREEN, 11, 8, 2, 2); // Right sleeve
         
-        // Tunic sleeves
-        ctx.fillStyle = '#684';
-        ctx.fillRect(x + 3*unit, y + 8*unit, 2*unit, 2*unit);
-        ctx.fillRect(x + 11*unit, y + 8*unit, 2*unit, 2*unit);
-        
-        // Legs/pants (brown)
-        ctx.fillStyle = '#542';
-        ctx.fillRect(x + 6*unit, y + 12*unit, 1*unit, 3*unit);
-        ctx.fillRect(x + 9*unit, y + 12*unit, 1*unit, 3*unit);
+        // Legs
+        SpriteUtils.drawLegs(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEATHER_BROWN);
         
         // Boots
-        ctx.fillStyle = '#321';
-        ctx.fillRect(x + 5*unit, y + 14*unit, 2*unit, 1*unit);
-        ctx.fillRect(x + 9*unit, y + 14*unit, 2*unit, 1*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEATHER_DARK, 5, 14, 2, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEATHER_DARK, 9, 14, 2, 1);
     },
     
     // Player facing up (back view)
     up: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Long brown hair (back view - more prominent)
-        ctx.fillStyle = '#643';
-        ctx.fillRect(x + 4*unit, y + 1*unit, 8*unit, 8*unit);
+        // Prominent hair (back view)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_BROWN, 4, 1, 8, 8);
         // Hair highlights
-        ctx.fillStyle = '#754';
-        ctx.fillRect(x + 5*unit, y + 2*unit, 1*unit, 6*unit);
-        ctx.fillRect(x + 7*unit, y + 1*unit, 2*unit, 7*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_HIGHLIGHT, 5, 2, 1, 6);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_HIGHLIGHT, 7, 1, 2, 7);
         
-        // Small bit of skin (neck)
-        ctx.fillStyle = '#dca';
-        ctx.fillRect(x + 7*unit, y + 6*unit, 2*unit, 1*unit);
+        // Neck
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_HUMAN, 7, 6, 2, 1);
         
-        // Tunic (back view)
-        ctx.fillStyle = '#684';
-        ctx.fillRect(x + 5*unit, y + 7*unit, 6*unit, 5*unit);
+        // Tunic back
+        SpriteUtils.drawBody(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_GREEN, 5, 7, 6, 5);
         
-        // Arms
-        ctx.fillStyle = '#684';
-        ctx.fillRect(x + 3*unit, y + 8*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 11*unit, y + 8*unit, 2*unit, 3*unit);
+        // Arms (covered by sleeves)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_GREEN, 3, 8, 2, 3);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_GREEN, 11, 8, 2, 3);
         
-        // Legs/pants
-        ctx.fillStyle = '#542';
-        ctx.fillRect(x + 6*unit, y + 12*unit, 1*unit, 3*unit);
-        ctx.fillRect(x + 9*unit, y + 12*unit, 1*unit, 3*unit);
+        // Legs
+        SpriteUtils.drawLegs(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEATHER_BROWN);
         
         // Boots
-        ctx.fillStyle = '#321';
-        ctx.fillRect(x + 5*unit, y + 14*unit, 2*unit, 1*unit);
-        ctx.fillRect(x + 9*unit, y + 14*unit, 2*unit, 1*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEATHER_DARK, 5, 14, 2, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEATHER_DARK, 9, 14, 2, 1);
     },
     
     // Player facing left (side view)
     left: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Head profile (facing left)
-        ctx.fillStyle = '#dca';
-        ctx.fillRect(x + 6*unit, y + 2*unit, 4*unit, 4*unit);
+        // Head profile
+        SpriteUtils.drawHead(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_HUMAN, 6, 2, 4, 4);
         
-        // Long hair flowing behind (to the right)
-        ctx.fillStyle = '#643';
-        // Hair on top of head
-        ctx.fillRect(x + 5*unit, y + 1*unit, 6*unit, 2*unit);
-        // Hair flowing back
-        ctx.fillRect(x + 8*unit, y + 1*unit, 5*unit, 2*unit);
-        ctx.fillRect(x + 8*unit, y + 3*unit, 4*unit, 5*unit);
-        ctx.fillRect(x + 5*unit, y + 6*unit, 3*unit, 3*unit);
+        // Hair flowing behind (to the right)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_BROWN, 5, 1, 6, 2); // Top
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_BROWN, 8, 1, 5, 2); // Flow back top
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_BROWN, 8, 3, 4, 5); // Flow back main
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_BROWN, 5, 6, 3, 3); // Side flow
         
         // Hair highlights
-        ctx.fillStyle = '#754';
-        ctx.fillRect(x + 10*unit, y + 2*unit, 1*unit, 4*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_HIGHLIGHT, 10, 2, 1, 4);
         
-        // Eye (visible on left side)
-        ctx.fillStyle = '#444';
-        ctx.fillRect(x + 7*unit, y + 4*unit, 1*unit, 1*unit);
+        // Eye (profile view)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.EYES_HUMAN, 7, 4, 1, 1);
         
-        // Tunic
-        ctx.fillStyle = '#684';
-        ctx.fillRect(x + 5*unit, y + 7*unit, 5*unit, 5*unit);
+        // Tunic (side view)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_GREEN, 5, 7, 5, 5);
         
-        // Arms (one visible in front)
-        ctx.fillStyle = '#dca';
-        ctx.fillRect(x + 4*unit, y + 8*unit, 1*unit, 3*unit);
-        ctx.fillStyle = '#684';
-        ctx.fillRect(x + 3*unit, y + 8*unit, 2*unit, 2*unit);
+        // Visible arm with sleeve
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_HUMAN, 4, 8, 1, 3);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_GREEN, 3, 8, 2, 2);
         
-        // Legs
-        ctx.fillStyle = '#542';
-        ctx.fillRect(x + 6*unit, y + 12*unit, 1*unit, 3*unit);
-        ctx.fillRect(x + 8*unit, y + 12*unit, 1*unit, 3*unit);
+        // Legs (side profile)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEATHER_BROWN, 6, 12, 1, 3);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEATHER_BROWN, 8, 12, 1, 3);
         
         // Boots
-        ctx.fillStyle = '#321';
-        ctx.fillRect(x + 5*unit, y + 14*unit, 2*unit, 1*unit);
-        ctx.fillRect(x + 8*unit, y + 14*unit, 2*unit, 1*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEATHER_DARK, 5, 14, 2, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEATHER_DARK, 8, 14, 2, 1);
     },
     
     // Player facing right (side view)
     right: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Head profile (facing right)
-        ctx.fillStyle = '#dca';
-        ctx.fillRect(x + 6*unit, y + 2*unit, 4*unit, 4*unit);
+        // Head profile
+        SpriteUtils.drawHead(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_HUMAN, 6, 2, 4, 4);
         
-        // Long hair flowing behind (to the left)
-        ctx.fillStyle = '#643';
-        // Hair on top of head
-        ctx.fillRect(x + 5*unit, y + 1*unit, 6*unit, 2*unit);
-        // Hair flowing back
-        ctx.fillRect(x + 3*unit, y + 1*unit, 5*unit, 2*unit);
-        ctx.fillRect(x + 4*unit, y + 3*unit, 4*unit, 5*unit);
-        ctx.fillRect(x + 8*unit, y + 6*unit, 3*unit, 3*unit);
+        // Hair flowing behind (to the left)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_BROWN, 5, 1, 6, 2); // Top
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_BROWN, 3, 1, 5, 2); // Flow back top
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_BROWN, 4, 3, 4, 5); // Flow back main
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_BROWN, 8, 6, 3, 3); // Side flow
         
         // Hair highlights
-        ctx.fillStyle = '#754';
-        ctx.fillRect(x + 5*unit, y + 2*unit, 1*unit, 4*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.HAIR_HIGHLIGHT, 5, 2, 1, 4);
         
-        // Eye (visible on right side)
-        ctx.fillStyle = '#444';
-        ctx.fillRect(x + 8*unit, y + 4*unit, 1*unit, 1*unit);
+        // Eye (profile view)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.EYES_HUMAN, 8, 4, 1, 1);
         
-        // Tunic
-        ctx.fillStyle = '#684';
-        ctx.fillRect(x + 6*unit, y + 7*unit, 5*unit, 5*unit);
+        // Tunic (side view)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_GREEN, 6, 7, 5, 5);
         
-        // Arms (one visible in front)
-        ctx.fillStyle = '#dca';
-        ctx.fillRect(x + 11*unit, y + 8*unit, 1*unit, 3*unit);
-        ctx.fillStyle = '#684';
-        ctx.fillRect(x + 11*unit, y + 8*unit, 2*unit, 2*unit);
+        // Visible arm with sleeve
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_HUMAN, 11, 8, 1, 3);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_GREEN, 11, 8, 2, 2);
         
-        // Legs
-        ctx.fillStyle = '#542';
-        ctx.fillRect(x + 7*unit, y + 12*unit, 1*unit, 3*unit);
-        ctx.fillRect(x + 9*unit, y + 12*unit, 1*unit, 3*unit);
+        // Legs (side profile)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEATHER_BROWN, 7, 12, 1, 3);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEATHER_BROWN, 9, 12, 1, 3);
         
         // Boots
-        ctx.fillStyle = '#321';
-        ctx.fillRect(x + 6*unit, y + 14*unit, 2*unit, 1*unit);
-        ctx.fillRect(x + 9*unit, y + 14*unit, 2*unit, 1*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEATHER_DARK, 6, 14, 2, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEATHER_DARK, 9, 14, 2, 1);
     },
     
     warrior: (ctx, x, y, size) => {
-        const unit = size / 16;
-        ctx.fillStyle = '#66a';
+        const unit = SpriteUtils.getUnit(size);
+        
         // Head
-        ctx.fillRect(x + 5*unit, y + 2*unit, 6*unit, 5*unit);
-        // Body (armored)
-        ctx.fillRect(x + 4*unit, y + 7*unit, 8*unit, 5*unit);
-        // Arms (armored)
-        ctx.fillRect(x + 2*unit, y + 8*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 12*unit, y + 8*unit, 2*unit, 3*unit);
-        // Legs (armored)
-        ctx.fillRect(x + 5*unit, y + 12*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 9*unit, y + 12*unit, 2*unit, 3*unit);
+        SpriteUtils.drawHead(ctx, x, y, unit, '#66a', 5, 2, 6, 5);
+        
+        // Armored body
+        SpriteUtils.drawBody(ctx, x, y, unit, '#66a', 4, 7, 8, 5);
+        
+        // Armored arms
+        SpriteUtils.drawArms(ctx, x, y, unit, '#66a', 8, 2, 3);
+        
+        // Armored legs
+        SpriteUtils.drawLegs(ctx, x, y, unit, '#66a');
+        
         // Helmet
-        ctx.fillStyle = '#888';
-        ctx.fillRect(x + 4*unit, y + 1*unit, 8*unit, 3*unit);
-        // Eyes
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(x + 6*unit, y + 4*unit, unit, unit);
-        ctx.fillRect(x + 9*unit, y + 4*unit, unit, unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, '#888', 4, 1, 8, 3);
+        
+        // Eyes through helmet
+        SpriteUtils.drawEyes(ctx, x, y, unit, '#fff', 6, 4, 3);
     },
     
     mage: (ctx, x, y, size) => {
-        const unit = size / 16;
-        ctx.fillStyle = '#a4a';
+        const unit = SpriteUtils.getUnit(size);
+        
         // Head
-        ctx.fillRect(x + 5*unit, y + 2*unit, 6*unit, 5*unit);
-        // Robe body
-        ctx.fillRect(x + 3*unit, y + 7*unit, 10*unit, 6*unit);
-        // Arms
-        ctx.fillRect(x + 2*unit, y + 8*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 12*unit, y + 8*unit, 2*unit, 3*unit);
-        // Hat
-        ctx.fillStyle = '#648';
-        ctx.fillRect(x + 5*unit, y + 1*unit, 6*unit, 3*unit);
-        ctx.fillRect(x + 6*unit, y + 0*unit, 4*unit, 2*unit);
+        SpriteUtils.drawHead(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_PURPLE, 5, 2, 6, 5);
+        
+        // Flowing robes
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_PURPLE, 3, 7, 10, 6);
+        
+        // Arms in robes
+        SpriteUtils.drawArms(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_PURPLE, 8, 2, 3);
+        
+        // Wizard hat
+        SpriteUtils.drawRect(ctx, x, y, unit, '#648', 5, 1, 6, 3);
+        SpriteUtils.drawRect(ctx, x, y, unit, '#648', 6, 0, 4, 2);
+        
         // Eyes
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(x + 6*unit, y + 4*unit, unit, unit);
-        ctx.fillRect(x + 9*unit, y + 4*unit, unit, unit);
-        // Staff
-        ctx.fillStyle = '#841';
-        ctx.fillRect(x + 14*unit, y + 6*unit, unit, 6*unit);
-        ctx.fillStyle = '#44a';
-        ctx.fillRect(x + 13*unit, y + 5*unit, 3*unit, 2*unit);
+        SpriteUtils.drawEyes(ctx, x, y, unit, '#fff', 6, 4, 3);
+        
+        // Magic staff
+        SpriteUtils.drawWeapon(ctx, x, y, unit, '#841', '#44a', 14, 5, 6);
     },
     
     rogue: (ctx, x, y, size) => {
-        const unit = size / 16;
-        ctx.fillStyle = '#333';
-        // Head
-        ctx.fillRect(x + 5*unit, y + 2*unit, 6*unit, 5*unit);
-        // Body (dark clothes)
-        ctx.fillRect(x + 4*unit, y + 7*unit, 8*unit, 5*unit);
-        // Arms
-        ctx.fillRect(x + 2*unit, y + 8*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 12*unit, y + 8*unit, 2*unit, 3*unit);
-        // Legs
-        ctx.fillRect(x + 5*unit, y + 12*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 9*unit, y + 12*unit, 2*unit, 3*unit);
+        const unit = SpriteUtils.getUnit(size);
+        
+        // Head in shadow
+        SpriteUtils.drawHead(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_DARK, 5, 2, 6, 5);
+        
+        // Dark clothing
+        SpriteUtils.drawBody(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_DARK, 4, 7, 8, 5);
+        SpriteUtils.drawArms(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_DARK, 8, 2, 3);
+        SpriteUtils.drawLegs(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_DARK);
+        
         // Hood
-        ctx.fillStyle = '#222';
-        ctx.fillRect(x + 4*unit, y + 1*unit, 8*unit, 4*unit);
-        // Eyes (glowing)
-        ctx.fillStyle = '#f80';
-        ctx.fillRect(x + 6*unit, y + 4*unit, unit, unit);
-        ctx.fillRect(x + 9*unit, y + 4*unit, unit, unit);
-        // Daggers
-        ctx.fillStyle = '#ccc';
-        ctx.fillRect(x + 1*unit, y + 9*unit, unit, 2*unit);
-        ctx.fillRect(x + 14*unit, y + 9*unit, unit, 2*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, '#222', 4, 1, 8, 4);
+        
+        // Glowing eyes
+        SpriteUtils.drawEyes(ctx, x, y, unit, '#f80', 6, 4, 3);
+        
+        // Twin daggers
+        SpriteUtils.drawRect(ctx, x, y, unit, '#ccc', 1, 9, 1, 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, '#ccc', 14, 9, 1, 2);
     }
 };

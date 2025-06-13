@@ -1,36 +1,50 @@
 const equipmentSprites = {
     sword: (ctx, x, y, size) => {
-        const unit = size / 16;
-        ctx.fillStyle = '#ccc';
-        ctx.fillRect(x + 7*unit, y + 2*unit, 2*unit, 8*unit);
-        ctx.fillRect(x + 5*unit, y + 10*unit, 6*unit, unit);
-        ctx.fillStyle = '#843';
-        ctx.fillRect(x + 7*unit, y + 11*unit, 2*unit, 3*unit);
+        const unit = SpriteUtils.getUnit(size);
+        
+        // Sword blade
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SWORD_BLADE, 7, 2, 2, 8);
+        
+        // Crossguard
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SWORD_GUARD, 5, 10, 6, 1);
+        
+        // Handle
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SWORD_HANDLE, 7, 11, 2, 3);
     },
     
     shield: (ctx, x, y, size) => {
-        const unit = size / 16;
-        ctx.fillStyle = '#888';
-        ctx.fillRect(x + 4*unit, y + 2*unit, 8*unit, 10*unit);
-        ctx.fillStyle = '#aaa';
-        ctx.fillRect(x + 5*unit, y + 3*unit, 6*unit, 8*unit);
-        ctx.fillStyle = '#44f';
-        ctx.fillRect(x + 7*unit, y + 6*unit, 2*unit, 2*unit);
-        ctx.fillStyle = '#888';
-        ctx.fillRect(x + 6*unit, y + 12*unit, 4*unit, 2*unit);
-        ctx.fillRect(x + 7*unit, y + 14*unit, 2*unit, 1*unit);
+        const unit = SpriteUtils.getUnit(size);
+        
+        // Shield frame
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SHIELD_FRAME, 4, 2, 8, 10);
+        
+        // Shield face
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SHIELD_FACE, 5, 3, 6, 8);
+        
+        // Shield emblem
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SHIELD_EMBLEM, 7, 6, 2, 2);
+        
+        // Shield grip
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SHIELD_FRAME, 6, 12, 4, 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SHIELD_FRAME, 7, 14, 2, 1);
     },
     
     scroll: (ctx, x, y, size) => {
-        const unit = size / 16;
-        ctx.fillStyle = '#eed';
-        ctx.fillRect(x + 3*unit, y + 4*unit, 10*unit, 8*unit);
-        ctx.fillStyle = '#654';
-        ctx.fillRect(x + 2*unit, y + 3*unit, 12*unit, 2*unit);
-        ctx.fillRect(x + 2*unit, y + 11*unit, 12*unit, 2*unit);
-        ctx.fillStyle = '#333';
-        ctx.fillRect(x + 5*unit, y + 6*unit, 6*unit, 1*unit);
-        ctx.fillRect(x + 5*unit, y + 8*unit, 5*unit, 1*unit);
-        ctx.fillRect(x + 5*unit, y + 10*unit, 4*unit, 1*unit);
+        const unit = SpriteUtils.getUnit(size);
+        
+        // Parchment
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SCROLL_PARCHMENT, 3, 4, 10, 8);
+        
+        // Ribbon ties
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SCROLL_RIBBON, 2, 3, 12, 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SCROLL_RIBBON, 2, 11, 12, 2);
+        
+        // Text lines
+        const textLines = [
+            {x: 5, y: 6, w: 6, h: 1},
+            {x: 5, y: 8, w: 5, h: 1},
+            {x: 5, y: 10, w: 4, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SCROLL_TEXT, textLines);
     }
 };

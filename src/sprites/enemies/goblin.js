@@ -1,135 +1,101 @@
 const goblinSprites = {
     default: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Goblin green skin
-        ctx.fillStyle = '#585';
-        // Head (larger with pointed ears)
-        ctx.fillRect(x + 4*unit, y + 3*unit, 8*unit, 6*unit);
-        // Pointed ears
-        ctx.fillRect(x + 3*unit, y + 4*unit, 1*unit, 2*unit); // Left ear
-        ctx.fillRect(x + 12*unit, y + 4*unit, 1*unit, 2*unit); // Right ear
+        // Head with pointed ears
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN, 4, 3, 8, 6);
+        SpriteUtils.drawPointedEars(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN);
         
-        // Body (smaller, crude clothing)
-        ctx.fillStyle = '#421'; // Brown crude cloth
-        ctx.fillRect(x + 5*unit, y + 9*unit, 6*unit, 4*unit);
+        // Body (crude clothing)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOTH_BROWN, 5, 9, 6, 4);
         
-        // Arms (green skin)
-        ctx.fillStyle = '#585';
-        ctx.fillRect(x + 3*unit, y + 9*unit, 2*unit, 2*unit);
-        ctx.fillRect(x + 11*unit, y + 9*unit, 2*unit, 2*unit);
-        // Legs
-        ctx.fillRect(x + 5*unit, y + 13*unit, 2*unit, 2*unit);
-        ctx.fillRect(x + 9*unit, y + 13*unit, 2*unit, 2*unit);
+        // Arms and legs (green skin)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN, 3, 9, 2, 2); // Left arm
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN, 11, 9, 2, 2); // Right arm
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN, 5, 13, 2, 2); // Left leg
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN, 9, 13, 2, 2); // Right leg
         
         // Menacing red eyes
-        ctx.fillStyle = '#f44';
-        ctx.fillRect(x + 5*unit, y + 5*unit, unit, unit);
-        ctx.fillRect(x + 10*unit, y + 5*unit, unit, unit);
+        SpriteUtils.drawEyes(ctx, x, y, unit, CONFIG.COLORS.SPRITES.EYES_GOBLIN_RED, 5, 5, 5);
         
         // Crude fangs
-        ctx.fillStyle = '#ddd';
-        ctx.fillRect(x + 6*unit, y + 7*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 9*unit, y + 7*unit, 1*unit, 1*unit);
+        SpriteUtils.drawFangs(ctx, x, y, unit, CONFIG.COLORS.SPRITES.TEETH_FANG, 6, 9, 7);
         
         // Simple weapon (club)
-        ctx.fillStyle = '#421';
-        ctx.fillRect(x + 13*unit, y + 8*unit, 1*unit, 4*unit);
-        ctx.fillStyle = '#654';
-        ctx.fillRect(x + 12*unit, y + 7*unit, 3*unit, 2*unit);
+        SpriteUtils.drawWeapon(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WOOD_HANDLE, CONFIG.COLORS.SPRITES.METAL_CROSSGUARD, 13, 7, 4);
     },
     
     warrior: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Goblin green skin
-        ctx.fillStyle = '#585';
         // Head with pointed ears
-        ctx.fillRect(x + 4*unit, y + 3*unit, 8*unit, 6*unit);
-        ctx.fillRect(x + 3*unit, y + 4*unit, 1*unit, 2*unit); // Left ear
-        ctx.fillRect(x + 12*unit, y + 4*unit, 1*unit, 2*unit); // Right ear
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN, 4, 3, 8, 6);
+        SpriteUtils.drawPointedEars(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN);
         
-        // Crude armor (dark metal)
-        ctx.fillStyle = '#444';
-        ctx.fillRect(x + 5*unit, y + 9*unit, 6*unit, 4*unit);
+        // Crude armor body
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.ARMOR_METAL, 5, 9, 6, 4);
         
         // Arms with armor pieces
-        ctx.fillStyle = '#585'; // Skin
-        ctx.fillRect(x + 3*unit, y + 9*unit, 2*unit, 2*unit);
-        ctx.fillRect(x + 11*unit, y + 9*unit, 2*unit, 2*unit);
-        ctx.fillStyle = '#444'; // Armor on arms
-        ctx.fillRect(x + 3*unit, y + 9*unit, 2*unit, 1*unit);
-        ctx.fillRect(x + 11*unit, y + 9*unit, 2*unit, 1*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN, 3, 9, 2, 2); // Left arm skin
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN, 11, 9, 2, 2); // Right arm skin
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.ARMOR_METAL, 3, 9, 2, 1); // Left armor
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.ARMOR_METAL, 11, 9, 2, 1); // Right armor
         
         // Legs
-        ctx.fillStyle = '#585';
-        ctx.fillRect(x + 5*unit, y + 13*unit, 2*unit, 2*unit);
-        ctx.fillRect(x + 9*unit, y + 13*unit, 2*unit, 2*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN, 5, 13, 2, 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN, 9, 13, 2, 2);
         
-        // Crude helmet
-        ctx.fillStyle = '#333';
-        ctx.fillRect(x + 4*unit, y + 2*unit, 8*unit, 3*unit);
-        // Helmet spikes
-        ctx.fillRect(x + 6*unit, y + 1*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 9*unit, y + 1*unit, 1*unit, 1*unit);
+        // Crude helmet with spikes
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.ARMOR_DARK, 4, 2, 8, 3);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.ARMOR_DARK, 6, 1, 1, 1); // Left spike
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.ARMOR_DARK, 9, 1, 1, 1); // Right spike
         
         // Glowing red eyes (visible through helmet)
-        ctx.fillStyle = '#f44';
-        ctx.fillRect(x + 5*unit, y + 5*unit, unit, unit);
-        ctx.fillRect(x + 10*unit, y + 5*unit, unit, unit);
+        SpriteUtils.drawEyes(ctx, x, y, unit, CONFIG.COLORS.SPRITES.EYES_GOBLIN_RED, 5, 5, 5);
         
-        // Crude sword (rusty)
-        ctx.fillStyle = '#987'; // Rusty blade
-        ctx.fillRect(x + 13*unit, y + 8*unit, unit, 4*unit);
-        ctx.fillStyle = '#421'; // Leather wrap handle
-        ctx.fillRect(x + 13*unit, y + 12*unit, unit, 2*unit);
-        ctx.fillStyle = '#654'; // Metal crossguard
-        ctx.fillRect(x + 12*unit, y + 11*unit, 3*unit, 1*unit);
+        // Crude sword
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.METAL_BLADE, 13, 8, 1, 4); // Blade
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WOOD_HANDLE, 13, 12, 1, 2); // Handle
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.METAL_CROSSGUARD, 12, 11, 3, 1); // Crossguard
     },
     
     shaman: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Goblin green skin
-        ctx.fillStyle = '#585';
         // Head with pointed ears
-        ctx.fillRect(x + 4*unit, y + 3*unit, 8*unit, 6*unit);
-        ctx.fillRect(x + 3*unit, y + 4*unit, 1*unit, 2*unit); // Left ear
-        ctx.fillRect(x + 12*unit, y + 4*unit, 1*unit, 2*unit); // Right ear
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN, 4, 3, 8, 6);
+        SpriteUtils.drawPointedEars(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN);
         
         // Dark ritual robes
-        ctx.fillStyle = '#201'; // Very dark red robe
-        ctx.fillRect(x + 4*unit, y + 9*unit, 8*unit, 5*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, '#201', 4, 9, 8, 5);
         
-        // Arms (green skin showing)
-        ctx.fillStyle = '#585';
-        ctx.fillRect(x + 2*unit, y + 9*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 12*unit, y + 9*unit, 2*unit, 3*unit);
+        // Arms (skin showing)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN, 2, 9, 2, 3);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_GOBLIN, 12, 9, 2, 3);
         
-        // Ritual markings on face
-        ctx.fillStyle = '#f0f'; // Purple magic markings
-        ctx.fillRect(x + 4*unit, y + 4*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 11*unit, y + 4*unit, 1*unit, 1*unit);
+        // Ritual face markings
+        const markings = [
+            {x: 4, y: 4, w: 1, h: 1},
+            {x: 11, y: 4, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.MAGIC_PURPLE, markings);
         
-        // Glowing magical eyes
-        ctx.fillStyle = '#a0f';
-        ctx.fillRect(x + 5*unit, y + 5*unit, unit, unit);
-        ctx.fillRect(x + 10*unit, y + 5*unit, unit, unit);
+        // Magical glowing eyes
+        SpriteUtils.drawEyes(ctx, x, y, unit, CONFIG.COLORS.SPRITES.EYES_GOBLIN_MAGIC, 5, 5, 5);
         
         // Bone staff
-        ctx.fillStyle = '#ddd';
-        ctx.fillRect(x + 14*unit, y + 7*unit, unit, 6*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BONE_WHITE, 14, 7, 1, 6);
         
-        // Skull totem on staff
-        ctx.fillStyle = '#eee';
-        ctx.fillRect(x + 13*unit, y + 6*unit, 3*unit, 2*unit);
-        ctx.fillStyle = '#000'; // Eye sockets
-        ctx.fillRect(x + 13*unit, y + 6*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 15*unit, y + 6*unit, 1*unit, 1*unit);
+        // Skull totem
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BONE_SKULL, 13, 6, 3, 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.EYES_SKELETON, 13, 6, 1, 1); // Left socket
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.EYES_SKELETON, 15, 6, 1, 1); // Right socket
         
         // Magical energy wisps
-        ctx.fillStyle = '#a0f';
-        ctx.fillRect(x + 1*unit, y + 8*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 15*unit, y + 9*unit, 1*unit, 1*unit);
+        const wisps = [
+            {x: 1, y: 8, w: 1, h: 1},
+            {x: 15, y: 9, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.MAGIC_WISP, wisps);
     }
 };

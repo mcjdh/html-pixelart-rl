@@ -1,38 +1,35 @@
 const sporelingSprites = {
     default: function(ctx, x, y, size) {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Mushroom body (small cap creature)
-        ctx.fillStyle = '#8a6aa8';
-        ctx.fillRect(x + unit * 4, y + unit * 4, unit * 8, unit * 8);
-        ctx.fillRect(x + unit * 3, y + unit * 5, unit * 10, unit * 6);
+        // Mushroom cap body
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.MUSHROOM_CAP, 4, 4, 8, 8);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.MUSHROOM_CAP, 3, 5, 10, 6);
         
-        // Cap details
-        ctx.fillStyle = '#7a5a98';
-        ctx.fillRect(x + unit * 5, y + unit * 6, unit * 6, unit * 3);
+        // Cap details and shading
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.MUSHROOM_CAP_DARK, 5, 6, 6, 3);
         
-        // Lighter spots on cap
-        ctx.fillStyle = '#9a7ab8';
-        ctx.fillRect(x + unit * 5, y + unit * 5, unit * 2, unit);
-        ctx.fillRect(x + unit * 9, y + unit * 6, unit, unit);
-        ctx.fillRect(x + unit * 6, y + unit * 8, unit, unit);
+        // Light spots on cap
+        const spots = [
+            {x: 5, y: 5, w: 2, h: 1},
+            {x: 9, y: 6, w: 1, h: 1},
+            {x: 6, y: 8, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.MUSHROOM_CAP_LIGHT, spots);
         
-        // Stem/legs
-        ctx.fillStyle = '#6a5a7a';
-        ctx.fillRect(x + unit * 5, y + unit * 11, unit * 2, unit * 4);
-        ctx.fillRect(x + unit * 9, y + unit * 11, unit * 2, unit * 4);
+        // Stem legs
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.MUSHROOM_STEM, 5, 11, 2, 4);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.MUSHROOM_STEM, 9, 11, 2, 4);
         
-        // Eyes (glowing)
-        ctx.fillStyle = '#d8b8f8';
-        ctx.fillRect(x + unit * 6, y + unit * 7, unit, unit);
-        ctx.fillRect(x + unit * 9, y + unit * 7, unit, unit);
+        // Glowing eyes
+        SpriteUtils.drawEyes(ctx, x, y, unit, CONFIG.COLORS.SPRITES.MUSHROOM_GLOW, 6, 7, 3);
         
-        // Spore cloud effect
+        // Animated spore cloud effect
         const time = Date.now() * 0.004;
         const alpha = Math.sin(time) * 0.2 + 0.3;
         ctx.fillStyle = `rgba(180, 140, 220, ${alpha})`;
-        ctx.fillRect(x + unit * 2, y + unit * 2, unit * 2, unit * 2);
-        ctx.fillRect(x + unit * 12, y + unit * 3, unit * 2, unit * 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, ctx.fillStyle, 2, 2, 2, 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, ctx.fillStyle, 12, 3, 2, 2);
     }
 };
 

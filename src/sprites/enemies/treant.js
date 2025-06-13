@@ -1,92 +1,90 @@
 const treantSprites = {
     default: function(ctx, x, y, size) {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Trunk (dark brown)
-        ctx.fillStyle = '#4a2c17';
-        ctx.fillRect(x + 5*unit, y + 7*unit, 6*unit, 9*unit);
+        // Main trunk
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BARK_TREANT, 5, 7, 6, 9);
         
-        // Roots/legs
-        ctx.fillRect(x + 3*unit, y + 14*unit, 3*unit, 2*unit);
-        ctx.fillRect(x + 10*unit, y + 14*unit, 3*unit, 2*unit);
+        // Root legs
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BARK_TREANT, 3, 14, 3, 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BARK_TREANT, 10, 14, 3, 2);
         
-        // Branches/arms
-        ctx.fillRect(x + 2*unit, y + 8*unit, 3*unit, 2*unit);
-        ctx.fillRect(x + 11*unit, y + 8*unit, 3*unit, 2*unit);
+        // Branch arms
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BARK_TREANT, 2, 8, 3, 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BARK_TREANT, 11, 8, 3, 2);
         
-        // Leaves (green canopy)
-        ctx.fillStyle = '#228B22';
-        ctx.fillRect(x + 3*unit, y + 2*unit, 10*unit, 6*unit);
-        ctx.fillRect(x + 4*unit, y + 1*unit, 8*unit, 1*unit);
-        ctx.fillRect(x + 5*unit, y + 0*unit, 6*unit, 1*unit);
+        // Leafy canopy (main structure)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEAVES_GREEN, 3, 2, 10, 6);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEAVES_GREEN, 4, 1, 8, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEAVES_GREEN, 5, 0, 6, 1);
         
-        // Darker leaves for depth
-        ctx.fillStyle = '#006400';
-        ctx.fillRect(x + 4*unit, y + 3*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 10*unit, y + 3*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 7*unit, y + 5*unit, 2*unit, 2*unit);
+        // Leaf depth shading
+        const leafPatches = [
+            {x: 4, y: 3, w: 2, h: 3},
+            {x: 10, y: 3, w: 2, h: 3},
+            {x: 7, y: 5, w: 2, h: 2}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEAVES_DARK, leafPatches);
         
-        // Face (eyes)
-        ctx.fillStyle = '#ff0000';
-        ctx.fillRect(x + 6*unit, y + 9*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 9*unit, y + 9*unit, 1*unit, 1*unit);
+        // Face features
+        SpriteUtils.drawEyes(ctx, x, y, unit, CONFIG.COLORS.SPRITES.EYES_TREANT, 6, 9, 3);
         
         // Mouth
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(x + 7*unit, y + 11*unit, 2*unit, 1*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, '#000000', 7, 11, 2, 1);
         
-        // Bark texture
-        ctx.fillStyle = '#3a2414';
-        ctx.fillRect(x + 6*unit, y + 8*unit, 1*unit, 2*unit);
-        ctx.fillRect(x + 9*unit, y + 10*unit, 1*unit, 2*unit);
-        ctx.fillRect(x + 7*unit, y + 13*unit, 1*unit, 2*unit);
+        // Bark texture details
+        const barkTexture = [
+            {x: 6, y: 8, w: 1, h: 2},
+            {x: 9, y: 10, w: 1, h: 2},
+            {x: 7, y: 13, w: 1, h: 2}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BARK_DARK, barkTexture);
     },
     
     attacking: function(ctx, x, y, size) {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Trunk (dark brown) - leaning forward
-        ctx.fillStyle = '#4a2c17';
-        ctx.fillRect(x + 6*unit, y + 7*unit, 6*unit, 9*unit);
+        // Trunk - leaning forward aggressively  
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BARK_TREANT, 6, 7, 6, 9);
         
-        // Roots/legs - spread
-        ctx.fillRect(x + 2*unit, y + 14*unit, 3*unit, 2*unit);
-        ctx.fillRect(x + 11*unit, y + 14*unit, 3*unit, 2*unit);
+        // Roots - spread wide for stability
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BARK_TREANT, 2, 14, 3, 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BARK_TREANT, 11, 14, 3, 2);
         
-        // Branches/arms - reaching
-        ctx.fillRect(x + 1*unit, y + 9*unit, 5*unit, 2*unit);
-        ctx.fillRect(x + 12*unit, y + 7*unit, 3*unit, 2*unit);
+        // Branches - reaching menacingly
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BARK_TREANT, 1, 9, 5, 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BARK_TREANT, 12, 7, 3, 2);
         
-        // Branch claws
-        ctx.fillRect(x + 0*unit, y + 9*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 0*unit, y + 11*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 15*unit, y + 7*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 15*unit, y + 9*unit, 1*unit, 1*unit);
+        // Sharp branch claws
+        const claws = [
+            {x: 0, y: 9, w: 1, h: 1},
+            {x: 0, y: 11, w: 1, h: 1},
+            {x: 15, y: 7, w: 1, h: 1},
+            {x: 15, y: 9, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BARK_TREANT, claws);
         
-        // Leaves (green canopy) - rustling
-        ctx.fillStyle = '#228B22';
-        ctx.fillRect(x + 4*unit, y + 2*unit, 10*unit, 5*unit);
-        ctx.fillRect(x + 3*unit, y + 3*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 13*unit, y + 3*unit, 2*unit, 3*unit);
+        // Rustling canopy
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEAVES_GREEN, 4, 2, 10, 5);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEAVES_GREEN, 3, 3, 2, 3);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEAVES_GREEN, 13, 3, 2, 3);
         
-        // Darker leaves
-        ctx.fillStyle = '#006400';
-        ctx.fillRect(x + 5*unit, y + 3*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 11*unit, y + 3*unit, 2*unit, 3*unit);
+        // Darker leaf shadows
+        const leafShadows = [
+            {x: 5, y: 3, w: 2, h: 3},
+            {x: 11, y: 3, w: 2, h: 3}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.LEAVES_DARK, leafShadows);
         
-        // Angry face (glowing eyes)
-        ctx.fillStyle = '#ff6666';
-        ctx.fillRect(x + 7*unit, y + 9*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 10*unit, y + 9*unit, 1*unit, 1*unit);
+        // Angry glowing eyes
+        SpriteUtils.drawEyes(ctx, x, y, unit, '#ff6666', 7, 9, 3);
         
-        // Open mouth
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(x + 8*unit, y + 11*unit, 3*unit, 2*unit);
+        // Gaping mouth
+        SpriteUtils.drawRect(ctx, x, y, unit, '#000000', 8, 11, 3, 2);
         
-        // Teeth
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x + 8*unit, y + 11*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 10*unit, y + 11*unit, 1*unit, 1*unit);
+        // Sharp teeth
+        SpriteUtils.drawRect(ctx, x, y, unit, '#ffffff', 8, 11, 1, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, '#ffffff', 10, 11, 1, 1);
     }
 };
 

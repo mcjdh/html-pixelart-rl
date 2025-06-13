@@ -1,23 +1,29 @@
 const skeletonSprites = {
     default: (ctx, x, y, size) => {
-        const unit = size / 16;
-        ctx.fillStyle = '#ddd';
+        const unit = SpriteUtils.getUnit(size);
+        
         // Skull
-        ctx.fillRect(x + 5*unit, y + 2*unit, 6*unit, 6*unit);
-        // Ribs
-        ctx.fillRect(x + 7*unit, y + 8*unit, 2*unit, unit);
-        ctx.fillRect(x + 6*unit, y + 9*unit, 4*unit, unit);
-        ctx.fillRect(x + 7*unit, y + 10*unit, 2*unit, unit);
-        ctx.fillRect(x + 6*unit, y + 11*unit, 4*unit, unit);
-        // Arms
-        ctx.fillRect(x + 4*unit, y + 8*unit, unit, 4*unit);
-        ctx.fillRect(x + 11*unit, y + 8*unit, unit, 4*unit);
-        // Legs
-        ctx.fillRect(x + 6*unit, y + 12*unit, unit, 3*unit);
-        ctx.fillRect(x + 9*unit, y + 12*unit, unit, 3*unit);
-        // Eye sockets
-        ctx.fillStyle = '#000';
-        ctx.fillRect(x + 6*unit, y + 4*unit, 2*unit, 2*unit);
-        ctx.fillRect(x + 8*unit, y + 4*unit, 2*unit, 2*unit);
+        SpriteUtils.drawHead(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_SKELETON, 5, 2, 6, 6);
+        
+        // Ribcage structure
+        const ribMarkings = [
+            {x: 7, y: 8, w: 2, h: 1},  // Top rib
+            {x: 6, y: 9, w: 4, h: 1},  // Wide rib
+            {x: 7, y: 10, w: 2, h: 1}, // Middle rib
+            {x: 6, y: 11, w: 4, h: 1}  // Bottom rib
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_SKELETON, ribMarkings);
+        
+        // Arms (bone structure)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_SKELETON, 4, 8, 1, 4); // Left arm
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_SKELETON, 11, 8, 1, 4); // Right arm
+        
+        // Legs (thin bone structure)
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_SKELETON, 6, 12, 1, 3); // Left leg
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_SKELETON, 9, 12, 1, 3); // Right leg
+        
+        // Dark eye sockets
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.EYES_SKELETON, 6, 4, 2, 2); // Left socket
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.EYES_SKELETON, 8, 4, 2, 2); // Right socket
     }
 };

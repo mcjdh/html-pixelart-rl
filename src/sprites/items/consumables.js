@@ -1,33 +1,23 @@
 const consumableSprites = {
     potion: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Glass bottle outline
-        ctx.fillStyle = '#ccc'; // Light gray glass
-        ctx.fillRect(x + 6*unit, y + 4*unit, 4*unit, 10*unit);
-        ctx.fillRect(x + 5*unit, y + 6*unit, 1*unit, 6*unit); // Left side
-        ctx.fillRect(x + 10*unit, y + 6*unit, 1*unit, 6*unit); // Right side
-        ctx.fillRect(x + 6*unit, y + 13*unit, 4*unit, 2*unit); // Bottom
+        // Glass bottle structure
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.GLASS_BOTTLE, 6, 4, 4, 10);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.GLASS_BOTTLE, 5, 6, 1, 6); // Left side
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.GLASS_BOTTLE, 10, 6, 1, 6); // Right side
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.GLASS_BOTTLE, 6, 13, 4, 2); // Bottom
         
-        // Inner glass (transparent effect)
-        ctx.fillStyle = '#eee';
-        ctx.fillRect(x + 7*unit, y + 5*unit, 2*unit, 8*unit);
+        // Inner glass transparency effect
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.GLASS_INNER, 7, 5, 2, 8);
         
-        // Health potion liquid (red)
-        ctx.fillStyle = '#f44';
-        ctx.fillRect(x + 7*unit, y + 7*unit, 2*unit, 6*unit);
+        // Health potion liquid
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.POTION_RED, 7, 7, 2, 6);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.POTION_SURFACE, 7, 7, 2, 1); // Surface
         
-        // Liquid surface (slightly darker)
-        ctx.fillStyle = '#d33';
-        ctx.fillRect(x + 7*unit, y + 7*unit, 2*unit, 1*unit);
-        
-        // Cork stopper
-        ctx.fillStyle = '#841'; // Brown cork
-        ctx.fillRect(x + 7*unit, y + 4*unit, 2*unit, 2*unit);
-        
-        // Cork texture
-        ctx.fillStyle = '#a52';
-        ctx.fillRect(x + 7*unit, y + 4*unit, 1*unit, 1*unit);
+        // Cork stopper with texture
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CORK, 7, 4, 2, 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CORK_TEXTURE, 7, 4, 1, 1);
         ctx.fillRect(x + 8*unit, y + 5*unit, 1*unit, 1*unit);
         
         // Paper label

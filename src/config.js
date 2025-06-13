@@ -33,7 +33,177 @@ const CONFIG = {
         NARRATIVE_PRIMARY: '#c0c0c0',
         NARRATIVE_URGENT: '#ff6666',
         NARRATIVE_DISCOVERY: '#d4af37',
-        NARRATIVE_LORE: '#dda0dd'
+        NARRATIVE_LORE: '#dda0dd',
+        
+        // Sprite color palettes
+        SPRITES: {
+            // Common skin tones
+            SKIN_HUMAN: '#dca',
+            SKIN_GOBLIN: '#585',
+            SKIN_SKELETON: '#ddd',
+            
+            // Eye colors
+            EYES_HUMAN: '#444',
+            EYES_GOBLIN_RED: '#f44',
+            EYES_GOBLIN_MAGIC: '#a0f',
+            EYES_WOLF: '#ff3',
+            EYES_TREANT: '#f00',
+            EYES_SKELETON: '#000',
+            
+            // Clothing and equipment
+            CLOTH_BROWN: '#421',
+            CLOTH_GREEN: '#684',
+            CLOTH_DARK: '#333',
+            CLOTH_PURPLE: '#a4a',
+            ARMOR_METAL: '#444',
+            ARMOR_DARK: '#333',
+            LEATHER_BROWN: '#542',
+            LEATHER_DARK: '#321',
+            
+            // Hair colors
+            HAIR_BROWN: '#643',
+            HAIR_HIGHLIGHT: '#754',
+            
+            // Natural colors
+            FUR_WOLF_BASE: '#5a4a3a',
+            FUR_WOLF_LIGHT: '#6a5a4a',
+            FUR_WOLF_DARK: '#3a2a1a',
+            FUR_WOLF_CHEST: '#7a6a5a',
+            BARK_TREANT: '#4a2c17',
+            BARK_DARK: '#3a2414',
+            LEAVES_GREEN: '#228B22',
+            LEAVES_DARK: '#006400',
+            
+            // Mushroom colors
+            MUSHROOM_CAP: '#8a6aa8',
+            MUSHROOM_CAP_DARK: '#7a5a98',
+            MUSHROOM_CAP_LIGHT: '#9a7ab8',
+            MUSHROOM_STEM: '#6a5a7a',
+            MUSHROOM_GLOW: '#d8b8f8',
+            SPORE_CLOUD: 'rgba(180, 140, 220, 0.5)',
+            MUSHROOM_ARMOR: '#5a4a6a',
+            MUSHROOM_HELM: '#7a5a8a',
+            MUSHROOM_PLATE: '#6a4a7a',
+            SPORE_WEAPON: '#9878b8',
+            DARK_ARMOR: '#4a3a5a',
+            SPORE_MOTHER_BODY: '#4a3a5a',
+            SPORE_MOTHER_CAP: '#6a4a7a',
+            SPORE_MOTHER_CROWN: '#7a5a8a',
+            SPORE_MOTHER_PATTERN: '#5a3a6a',
+            SPORE_MOTHER_EYES: '#d8a8f8',
+            MYCELIUM_ROOT: '#3a2a4a',
+            ANCIENT_RUNE: '#8a6aa8',
+            
+            // Boss colors
+            BONE_LORD: '#e8e8e8',
+            BONE_LORD_DARK: '#d0d0d0',
+            BONE_LORD_SCAR: '#bbb',
+            DARK_ENERGY: '#800040',
+            CLOAK_DARK: 'rgba(40, 20, 40, 0.8)',
+            
+            // Stellar/cosmic colors  
+            STARDUST_BODY: 'rgba(180, 200, 255, 0.8)',
+            STARDUST_CORE: 'rgba(255, 255, 255, 1.0)',
+            STAR_PARTICLE: 'rgba(200, 220, 255, 0.7)',
+            COSMIC_ARMOR: '#4a4a7a',
+            COSMIC_PLATE: '#6a6a9a',
+            COSMIC_CROWN: '#8a8aba',
+            COSMIC_STAFF: '#7a7aaa',
+            STELLAR_BODY: '#2a2a5a',
+            STELLAR_ROBE: '#3a3a6a',
+            STELLAR_PATTERN: '#5a5a8a',
+            STELLAR_CROWN: '#7a7aaa',
+            COSMIC_EYE: 'rgba(150, 200, 255, 0.8)',
+            CONSCIOUSNESS_EYE: 'rgba(255, 255, 255, 1.0)',
+            
+            // Item colors
+            GLASS_BOTTLE: '#ccc',
+            GLASS_INNER: '#eee',
+            POTION_RED: '#f44',
+            POTION_SURFACE: '#d33',
+            CORK: '#841',
+            CORK_TEXTURE: '#a52',
+            GOLD_COIN: '#ffd700',
+            GOLD_SHINE: '#ffff99',
+            
+            // Weapons and tools
+            METAL_BLADE: '#987',
+            METAL_CROSSGUARD: '#654',
+            WOOD_HANDLE: '#421',
+            BONE_WHITE: '#ddd',
+            BONE_SKULL: '#eee',
+            
+            // Magic and effects
+            MAGIC_PURPLE: '#f0f',
+            MAGIC_WISP: '#a0f',
+            TEETH_WHITE: '#eee',
+            TEETH_FANG: '#ddd',
+            
+            // Equipment colors
+            SWORD_BLADE: '#ccc',
+            SWORD_GUARD: '#ccc',
+            SWORD_HANDLE: '#843',
+            SHIELD_FRAME: '#888',
+            SHIELD_FACE: '#aaa',
+            SHIELD_EMBLEM: '#44f',
+            SCROLL_PARCHMENT: '#eed',
+            SCROLL_RIBBON: '#654',
+            SCROLL_TEXT: '#333',
+            
+            // Terrain colors
+            FLOOR_BASE: '#555',
+            FLOOR_BASE_ALT: '#544',
+            FLOOR_BASE_CLEAN: '#565',
+            FLOOR_TEXTURE: '#666',
+            FLOOR_HIGHLIGHT: '#777',
+            FLOOR_HIGHLIGHT_ALT: '#677',
+            FLOOR_HIGHLIGHT_CLEAN: '#788',
+            FLOOR_SHADOW: '#444',
+            FLOOR_SHADOW_ALT: '#454',
+            FLOOR_CRACK: '#444',
+            FLOOR_WEATHERED: '#666',
+            
+            WALL_BASE: '#777',
+            WALL_BASE_ROUGH: '#787',
+            WALL_BASE_MOSSY: '#776',
+            WALL_HIGHLIGHT: '#888',
+            WALL_HIGHLIGHT_ROUGH: '#898',
+            WALL_HIGHLIGHT_MOSSY: '#887',
+            WALL_SHADOW: '#555',
+            WALL_SHADOW_ROUGH: '#565',
+            WALL_SHADOW_MOSSY: '#665',
+            WALL_EDGE_HIGHLIGHT: '#999',
+            WALL_DIVISIONS: '#666',
+            MOSS_PATCH: '#686',
+            MOSS_DARK: '#575',
+            
+            STAIRS_BASE: '#66a',
+            STAIRS_SHADOW: '#44a',
+            STAIRS_HIGHLIGHT: '#88c',
+            STAIRS_GLOW: '#aaf',
+            
+            // Cavern environment colors
+            CAVERN_WALL_BASE: '#2a251f',
+            CAVERN_WALL_TEXTURE: '#3d3429',
+            CAVERN_WALL_CRACK: '#1a1510',
+            CAVERN_WALL_HIGHLIGHT: '#4f453a',
+            CAVERN_FLOOR_BASE: '#6b6b6b',
+            CAVERN_FLOOR_TILE: '#5a5a5a',
+            CAVERN_FLOOR_MORTAR: '#484848',
+            CAVERN_FLOOR_DEBRIS: '#7a7a7a',
+            CAVERN_STALAGMITE: '#606060',
+            CAVERN_STALAGMITE_MID: '#505050',
+            CAVERN_STALAGMITE_HIGHLIGHT: '#707070',
+            CAVERN_STALAGMITE_SHADOW: '#404040',
+            CAVERN_CRYSTAL_BASE: '#4a4aff',
+            CAVERN_CRYSTAL_FACET: '#6a6aff',
+            CAVERN_RUBBLE: '#606060',
+            CAVERN_RUBBLE_SMALL: '#505050',
+            CAVERN_RUBBLE_DUST: '#4a4a4a',
+            CAVERN_BONE_SKULL: '#e0e0e0',
+            CAVERN_BONE_SCATTERED: '#d0d0d0',
+            CAVERN_BONE_FRAGMENT: '#c0c0c0'
+        }
     },
     
     GAME: {

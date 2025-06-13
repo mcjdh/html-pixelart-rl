@@ -1,94 +1,86 @@
 const wolfSprites = {
     default: function(ctx, x, y, size) {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Wolf fur - natural gray-brown
-        ctx.fillStyle = '#5a4a3a'; // Dark brown base
-        ctx.fillRect(x + 3*unit, y + 8*unit, 10*unit, 5*unit);
+        // Main body
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FUR_WOLF_BASE, 3, 8, 10, 5);
         
-        // Wolf head with muzzle
-        ctx.fillRect(x + 2*unit, y + 9*unit, 4*unit, 3*unit);
-        // Extended muzzle
-        ctx.fillRect(x + 1*unit, y + 10*unit, 2*unit, 2*unit);
+        // Head with muzzle
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FUR_WOLF_BASE, 2, 9, 4, 3);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FUR_WOLF_BASE, 1, 10, 2, 2); // Extended muzzle
         
-        // Four legs (proper wolf stance)
-        ctx.fillRect(x + 4*unit, y + 13*unit, 2*unit, 3*unit); // Front left
-        ctx.fillRect(x + 7*unit, y + 13*unit, 2*unit, 3*unit); // Front right
-        ctx.fillRect(x + 9*unit, y + 13*unit, 2*unit, 3*unit); // Back left
-        ctx.fillRect(x + 11*unit, y + 13*unit, 2*unit, 3*unit); // Back right
+        // Quadruped legs
+        SpriteUtils.drawQuadrupedLegs(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FUR_WOLF_BASE);
         
         // Bushy tail
-        ctx.fillRect(x + 13*unit, y + 8*unit, 2*unit, 3*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FUR_WOLF_BASE, 13, 8, 2, 3);
         
-        // Pointed wolf ears
-        ctx.fillStyle = '#6a5a4a'; // Lighter fur for ears
-        ctx.fillRect(x + 3*unit, y + 8*unit, 1*unit, 2*unit); // Left ear
-        ctx.fillRect(x + 5*unit, y + 8*unit, 1*unit, 2*unit); // Right ear
-        // Ear tips
-        ctx.fillRect(x + 3*unit, y + 7*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 5*unit, y + 7*unit, 1*unit, 1*unit);
+        // Pointed ears
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FUR_WOLF_LIGHT, 3, 8, 1, 2); // Left ear
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FUR_WOLF_LIGHT, 5, 8, 1, 2); // Right ear
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FUR_WOLF_LIGHT, 3, 7, 1, 1); // Left tip
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FUR_WOLF_LIGHT, 5, 7, 1, 1); // Right tip
         
-        // Piercing yellow eyes
-        ctx.fillStyle = '#ff3'; // Yellow wolf eyes
-        ctx.fillRect(x + 3*unit, y + 10*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 4*unit, y + 10*unit, 1*unit, 1*unit);
+        // Eyes
+        SpriteUtils.drawEyes(ctx, x, y, unit, CONFIG.COLORS.SPRITES.EYES_WOLF, 3, 10, 1);
         
-        // Black nose
-        ctx.fillStyle = '#000';
-        ctx.fillRect(x + 1*unit, y + 11*unit, 1*unit, 1*unit);
+        // Nose
+        SpriteUtils.drawRect(ctx, x, y, unit, '#000', 1, 11, 1, 1);
         
-        // Subtle fangs
-        ctx.fillStyle = '#eee';
-        ctx.fillRect(x + 2*unit, y + 11*unit, 1*unit, 1*unit);
+        // Fangs
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.TEETH_WHITE, 2, 11, 1, 1);
         
-        // Darker fur markings (natural wolf patterns)
-        ctx.fillStyle = '#3a2a1a';
-        ctx.fillRect(x + 6*unit, y + 9*unit, 3*unit, 2*unit); // Back stripe
-        ctx.fillRect(x + 10*unit, y + 10*unit, 2*unit, 1*unit); // Side marking
-        ctx.fillRect(x + 13*unit, y + 9*unit, 2*unit, 1*unit); // Tail tip
+        // Natural markings
+        const markings = [
+            {x: 6, y: 9, w: 3, h: 2},  // Back stripe
+            {x: 10, y: 10, w: 2, h: 1}, // Side marking
+            {x: 13, y: 9, w: 2, h: 1}   // Tail tip
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FUR_WOLF_DARK, markings);
         
-        // Lighter chest fur
-        ctx.fillStyle = '#7a6a5a';
-        ctx.fillRect(x + 4*unit, y + 11*unit, 2*unit, 2*unit);
+        // Chest fur
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FUR_WOLF_CHEST, 4, 11, 2, 2);
     },
     
     attacking: function(ctx, x, y, size) {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Body (gray) - slightly crouched
-        ctx.fillStyle = '#696969';
-        ctx.fillRect(x + 3*unit, y + 9*unit, 10*unit, 5*unit);
+        // Body - crouched stance
+        SpriteUtils.drawRect(ctx, x, y, unit, '#696969', 3, 9, 10, 5);
         
-        // Head - lowered
-        ctx.fillRect(x + 1*unit, y + 10*unit, 3*unit, 3*unit);
+        // Head - lowered aggressively
+        SpriteUtils.drawRect(ctx, x, y, unit, '#696969', 1, 10, 3, 3);
         
-        // Legs - spread for pounce
-        ctx.fillRect(x + 3*unit, y + 14*unit, 2*unit, 2*unit);
-        ctx.fillRect(x + 6*unit, y + 14*unit, 2*unit, 2*unit);
-        ctx.fillRect(x + 9*unit, y + 14*unit, 2*unit, 2*unit);
-        ctx.fillRect(x + 12*unit, y + 14*unit, 2*unit, 2*unit);
+        // Legs - spread for pouncing
+        const positions = [3, 6, 9, 12];
+        positions.forEach(xPos => {
+            SpriteUtils.drawRect(ctx, x, y, unit, '#696969', xPos, 14, 2, 2);
+        });
         
-        // Tail - raised
-        ctx.fillRect(x + 13*unit, y + 8*unit, 2*unit, 2*unit);
+        // Tail - raised in aggression
+        SpriteUtils.drawRect(ctx, x, y, unit, '#696969', 13, 8, 2, 2);
         
-        // Ears - flattened
-        ctx.fillRect(x + 1*unit, y + 9*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 3*unit, y + 9*unit, 1*unit, 1*unit);
+        // Flattened ears
+        SpriteUtils.drawRect(ctx, x, y, unit, '#696969', 1, 9, 1, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, '#696969', 3, 9, 1, 1);
         
-        // Eyes (bright red)
-        ctx.fillStyle = '#ff4444';
-        ctx.fillRect(x + 2*unit, y + 11*unit, 1*unit, 1*unit);
+        // Angry red eyes
+        SpriteUtils.drawRect(ctx, x, y, unit, '#ff4444', 2, 11, 1, 1);
         
-        // Open mouth with teeth
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x + 1*unit, y + 12*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 2*unit, y + 12*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 3*unit, y + 12*unit, 1*unit, 1*unit);
+        // Snarling mouth with visible teeth
+        const teeth = [
+            {x: 1, y: 12, w: 1, h: 1},
+            {x: 2, y: 12, w: 1, h: 1},
+            {x: 3, y: 12, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, '#ffffff', teeth);
         
-        // Darker fur patches
-        ctx.fillStyle = '#404040';
-        ctx.fillRect(x + 6*unit, y + 10*unit, 2*unit, 2*unit);
-        ctx.fillRect(x + 10*unit, y + 11*unit, 2*unit, 1*unit);
+        // Darker fur patches for aggressive look
+        const furPatches = [
+            {x: 6, y: 10, w: 2, h: 2},
+            {x: 10, y: 11, w: 2, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, '#404040', furPatches);
     }
 };
 

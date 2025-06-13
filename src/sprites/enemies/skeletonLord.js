@@ -1,100 +1,90 @@
 const skeletonLordSprites = {
     default: function(ctx, x, y, size) {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Animation: Menacing presence with dark energy
-        const time = Date.now() * 0.004; // Slow, ominous pulse
+        // Animation timing (preserve original complex animation)
+        const time = Date.now() * 0.004;
         const seed = (x + y) * 0.01;
-        const darkPulse = Math.sin(time + seed) * 0.3 + 0.7; // 0.4 to 1.0
-        const energyFlicker = Math.sin(time * 2 + seed) * 0.5 + 0.5; // 0 to 1
+        const darkPulse = Math.sin(time + seed) * 0.3 + 0.7;
+        const energyFlicker = Math.sin(time * 2 + seed) * 0.5 + 0.5;
         
-        // Dark energy wisps around the boss (no background fill)
-        // Only draw contained energy effects, no background aura
+        // Imposing skull structure
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BONE_LORD, 3, 1, 10, 8);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BONE_LORD, 2, 3, 2, 4); // Jaw left
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BONE_LORD, 12, 3, 2, 4); // Jaw right
         
-        // Larger, more imposing skull (boss is bigger)
-        ctx.fillStyle = '#e8e8e8'; // Slightly brighter bone
-        ctx.fillRect(x + 3*unit, y + 1*unit, 10*unit, 8*unit);
-        ctx.fillRect(x + 2*unit, y + 3*unit, 2*unit, 4*unit); // Jaw extension
-        ctx.fillRect(x + 12*unit, y + 3*unit, 2*unit, 4*unit);
+        // Crown horns
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BONE_LORD_DARK, 5, 0, 2, 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BONE_LORD_DARK, 9, 0, 2, 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BONE_LORD_DARK, 7, 0, 2, 1);
         
-        // Menacing crown/horn protrusions (boss-exclusive - regular skeleton has none)
-        ctx.fillStyle = '#d0d0d0';
-        ctx.fillRect(x + 5*unit, y + 0*unit, 2*unit, 2*unit); // Left horn
-        ctx.fillRect(x + 9*unit, y + 0*unit, 2*unit, 2*unit); // Right horn
-        ctx.fillRect(x + 7*unit, y + 0*unit, 2*unit, 1*unit); // Center spike (within bounds)
+        // Dark energy crown jewel
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.DARK_ENERGY, 7, 0, 2, 1);
         
-        // Boss crown jewel (dark energy gem)
-        ctx.fillStyle = '#800040';
-        ctx.fillRect(x + 7*unit, y + 0*unit, 2*unit, 1*unit);
+        // Expanded ribcage structure
+        const ribs = [
+            {x: 5, y: 9, w: 6, h: 1},
+            {x: 4, y: 10, w: 8, h: 1},
+            {x: 5, y: 11, w: 6, h: 1},
+            {x: 4, y: 12, w: 8, h: 1},
+            {x: 5, y: 13, w: 6, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_SKELETON, ribs);
         
-        // Larger ribcage (more imposing)
-        ctx.fillStyle = '#ddd';
-        ctx.fillRect(x + 5*unit, y + 9*unit, 6*unit, 1*unit);  // Top rib
-        ctx.fillRect(x + 4*unit, y + 10*unit, 8*unit, 1*unit); // Main ribs
-        ctx.fillRect(x + 5*unit, y + 11*unit, 6*unit, 1*unit);
-        ctx.fillRect(x + 4*unit, y + 12*unit, 8*unit, 1*unit);
-        ctx.fillRect(x + 5*unit, y + 13*unit, 6*unit, 1*unit); // Bottom rib
+        // Powerful arms
+        SpriteUtils.drawRect(ctx, x, y, unit, '#d8d8d8', 2, 9, 2, 6);
+        SpriteUtils.drawRect(ctx, x, y, unit, '#d8d8d8', 12, 9, 2, 6);
         
-        // Powerful arms with ancient weapons
-        ctx.fillStyle = '#d8d8d8';
-        ctx.fillRect(x + 2*unit, y + 9*unit, 2*unit, 6*unit);  // Left arm (thicker)
-        ctx.fillRect(x + 12*unit, y + 9*unit, 2*unit, 6*unit); // Right arm
+        // Ancient weapon (left hand)
+        SpriteUtils.drawRect(ctx, x, y, unit, '#8b4513', 2, 11, 1, 3); // Handle
+        SpriteUtils.drawRect(ctx, x, y, unit, '#c0c0c0', 2, 8, 1, 4); // Blade
         
-        // Ancient weapon in left hand (contained within bounds)
-        ctx.fillStyle = '#8b4513'; // Brown handle
-        ctx.fillRect(x + 2*unit, y + 11*unit, 1*unit, 3*unit);
-        ctx.fillStyle = '#c0c0c0'; // Metal blade
-        ctx.fillRect(x + 2*unit, y + 8*unit, 1*unit, 4*unit);
+        // Shield (right hand)
+        SpriteUtils.drawRect(ctx, x, y, unit, '#654321', 12, 10, 2, 4); // Wood
+        SpriteUtils.drawRect(ctx, x, y, unit, '#888', 12, 10, 2, 1); // Top rim
+        SpriteUtils.drawRect(ctx, x, y, unit, '#888', 12, 13, 2, 1); // Bottom rim
         
-        // Shield in right hand (safely within bounds)
-        ctx.fillStyle = '#654321'; // Dark wood
-        ctx.fillRect(x + 12*unit, y + 10*unit, 2*unit, 4*unit);
-        ctx.fillStyle = '#888'; // Metal rim
-        ctx.fillRect(x + 12*unit, y + 10*unit, 2*unit, 1*unit);
-        ctx.fillRect(x + 12*unit, y + 13*unit, 2*unit, 1*unit);
+        // Strong leg bones
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_SKELETON, 5, 14, 2, 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SKIN_SKELETON, 9, 14, 2, 2);
         
-        // Stronger leg bones
-        ctx.fillStyle = '#ddd';
-        ctx.fillRect(x + 5*unit, y + 14*unit, 2*unit, 2*unit); // Left leg (within bounds)
-        ctx.fillRect(x + 9*unit, y + 14*unit, 2*unit, 2*unit);  // Right leg (within bounds)
-        
-        // Glowing eye sockets with flickering evil energy
+        // Animated glowing eyes
         const eyeGlowR = Math.floor(255 * (0.7 + energyFlicker * 0.3));
         const eyeGlowG = Math.floor(50 * energyFlicker);
-        ctx.fillStyle = '#000'; // Socket base
-        ctx.fillRect(x + 5*unit, y + 3*unit, 2*unit, 2*unit); // Left socket
-        ctx.fillRect(x + 9*unit, y + 3*unit, 2*unit, 2*unit);  // Right socket
+        SpriteUtils.drawRect(ctx, x, y, unit, '#000', 5, 3, 2, 2); // Socket base
+        SpriteUtils.drawRect(ctx, x, y, unit, '#000', 9, 3, 2, 2);
         
-        // Flickering red eyes
-        ctx.fillStyle = `rgb(${eyeGlowR}, ${eyeGlowG}, 0)`;
-        ctx.fillRect(x + 5*unit, y + 3*unit, 2*unit, 2*unit);
-        ctx.fillRect(x + 9*unit, y + 3*unit, 2*unit, 2*unit);
+        const eyeColor = `rgb(${eyeGlowR}, ${eyeGlowG}, 0)`;
+        SpriteUtils.drawRect(ctx, x, y, unit, eyeColor, 5, 3, 2, 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, eyeColor, 9, 3, 2, 2);
         
-        // Extra bright eye centers when energy peaks
+        // Eye intensity peaks
         if (energyFlicker > 0.8) {
-            ctx.fillStyle = 'rgba(255, 100, 100, 0.9)';
-            ctx.fillRect(x + 6*unit, y + 4*unit, 1*unit, 1*unit);
-            ctx.fillRect(x + 10*unit, y + 4*unit, 1*unit, 1*unit);
+            SpriteUtils.drawRect(ctx, x, y, unit, 'rgba(255, 100, 100, 0.9)', 6, 4, 1, 1);
+            SpriteUtils.drawRect(ctx, x, y, unit, 'rgba(255, 100, 100, 0.9)', 10, 4, 1, 1);
         }
         
-        // Dark energy crackling around the boss (contained within bounds)
+        // Dark energy sparks
         if (darkPulse > 0.8) {
-            ctx.fillStyle = 'rgba(80, 0, 80, 0.9)';
-            // Small energy sparks only in specific safe positions
-            ctx.fillRect(x + 4*unit, y + 6*unit, 1*unit, 1*unit);
-            ctx.fillRect(x + 11*unit, y + 8*unit, 1*unit, 1*unit);
-            ctx.fillRect(x + 6*unit, y + 12*unit, 1*unit, 1*unit);
+            const sparkColor = 'rgba(80, 0, 80, 0.9)';
+            const sparks = [
+                {x: 4, y: 6, w: 1, h: 1},
+                {x: 11, y: 8, w: 1, h: 1},
+                {x: 6, y: 12, w: 1, h: 1}
+            ];
+            SpriteUtils.drawMarkings(ctx, x, y, unit, sparkColor, sparks);
         }
         
-        // Tattered ancient cloak/cape flowing behind
-        ctx.fillStyle = 'rgba(40, 20, 40, 0.8)';
-        ctx.fillRect(x + 6*unit, y + 15*unit, 4*unit, 1*unit);
-        ctx.fillRect(x + 5*unit, y + 15*unit, 6*unit, 1*unit);
+        // Tattered cloak
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOAK_DARK, 6, 15, 4, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CLOAK_DARK, 5, 15, 6, 1);
         
-        // Battle scars on skull (character detail)
-        ctx.fillStyle = '#bbb';
-        ctx.fillRect(x + 4*unit, y + 2*unit, 1*unit, 3*unit); // Left scar
-        ctx.fillRect(x + 11*unit, y + 4*unit, 1*unit, 2*unit); // Right scar
+        // Battle scars
+        const scars = [
+            {x: 4, y: 2, w: 1, h: 3},
+            {x: 11, y: 4, w: 1, h: 2}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.BONE_LORD_SCAR, scars);
     }
 };
 

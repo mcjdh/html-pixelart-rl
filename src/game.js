@@ -1633,7 +1633,7 @@ class ModalManager {
                 
                 // Focus first button or primary button
                 if (index === 0 || buttonConfig.primary) {
-                    this.addTimeoutTracked(() => button.focus(), 100);
+                    setTimeout(() => button.focus(), 100);
                 }
                 
                 this.buttons.appendChild(button);

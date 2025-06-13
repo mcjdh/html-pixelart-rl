@@ -1,37 +1,32 @@
 const cosmicGuardianSprites = {
     default: function(ctx, x, y, size) {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         const time = Date.now() * 0.002;
         
-        // Armored celestial body
-        ctx.fillStyle = '#4a4a7a';
-        ctx.fillRect(x + unit * 4, y + unit * 6, unit * 8, unit * 8);
+        // Celestial armored body
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.COSMIC_ARMOR, 4, 6, 8, 8);
         
         // Stellar armor plates
-        ctx.fillStyle = '#6a6a9a';
-        ctx.fillRect(x + unit * 3, y + unit * 5, unit * 3, unit * 4);
-        ctx.fillRect(x + unit * 10, y + unit * 5, unit * 3, unit * 4);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.COSMIC_PLATE, 3, 5, 3, 4);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.COSMIC_PLATE, 10, 5, 3, 4);
         
         // Constellation crown
-        ctx.fillStyle = '#8a8aba';
-        ctx.fillRect(x + unit * 5, y + unit * 3, unit * 6, unit * 3);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.COSMIC_CROWN, 5, 3, 6, 3);
         
-        // Glowing constellation points on crown
+        // Glowing constellation points
         const glow = Math.sin(time) * 0.4 + 0.6;
-        ctx.fillStyle = `rgba(150, 180, 255, ${glow})`;
-        ctx.fillRect(x + unit * 6, y + unit * 4, unit, unit);
-        ctx.fillRect(x + unit * 9, y + unit * 4, unit, unit);
+        const glowColor = `rgba(150, 180, 255, ${glow})`;
+        SpriteUtils.drawRect(ctx, x, y, unit, glowColor, 6, 4, 1, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, glowColor, 9, 4, 1, 1);
         
         // Star staff
-        ctx.fillStyle = '#7a7aaa';
-        ctx.fillRect(x + unit * 13, y + unit * 7, unit, unit * 6);
-        ctx.fillStyle = `rgba(200, 220, 255, ${glow})`;
-        ctx.fillRect(x + unit * 12, y + unit * 6, unit * 3, unit * 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.COSMIC_STAFF, 13, 7, 1, 6);
+        const staffGlow = `rgba(200, 220, 255, ${glow})`;
+        SpriteUtils.drawRect(ctx, x, y, unit, staffGlow, 12, 6, 3, 2);
         
-        // Legs
-        ctx.fillStyle = '#4a4a7a';
-        ctx.fillRect(x + unit * 6, y + unit * 13, unit * 2, unit * 3);
-        ctx.fillRect(x + unit * 8, y + unit * 13, unit * 2, unit * 3);
+        // Cosmic legs
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.COSMIC_ARMOR, 6, 13, 2, 3);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.COSMIC_ARMOR, 8, 13, 2, 3);
     }
 };
 

@@ -34,291 +34,239 @@ const terrainSprites = {
     
     // Stone floor variant 1 - basic texture
     floor1: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
         // Base floor color
-        ctx.fillStyle = '#555';
-        ctx.fillRect(x, y, size, size);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_BASE, 0, 0, 16, 16);
         
         // Stone texture details
-        ctx.fillStyle = '#666';
-        ctx.fillRect(x + 2*unit, y + 1*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 7*unit, y + 2*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 12*unit, y + 3*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 4*unit, y + 5*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 9*unit, y + 6*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 14*unit, y + 7*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 1*unit, y + 9*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 6*unit, y + 10*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 11*unit, y + 11*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 3*unit, y + 13*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 8*unit, y + 14*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 13*unit, y + 15*unit, 1*unit, 1*unit);
+        const textureSpots = [
+            {x: 2, y: 1, w: 1, h: 1}, {x: 7, y: 2, w: 1, h: 1}, {x: 12, y: 3, w: 1, h: 1},
+            {x: 4, y: 5, w: 1, h: 1}, {x: 9, y: 6, w: 1, h: 1}, {x: 14, y: 7, w: 1, h: 1},
+            {x: 1, y: 9, w: 1, h: 1}, {x: 6, y: 10, w: 1, h: 1}, {x: 11, y: 11, w: 1, h: 1},
+            {x: 3, y: 13, w: 1, h: 1}, {x: 8, y: 14, w: 1, h: 1}, {x: 13, y: 15, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_TEXTURE, textureSpots);
         
         // Highlight spots
-        ctx.fillStyle = '#777';
-        ctx.fillRect(x + 5*unit, y + 3*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 10*unit, y + 8*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 15*unit, y + 12*unit, 1*unit, 1*unit);
+        const highlights = [
+            {x: 5, y: 3, w: 1, h: 1}, {x: 10, y: 8, w: 1, h: 1}, {x: 15, y: 12, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_HIGHLIGHT, highlights);
     },
     
     // Stone floor variant 2 - with cracks
     floor2: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
         // Base floor color
-        ctx.fillStyle = '#555';
-        ctx.fillRect(x, y, size, size);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_BASE, 0, 0, 16, 16);
         
         // Crack pattern
-        ctx.fillStyle = '#444';
-        ctx.fillRect(x + 3*unit, y + 5*unit, 8*unit, 1*unit);
-        ctx.fillRect(x + 6*unit, y + 4*unit, 1*unit, 3*unit);
-        ctx.fillRect(x + 2*unit, y + 10*unit, 5*unit, 1*unit);
-        ctx.fillRect(x + 11*unit, y + 8*unit, 4*unit, 1*unit);
+        const cracks = [
+            {x: 3, y: 5, w: 8, h: 1}, {x: 6, y: 4, w: 1, h: 3},
+            {x: 2, y: 10, w: 5, h: 1}, {x: 11, y: 8, w: 4, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_CRACK, cracks);
         
         // Texture spots
-        ctx.fillStyle = '#666';
-        ctx.fillRect(x + 1*unit, y + 2*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 8*unit, y + 1*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 14*unit, y + 3*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 5*unit, y + 7*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 12*unit, y + 6*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 3*unit, y + 12*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 9*unit, y + 14*unit, 1*unit, 1*unit);
+        const textureSpots = [
+            {x: 1, y: 2, w: 1, h: 1}, {x: 8, y: 1, w: 1, h: 1}, {x: 14, y: 3, w: 1, h: 1},
+            {x: 5, y: 7, w: 1, h: 1}, {x: 12, y: 6, w: 1, h: 1}, {x: 3, y: 12, w: 1, h: 1},
+            {x: 9, y: 14, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_TEXTURE, textureSpots);
         
         // Highlights
-        ctx.fillStyle = '#777';
-        ctx.fillRect(x + 7*unit, y + 9*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 13*unit, y + 11*unit, 1*unit, 1*unit);
+        const highlights = [
+            {x: 7, y: 9, w: 1, h: 1}, {x: 13, y: 11, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_HIGHLIGHT, highlights);
     },
     
     // Stone floor variant 3 - weathered
     floor3: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
         // Base floor with slight color variation
-        ctx.fillStyle = '#544';
-        ctx.fillRect(x, y, size, size);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_BASE_ALT, 0, 0, 16, 16);
         
         // Weathered patches
-        ctx.fillStyle = '#666';
-        ctx.fillRect(x + 2*unit, y + 3*unit, 3*unit, 2*unit);
-        ctx.fillRect(x + 9*unit, y + 5*unit, 4*unit, 3*unit);
-        ctx.fillRect(x + 4*unit, y + 11*unit, 5*unit, 2*unit);
+        const weatheredPatches = [
+            {x: 2, y: 3, w: 3, h: 2}, {x: 9, y: 5, w: 4, h: 3}, {x: 4, y: 11, w: 5, h: 2}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_WEATHERED, weatheredPatches);
         
         // Small stones/debris
-        ctx.fillStyle = '#777';
-        ctx.fillRect(x + 6*unit, y + 2*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 11*unit, y + 9*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 2*unit, y + 13*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 14*unit, y + 14*unit, 1*unit, 1*unit);
+        const debris = [
+            {x: 6, y: 2, w: 1, h: 1}, {x: 11, y: 9, w: 1, h: 1},
+            {x: 2, y: 13, w: 1, h: 1}, {x: 14, y: 14, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_HIGHLIGHT, debris);
         
         // Dark spots
-        ctx.fillStyle = '#444';
-        ctx.fillRect(x + 8*unit, y + 3*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 1*unit, y + 8*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 13*unit, y + 7*unit, 1*unit, 1*unit);
+        const darkSpots = [
+            {x: 8, y: 3, w: 1, h: 1}, {x: 1, y: 8, w: 1, h: 1}, {x: 13, y: 7, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_SHADOW, darkSpots);
     },
     
     // Stone floor variant 4 - clean
     floor4: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
         // Cleaner base color
-        ctx.fillStyle = '#565';
-        ctx.fillRect(x, y, size, size);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_BASE_CLEAN, 0, 0, 16, 16);
         
         // Minimal texture - just some subtle spots
-        ctx.fillStyle = '#677';
-        ctx.fillRect(x + 4*unit, y + 4*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 10*unit, y + 7*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 7*unit, y + 11*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 13*unit, y + 13*unit, 1*unit, 1*unit);
+        const subtleTexture = [
+            {x: 4, y: 4, w: 1, h: 1}, {x: 10, y: 7, w: 1, h: 1},
+            {x: 7, y: 11, w: 1, h: 1}, {x: 13, y: 13, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_HIGHLIGHT_ALT, subtleTexture);
         
         // Light highlights
-        ctx.fillStyle = '#788';
-        ctx.fillRect(x + 2*unit, y + 6*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 12*unit, y + 3*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 6*unit, y + 14*unit, 1*unit, 1*unit);
+        const highlights = [
+            {x: 2, y: 6, w: 1, h: 1}, {x: 12, y: 3, w: 1, h: 1}, {x: 6, y: 14, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_HIGHLIGHT_CLEAN, highlights);
         
         // Subtle shadows
-        ctx.fillStyle = '#454';
-        ctx.fillRect(x + 8*unit, y + 5*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 14*unit, y + 9*unit, 1*unit, 1*unit);
+        const shadows = [
+            {x: 8, y: 5, w: 1, h: 1}, {x: 14, y: 9, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_SHADOW_ALT, shadows);
     },
     
     // Stone wall variant 1 - detailed blocks
     wall1: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
         // Base wall color
-        ctx.fillStyle = '#777';
-        ctx.fillRect(x, y, size, size);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_BASE, 0, 0, 16, 16);
         
-        // Stone block outlines
-        ctx.fillStyle = '#888';
-        // Top edge highlight
-        ctx.fillRect(x, y, size, 1*unit);
-        // Left edge highlight  
-        ctx.fillRect(x, y, 1*unit, size);
+        // Edge highlights
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_HIGHLIGHT, 0, 0, 16, 1); // Top
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_HIGHLIGHT, 0, 0, 1, 16); // Left
         
         // Stone block divisions
-        ctx.fillStyle = '#666';
-        // Vertical division
-        ctx.fillRect(x + 8*unit, y + 2*unit, 1*unit, 12*unit);
-        // Horizontal divisions
-        ctx.fillRect(x + 1*unit, y + 5*unit, 7*unit, 1*unit);
-        ctx.fillRect(x + 9*unit, y + 8*unit, 6*unit, 1*unit);
-        ctx.fillRect(x + 1*unit, y + 11*unit, 7*unit, 1*unit);
+        const divisions = [
+            {x: 8, y: 2, w: 1, h: 12}, // Vertical division
+            {x: 1, y: 5, w: 7, h: 1}, {x: 9, y: 8, w: 6, h: 1}, {x: 1, y: 11, w: 7, h: 1} // Horizontal
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_DIVISIONS, divisions);
         
         // Dark edges for depth
-        ctx.fillStyle = '#555';
-        // Bottom edge
-        ctx.fillRect(x, y + 15*unit, size, 1*unit);
-        // Right edge
-        ctx.fillRect(x + 15*unit, y, 1*unit, size);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_SHADOW, 0, 15, 16, 1); // Bottom
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_SHADOW, 15, 0, 1, 16); // Right
         
         // Stone texture
-        ctx.fillStyle = '#888';
-        ctx.fillRect(x + 3*unit, y + 2*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 12*unit, y + 3*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 5*unit, y + 6*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 10*unit, y + 9*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 2*unit, y + 12*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 13*unit, y + 13*unit, 1*unit, 1*unit);
+        const texture = [
+            {x: 3, y: 2, w: 1, h: 1}, {x: 12, y: 3, w: 1, h: 1}, {x: 5, y: 6, w: 1, h: 1},
+            {x: 10, y: 9, w: 1, h: 1}, {x: 2, y: 12, w: 1, h: 1}, {x: 13, y: 13, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_HIGHLIGHT, texture);
         
         // Shadow spots
-        ctx.fillStyle = '#666';
-        ctx.fillRect(x + 6*unit, y + 3*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 11*unit, y + 6*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 4*unit, y + 9*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 14*unit, y + 12*unit, 1*unit, 1*unit);
+        const shadows = [
+            {x: 6, y: 3, w: 1, h: 1}, {x: 11, y: 6, w: 1, h: 1},
+            {x: 4, y: 9, w: 1, h: 1}, {x: 14, y: 12, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_DIVISIONS, shadows);
     },
     
     // Stone wall variant 2 - rough surface
     wall2: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
         // Slightly different base color
-        ctx.fillStyle = '#787';
-        ctx.fillRect(x, y, size, size);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_BASE_ROUGH, 0, 0, 16, 16);
         
         // Rough texture all over
-        ctx.fillStyle = '#898';
-        ctx.fillRect(x + 1*unit, y + 1*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 4*unit, y + 2*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 7*unit, y + 1*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 11*unit, y + 3*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 14*unit, y + 2*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 2*unit, y + 5*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 9*unit, y + 6*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 13*unit, y + 7*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 5*unit, y + 9*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 8*unit, y + 11*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 12*unit, y + 12*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 3*unit, y + 14*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 10*unit, y + 15*unit, 1*unit, 1*unit);
+        const roughTexture = [
+            {x: 1, y: 1, w: 1, h: 1}, {x: 4, y: 2, w: 1, h: 1}, {x: 7, y: 1, w: 1, h: 1},
+            {x: 11, y: 3, w: 1, h: 1}, {x: 14, y: 2, w: 1, h: 1}, {x: 2, y: 5, w: 1, h: 1},
+            {x: 9, y: 6, w: 1, h: 1}, {x: 13, y: 7, w: 1, h: 1}, {x: 5, y: 9, w: 1, h: 1},
+            {x: 8, y: 11, w: 1, h: 1}, {x: 12, y: 12, w: 1, h: 1}, {x: 3, y: 14, w: 1, h: 1},
+            {x: 10, y: 15, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_HIGHLIGHT_ROUGH, roughTexture);
         
         // Dark spots for depth
-        ctx.fillStyle = '#565';
-        ctx.fillRect(x + 6*unit, y + 4*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 15*unit, y + 8*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 1*unit, y + 10*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 14*unit, y + 13*unit, 1*unit, 1*unit);
+        const darkSpots = [
+            {x: 6, y: 4, w: 1, h: 1}, {x: 15, y: 8, w: 1, h: 1},
+            {x: 1, y: 10, w: 1, h: 1}, {x: 14, y: 13, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_SHADOW_ROUGH, darkSpots);
         
         // Edge highlights
-        ctx.fillStyle = '#999';
-        ctx.fillRect(x, y, size, 1*unit);
-        ctx.fillRect(x, y, 1*unit, size);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_EDGE_HIGHLIGHT, 0, 0, 16, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_EDGE_HIGHLIGHT, 0, 0, 1, 16);
     },
     
     // Stone wall variant 3 - mossy/aged
     wall3: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
         // Base wall with greenish tint
-        ctx.fillStyle = '#776';
-        ctx.fillRect(x, y, size, size);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_BASE_MOSSY, 0, 0, 16, 16);
         
         // Moss patches
-        ctx.fillStyle = '#686';
-        ctx.fillRect(x + 3*unit, y + 7*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 11*unit, y + 4*unit, 3*unit, 2*unit);
-        ctx.fillRect(x + 7*unit, y + 12*unit, 4*unit, 2*unit);
-        ctx.fillRect(x + 1*unit, y + 2*unit, 2*unit, 2*unit);
+        const mossPatches = [
+            {x: 3, y: 7, w: 2, h: 3}, {x: 11, y: 4, w: 3, h: 2},
+            {x: 7, y: 12, w: 4, h: 2}, {x: 1, y: 2, w: 2, h: 2}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.MOSS_PATCH, mossPatches);
         
         // Stone texture
-        ctx.fillStyle = '#887';
-        ctx.fillRect(x + 6*unit, y + 3*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 13*unit, y + 8*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 2*unit, y + 11*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 9*unit, y + 15*unit, 1*unit, 1*unit);
+        const stoneTexture = [
+            {x: 6, y: 3, w: 1, h: 1}, {x: 13, y: 8, w: 1, h: 1},
+            {x: 2, y: 11, w: 1, h: 1}, {x: 9, y: 15, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_HIGHLIGHT_MOSSY, stoneTexture);
         
         // Dark moss spots
-        ctx.fillStyle = '#575';
-        ctx.fillRect(x + 4*unit, y + 8*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 12*unit, y + 5*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 8*unit, y + 13*unit, 1*unit, 1*unit);
+        const darkMoss = [
+            {x: 4, y: 8, w: 1, h: 1}, {x: 12, y: 5, w: 1, h: 1}, {x: 8, y: 13, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.MOSS_DARK, darkMoss);
         
         // Edge definition
-        ctx.fillStyle = '#665';
-        ctx.fillRect(x, y + 15*unit, size, 1*unit);
-        ctx.fillRect(x + 15*unit, y, 1*unit, size);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_SHADOW_MOSSY, 0, 15, 16, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.WALL_SHADOW_MOSSY, 15, 0, 1, 16);
     },
     
     // Beautiful descending stairs
     stairs: (ctx, x, y, size) => {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
         // Base floor
-        ctx.fillStyle = '#555';
-        ctx.fillRect(x, y, size, size);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.FLOOR_BASE, 0, 0, 16, 16);
         
-        // Stairs descending from top-left to bottom-right
-        ctx.fillStyle = '#66a';
+        // Steps with shadows
+        const steps = [
+            {step: 1, x: 2, y: 2}, {step: 2, x: 4, y: 4}, {step: 3, x: 6, y: 6},
+            {step: 4, x: 8, y: 8}, {step: 5, x: 10, y: 10}
+        ];
         
-        // Step 1 (highest)
-        ctx.fillRect(x + 2*unit, y + 2*unit, 5*unit, 2*unit);
-        ctx.fillStyle = '#44a';
-        ctx.fillRect(x + 2*unit, y + 3*unit, 5*unit, 1*unit);
-        
-        // Step 2
-        ctx.fillStyle = '#66a';
-        ctx.fillRect(x + 4*unit, y + 4*unit, 5*unit, 2*unit);
-        ctx.fillStyle = '#44a';
-        ctx.fillRect(x + 4*unit, y + 5*unit, 5*unit, 1*unit);
-        
-        // Step 3
-        ctx.fillStyle = '#66a';
-        ctx.fillRect(x + 6*unit, y + 6*unit, 5*unit, 2*unit);
-        ctx.fillStyle = '#44a';
-        ctx.fillRect(x + 6*unit, y + 7*unit, 5*unit, 1*unit);
-        
-        // Step 4
-        ctx.fillStyle = '#66a';
-        ctx.fillRect(x + 8*unit, y + 8*unit, 5*unit, 2*unit);
-        ctx.fillStyle = '#44a';
-        ctx.fillRect(x + 8*unit, y + 9*unit, 5*unit, 1*unit);
-        
-        // Step 5 (lowest)
-        ctx.fillStyle = '#66a';
-        ctx.fillRect(x + 10*unit, y + 10*unit, 5*unit, 2*unit);
-        ctx.fillStyle = '#44a';
-        ctx.fillRect(x + 10*unit, y + 11*unit, 5*unit, 1*unit);
+        steps.forEach(({x: stepX, y: stepY}) => {
+            // Step surface
+            SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.STAIRS_BASE, stepX, stepY, 5, 2);
+            // Step shadow
+            SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.STAIRS_SHADOW, stepX, stepY + 1, 5, 1);
+        });
         
         // Side highlights
-        ctx.fillStyle = '#88c';
-        ctx.fillRect(x + 2*unit, y + 2*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 4*unit, y + 4*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 6*unit, y + 6*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 8*unit, y + 8*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 10*unit, y + 10*unit, 1*unit, 1*unit);
+        const highlights = [
+            {x: 2, y: 2, w: 1, h: 1}, {x: 4, y: 4, w: 1, h: 1}, {x: 6, y: 6, w: 1, h: 1},
+            {x: 8, y: 8, w: 1, h: 1}, {x: 10, y: 10, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.STAIRS_HIGHLIGHT, highlights);
         
         // Descent indicator glow
-        ctx.fillStyle = '#aaf';
-        ctx.fillRect(x + 12*unit, y + 13*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 13*unit, y + 14*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 14*unit, y + 15*unit, 1*unit, 1*unit);
+        const glowSpots = [
+            {x: 12, y: 13, w: 1, h: 1}, {x: 13, y: 14, w: 1, h: 1}, {x: 14, y: 15, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.STAIRS_GLOW, glowSpots);
     }
 };

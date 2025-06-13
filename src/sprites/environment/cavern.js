@@ -1,31 +1,30 @@
 const cavernSprites = {
     wall: function(ctx, x, y, size) {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Base rock wall (dark brown-gray for better contrast)
-        ctx.fillStyle = '#2a251f';
-        ctx.fillRect(x, y, size, size);
+        // Base rock wall
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_WALL_BASE, 0, 0, 16, 16);
         
-        // Rock texture variations (brownish stone)
-        ctx.fillStyle = '#3d3429';
-        ctx.fillRect(x + 2*unit, y + 1*unit, 3*unit, 4*unit);
-        ctx.fillRect(x + 8*unit, y + 3*unit, 4*unit, 3*unit);
-        ctx.fillRect(x + 1*unit, y + 8*unit, 5*unit, 3*unit);
-        ctx.fillRect(x + 10*unit, y + 10*unit, 4*unit, 4*unit);
+        // Rock texture variations
+        const texturePatches = [
+            {x: 2, y: 1, w: 3, h: 4}, {x: 8, y: 3, w: 4, h: 3},
+            {x: 1, y: 8, w: 5, h: 3}, {x: 10, y: 10, w: 4, h: 4}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_WALL_TEXTURE, texturePatches);
         
-        // Darker cracks and crevices (very dark)
-        ctx.fillStyle = '#1a1510';
-        ctx.fillRect(x + 4*unit, y + 2*unit, 1*unit, 6*unit);
-        ctx.fillRect(x + 9*unit, y + 5*unit, 1*unit, 4*unit);
-        ctx.fillRect(x + 2*unit, y + 12*unit, 6*unit, 1*unit);
-        ctx.fillRect(x + 11*unit, y + 8*unit, 3*unit, 1*unit);
+        // Darker cracks and crevices
+        const cracks = [
+            {x: 4, y: 2, w: 1, h: 6}, {x: 9, y: 5, w: 1, h: 4},
+            {x: 2, y: 12, w: 6, h: 1}, {x: 11, y: 8, w: 3, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_WALL_CRACK, cracks);
         
-        // Lighter highlights (tan/beige)
-        ctx.fillStyle = '#4f453a';
-        ctx.fillRect(x + 1*unit, y + 0*unit, 2*unit, 1*unit);
-        ctx.fillRect(x + 6*unit, y + 1*unit, 2*unit, 1*unit);
-        ctx.fillRect(x + 0*unit, y + 5*unit, 1*unit, 2*unit);
-        ctx.fillRect(x + 13*unit, y + 7*unit, 2*unit, 1*unit);
+        // Lighter highlights
+        const highlights = [
+            {x: 1, y: 0, w: 2, h: 1}, {x: 6, y: 1, w: 2, h: 1},
+            {x: 0, y: 5, w: 1, h: 2}, {x: 13, y: 7, w: 2, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_WALL_HIGHLIGHT, highlights);
         
         // Animation: Subtle moisture sparkles
         const time = Date.now() * 0.004;
@@ -50,59 +49,55 @@ const cavernSprites = {
     },
     
     floor: function(ctx, x, y, size) {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
-        // Base stone floor (lighter gray for strong contrast with dark walls)
-        ctx.fillStyle = '#6b6b6b';
-        ctx.fillRect(x, y, size, size);
+        // Base stone floor
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_FLOOR_BASE, 0, 0, 16, 16);
         
-        // Stone tile variations (medium gray)
-        ctx.fillStyle = '#5a5a5a';
-        ctx.fillRect(x + 1*unit, y + 2*unit, 6*unit, 5*unit);
-        ctx.fillRect(x + 9*unit, y + 1*unit, 5*unit, 4*unit);
-        ctx.fillRect(x + 2*unit, y + 9*unit, 4*unit, 5*unit);
-        ctx.fillRect(x + 8*unit, y + 10*unit, 6*unit, 4*unit);
+        // Stone tile variations
+        const tiles = [
+            {x: 1, y: 2, w: 6, h: 5}, {x: 9, y: 1, w: 5, h: 4},
+            {x: 2, y: 9, w: 4, h: 5}, {x: 8, y: 10, w: 6, h: 4}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_FLOOR_TILE, tiles);
         
-        // Mortar lines (darker gray for definition)
-        ctx.fillStyle = '#484848';
-        ctx.fillRect(x + 7*unit, y + 0*unit, 1*unit, size);
-        ctx.fillRect(x + 0*unit, y + 8*unit, size, 1*unit);
+        // Mortar lines
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_FLOOR_MORTAR, 7, 0, 1, 16);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_FLOOR_MORTAR, 0, 8, 16, 1);
         
-        // Small debris and pebbles (light highlights)
-        ctx.fillStyle = '#7a7a7a';
-        ctx.fillRect(x + 3*unit, y + 4*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 11*unit, y + 6*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 5*unit, y + 12*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 13*unit, y + 3*unit, 1*unit, 1*unit);
+        // Small debris and pebbles
+        const debris = [
+            {x: 3, y: 4, w: 1, h: 1}, {x: 11, y: 6, w: 1, h: 1},
+            {x: 5, y: 12, w: 1, h: 1}, {x: 13, y: 3, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_FLOOR_DEBRIS, debris);
     },
     
     stalagmite: function(ctx, x, y, size) {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
         // Floor base
         cavernSprites.floor(ctx, x, y, size);
         
         // Stalagmite base (wide)
-        ctx.fillStyle = '#606060';
-        ctx.fillRect(x + 5*unit, y + 11*unit, 6*unit, 5*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_STALAGMITE, 5, 11, 6, 5);
         
-        // Middle section
-        ctx.fillStyle = '#505050';
-        ctx.fillRect(x + 6*unit, y + 8*unit, 4*unit, 3*unit);
-        
-        // Top point
-        ctx.fillRect(x + 7*unit, y + 5*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 7*unit, y + 3*unit, 2*unit, 2*unit);
+        // Middle section and top point
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_STALAGMITE_MID, 6, 8, 4, 3);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_STALAGMITE_MID, 7, 5, 2, 3);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_STALAGMITE_MID, 7, 3, 2, 2);
         
         // Highlight
-        ctx.fillStyle = '#707070';
-        ctx.fillRect(x + 6*unit, y + 8*unit, 1*unit, 2*unit);
-        ctx.fillRect(x + 7*unit, y + 5*unit, 1*unit, 2*unit);
+        const highlights = [
+            {x: 6, y: 8, w: 1, h: 2}, {x: 7, y: 5, w: 1, h: 2}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_STALAGMITE_HIGHLIGHT, highlights);
         
         // Shadow
-        ctx.fillStyle = '#404040';
-        ctx.fillRect(x + 9*unit, y + 9*unit, 1*unit, 3*unit);
-        ctx.fillRect(x + 8*unit, y + 12*unit, 2*unit, 2*unit);
+        const shadows = [
+            {x: 9, y: 9, w: 1, h: 3}, {x: 8, y: 12, w: 2, h: 2}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_STALAGMITE_SHADOW, shadows);
         
         // Animation: Water drip
         const time = Date.now() * 0.002;
@@ -145,14 +140,13 @@ const cavernSprites = {
         const glowIntensity = 0.3 + pulse * 0.4; // 0.3 to 0.7
         
         // Crystal base
-        ctx.fillStyle = '#4a4aff';
-        ctx.fillRect(x + 6*unit, y + 10*unit, 4*unit, 6*unit);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_CRYSTAL_BASE, 6, 10, 4, 6);
         
         // Crystal facets
-        ctx.fillStyle = '#6a6aff';
-        ctx.fillRect(x + 5*unit, y + 8*unit, 2*unit, 2*unit);
-        ctx.fillRect(x + 9*unit, y + 8*unit, 2*unit, 2*unit);
-        ctx.fillRect(x + 7*unit, y + 6*unit, 2*unit, 2*unit);
+        const facets = [
+            {x: 5, y: 8, w: 2, h: 2}, {x: 9, y: 8, w: 2, h: 2}, {x: 7, y: 6, w: 2, h: 2}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_CRYSTAL_FACET, facets);
         
         // Bright highlights with pulse
         const highlightAlpha = Math.floor(255 * (0.6 + pulse * 0.4));
@@ -182,25 +176,25 @@ const cavernSprites = {
         cavernSprites.floor(ctx, x, y, size);
         
         // Scattered rocks
-        ctx.fillStyle = '#606060';
-        ctx.fillRect(x + 3*unit, y + 8*unit, 3*unit, 2*unit);
-        ctx.fillRect(x + 8*unit, y + 6*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 5*unit, y + 12*unit, 4*unit, 2*unit);
-        ctx.fillRect(x + 10*unit, y + 11*unit, 3*unit, 3*unit);
+        const rocks = [
+            {x: 3, y: 8, w: 3, h: 2}, {x: 8, y: 6, w: 2, h: 3},
+            {x: 5, y: 12, w: 4, h: 2}, {x: 10, y: 11, w: 3, h: 3}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_RUBBLE, rocks);
         
         // Smaller debris
-        ctx.fillStyle = '#505050';
-        ctx.fillRect(x + 2*unit, y + 10*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 7*unit, y + 9*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 11*unit, y + 8*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 4*unit, y + 14*unit, 1*unit, 1*unit);
+        const debris = [
+            {x: 2, y: 10, w: 1, h: 1}, {x: 7, y: 9, w: 1, h: 1},
+            {x: 11, y: 8, w: 1, h: 1}, {x: 4, y: 14, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_RUBBLE_SMALL, debris);
         
         // Dust and particles
-        ctx.fillStyle = '#4a4a4a';
-        ctx.fillRect(x + 1*unit, y + 9*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 6*unit, y + 7*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 9*unit, y + 13*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 12*unit, y + 10*unit, 1*unit, 1*unit);
+        const dust = [
+            {x: 1, y: 9, w: 1, h: 1}, {x: 6, y: 7, w: 1, h: 1},
+            {x: 9, y: 13, w: 1, h: 1}, {x: 12, y: 10, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_RUBBLE_DUST, dust);
     },
     
     bones: function(ctx, x, y, size) {
@@ -217,7 +211,8 @@ const cavernSprites = {
         const shiftY = Math.floor(shift * 0.5 * unit);
         
         // Skull (with tiny movement)
-        ctx.fillStyle = '#e0e0e0';
+        const skullColor = CONFIG.COLORS.SPRITES.CAVERN_BONE_SKULL;
+        ctx.fillStyle = skullColor;
         ctx.fillRect(x + 3*unit + shiftX, y + 3*unit + shiftY, 4*unit, 4*unit);
         ctx.fillRect(x + 2*unit + shiftX, y + 4*unit + shiftY, 1*unit, 2*unit);
         ctx.fillRect(x + 7*unit + shiftX, y + 4*unit + shiftY, 1*unit, 2*unit);
@@ -236,7 +231,8 @@ const cavernSprites = {
         }
         
         // Scattered bones (some slightly moving)
-        ctx.fillStyle = '#d0d0d0';
+        const scatteredColor = CONFIG.COLORS.SPRITES.CAVERN_BONE_SCATTERED;
+        ctx.fillStyle = scatteredColor;
         const shift2 = Math.sin(time * 1.3 + seed + 1) * 0.2;
         const shiftX2 = Math.floor(shift2 * unit);
         
@@ -247,15 +243,15 @@ const cavernSprites = {
         ctx.fillRect(x + 10*unit + shiftX2, y + 8*unit, 3*unit, 1*unit);
         
         // Bone fragments
-        ctx.fillStyle = '#c0c0c0';
-        ctx.fillRect(x + 6*unit, y + 7*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 8*unit, y + 11*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 12*unit, y + 5*unit, 1*unit, 1*unit);
-        ctx.fillRect(x + 4*unit, y + 13*unit, 1*unit, 1*unit);
+        const fragments = [
+            {x: 6, y: 7, w: 1, h: 1}, {x: 8, y: 11, w: 1, h: 1},
+            {x: 12, y: 5, w: 1, h: 1}, {x: 4, y: 13, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.CAVERN_BONE_FRAGMENT, fragments);
     },
     
     stairs: function(ctx, x, y, size) {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         
         // Floor base
         cavernSprites.floor(ctx, x, y, size);

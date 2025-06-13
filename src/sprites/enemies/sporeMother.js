@@ -1,56 +1,55 @@
 const sporeMotherSprites = {
     default: function(ctx, x, y, size) {
-        const unit = size / 16;
+        const unit = SpriteUtils.getUnit(size);
         const time = Date.now() * 0.002;
         
-        // Massive mushroom body
-        ctx.fillStyle = '#4a3a5a';
-        ctx.fillRect(x + unit * 2, y + unit * 8, unit * 12, unit * 8);
+        // Massive boss body
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SPORE_MOTHER_BODY, 2, 8, 12, 8);
         
-        // Giant cap (boss-sized - much larger than sporeling)
-        ctx.fillStyle = '#6a4a7a';
-        ctx.fillRect(x, y + unit * 2, unit * 16, unit * 7);
-        ctx.fillRect(x + unit * 2, y + unit, unit * 12, unit);
-        ctx.fillRect(x + unit * 4, y, unit * 8, unit);
+        // Giant cap structure
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SPORE_MOTHER_CAP, 0, 2, 16, 7);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SPORE_MOTHER_CAP, 2, 1, 12, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SPORE_MOTHER_CAP, 4, 0, 8, 1);
         
-        // Boss-exclusive crown ridges
-        ctx.fillStyle = '#7a5a8a';
-        ctx.fillRect(x + unit * 6, y, unit * 4, unit);
-        ctx.fillRect(x + unit * 4, y + unit, unit * 8, unit);
+        // Boss crown ridges
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SPORE_MOTHER_CROWN, 6, 0, 4, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SPORE_MOTHER_CROWN, 4, 1, 8, 1);
         
-        // Cap patterns and ridges
-        ctx.fillStyle = '#5a3a6a';
-        ctx.fillRect(x + unit * 2, y + unit * 4, unit * 3, unit * 3);
-        ctx.fillRect(x + unit * 11, y + unit * 4, unit * 3, unit * 3);
-        ctx.fillRect(x + unit * 6, y + unit * 5, unit * 4, unit * 2);
+        // Cap patterns
+        const patterns = [
+            {x: 2, y: 4, w: 3, h: 3},
+            {x: 11, y: 4, w: 3, h: 3},
+            {x: 6, y: 5, w: 4, h: 2}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SPORE_MOTHER_PATTERN, patterns);
         
-        // Multiple glowing ancient eyes (boss-exclusive - sporeling only has 2)
-        ctx.fillStyle = '#d8a8f8';
-        ctx.fillRect(x + unit * 4, y + unit * 5, unit * 2, unit);
-        ctx.fillRect(x + unit * 10, y + unit * 5, unit * 2, unit);
-        ctx.fillRect(x + unit * 7, y + unit * 3, unit * 2, unit);
+        // Multiple ancient eyes
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SPORE_MOTHER_EYES, 4, 5, 2, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SPORE_MOTHER_EYES, 10, 5, 2, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, CONFIG.COLORS.SPRITES.SPORE_MOTHER_EYES, 7, 3, 2, 1);
         
-        // Boss-exclusive third eye (center forehead)
+        // Pulsating third eye (boss special)
         const eyePulse = Math.sin(time * 1.5) * 0.3 + 0.7;
-        ctx.fillStyle = `rgba(255, 180, 255, ${eyePulse})`;
-        ctx.fillRect(x + unit * 7, y + unit * 6, unit * 2, unit * 2);
+        SpriteUtils.drawRect(ctx, x, y, unit, `rgba(255, 180, 255, ${eyePulse})`, 7, 6, 2, 2);
         
         // Pulsating core
         const pulse = Math.sin(time) * 0.5 + 0.5;
-        ctx.fillStyle = `rgba(200, 150, 255, ${0.4 + pulse * 0.4})`;
-        ctx.fillRect(x + unit * 6, y + unit * 10, unit * 4, unit * 4);
+        const coreColor = `rgba(200, 150, 255, ${0.4 + pulse * 0.4})`;
+        SpriteUtils.drawRect(ctx, x, y, unit, coreColor, 6, 10, 4, 4);
         
-        // Tentacle-like mycelium roots
-        ctx.fillStyle = '#3a2a4a';
-        ctx.fillRect(x + unit, y + unit * 14, unit * 2, unit * 2);
-        ctx.fillRect(x + unit * 13, y + unit * 14, unit * 2, unit * 2);
-        ctx.fillRect(x + unit * 4, y + unit * 15, unit * 2, unit);
-        ctx.fillRect(x + unit * 10, y + unit * 15, unit * 2, unit);
+        // Mycelium tentacle roots
+        const roots = [
+            {x: 1, y: 14, w: 2, h: 2},
+            {x: 13, y: 14, w: 2, h: 2},
+            {x: 4, y: 15, w: 2, h: 1},
+            {x: 10, y: 15, w: 2, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.MYCELIUM_ROOT, roots);
         
-        // Spore clouds emanating (contained within bounds)
+        // Animated spore clouds
         for (let i = 0; i < 5; i++) {
             const angle = (time + i * 1.3) % (Math.PI * 2);
-            const radius = unit * 2.5; // Reduced radius to stay within bounds
+            const radius = unit * 2.5;
             const dx = Math.cos(angle) * radius;
             const dy = Math.sin(angle) * radius;
             const alpha = 0.2 + Math.sin(time + i * 0.7) * 0.15;
@@ -58,24 +57,27 @@ const sporeMotherSprites = {
             const sporeX = x + unit * 8 + dx - unit;
             const sporeY = y + unit * 8 + dy - unit;
             
-            // Only draw if within sprite bounds
-            if (sporeX >= x && sporeX + unit * 2 <= x + size && sporeY >= y && sporeY + unit * 2 <= y + size) {
+            // Bounds check for safety
+            if (sporeX >= x && sporeX + unit * 2 <= x + size && 
+                sporeY >= y && sporeY + unit * 2 <= y + size) {
                 ctx.fillStyle = `rgba(180, 120, 220, ${alpha})`;
                 ctx.fillRect(sporeX, sporeY, unit * 2, unit * 2);
             }
         }
         
-        // Ancient runes on cap
-        ctx.fillStyle = '#8a6aa8';
-        ctx.fillRect(x + unit * 3, y + unit * 2, unit, unit);
-        ctx.fillRect(x + unit * 12, y + unit * 2, unit, unit);
-        ctx.fillRect(x + unit * 7, y + unit * 6, unit, unit);
+        // Ancient runes
+        const runes = [
+            {x: 3, y: 2, w: 1, h: 1},
+            {x: 12, y: 2, w: 1, h: 1},
+            {x: 7, y: 6, w: 1, h: 1}
+        ];
+        SpriteUtils.drawMarkings(ctx, x, y, unit, CONFIG.COLORS.SPRITES.ANCIENT_RUNE, runes);
         
         // Bioluminescent veins
         const veinGlow = Math.sin(time * 1.5) * 0.3 + 0.4;
-        ctx.fillStyle = `rgba(150, 100, 255, ${veinGlow})`;
-        ctx.fillRect(x + unit * 5, y + unit * 8, unit * 6, unit);
-        ctx.fillRect(x + unit * 8, y + unit * 6, unit, unit * 4);
+        const veinColor = `rgba(150, 100, 255, ${veinGlow})`;
+        SpriteUtils.drawRect(ctx, x, y, unit, veinColor, 5, 8, 6, 1);
+        SpriteUtils.drawRect(ctx, x, y, unit, veinColor, 8, 6, 1, 4);
     }
 };
 
