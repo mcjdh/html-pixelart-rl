@@ -18,6 +18,7 @@ class GameState {
         this.messages = [];
         this.turn = 0;
         
+        // Legacy upgrade system removed - now using passive skill progression
         this.upgrades = {
             attackCost: 10,
             defenseCost: 10,
@@ -390,8 +391,15 @@ class GameState {
         if (isFirstUpdate || forceUpdate) {
             // On first update or forced update, just reveal all visible tiles
             for (const tile of newVisibleTiles) {
+                const wasExplored = this.explored[tile.y][tile.x];
                 this.fogOfWar[tile.y][tile.x] = false;
                 this.explored[tile.y][tile.x] = true;
+                
+                // Track exploration for skill progression
+                if (!wasExplored && this.player && this.player.trackAction) {
+                    this.player.trackAction('tilesExplored');
+                }
+                
                 if (this.renderer && this.renderer.markTileDirty) {
                     this.renderer.markTileDirty(tile.x, tile.y);
                 }
@@ -417,8 +425,15 @@ class GameState {
             // Show tiles that are newly visible
             for (const tile of newVisibleTiles) {
                 if (!oldSet.has(`${tile.x},${tile.y}`)) {
+                    const wasExplored = this.explored[tile.y][tile.x];
                     this.fogOfWar[tile.y][tile.x] = false;
                     this.explored[tile.y][tile.x] = true;
+                    
+                    // Track exploration for skill progression
+                    if (!wasExplored && this.player && this.player.trackAction) {
+                        this.player.trackAction('tilesExplored');
+                    }
+                    
                     if (this.renderer && this.renderer.markTileDirty) {
                         this.renderer.markTileDirty(tile.x, tile.y);
                     }
@@ -617,7 +632,7 @@ class GameState {
     
     saveGame() {
         const saveData = {
-            version: '1.1',
+            version: '1.2',
             player: {
                 x: this.player.x,
                 y: this.player.y,
@@ -630,7 +645,9 @@ class GameState {
                 expToNext: this.player.expToNext,
                 gold: this.player.gold,
                 energy: this.player.energy,
-                maxEnergy: this.player.maxEnergy
+                maxEnergy: this.player.maxEnergy,
+                skills: this.player.skills,
+                actionCounts: this.player.actionCounts
             },
             floor: this.floor,
             currentAreaId: this.currentArea ? this.currentArea.id : null,
@@ -655,6 +672,14 @@ class GameState {
             // Restore player
             this.player = new Player(data.player.x, data.player.y);
             Object.assign(this.player, data.player);
+            
+            // Restore skill data (backwards compatibility)
+            if (data.player.skills) {
+                this.player.skills = data.player.skills;
+            }
+            if (data.player.actionCounts) {
+                this.player.actionCounts = data.player.actionCounts;
+            }
             
             // Restore game state
             this.floor = data.floor;

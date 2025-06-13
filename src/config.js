@@ -207,7 +207,7 @@ const CONFIG = {
     },
     
     GAME: {
-        ENERGY_REGEN_RATE: 600, // Faster energy regen for better auto-explore flow
+        ENERGY_REGEN_RATE: 500, // Faster energy regen for better auto-explore flow
         ENERGY_REGEN_AMOUNT: 3, // More energy per tick
         MAX_MESSAGES: 15,
         INPUT_THROTTLE: 50,
@@ -279,7 +279,7 @@ const CONFIG = {
         
         UPGRADE_ATTACK_GAIN: 2,
         UPGRADE_DEFENSE_GAIN: 1,
-        UPGRADE_COST_MULTIPLIER: 1.5,
+        UPGRADE_COST_MULTIPLIER: 1.3,
         
         GOBLIN_HP_BASE: 3,
         GOBLIN_ATTACK_BASE: 1,
@@ -297,32 +297,32 @@ const CONFIG = {
         TREANT_ATTACK_BASE: 6,
         TREANT_EXP: 12,
         
-        SKELETON_LORD_HP_BASE: 25,
-        SKELETON_LORD_ATTACK_BASE: 8,
+        SKELETON_LORD_HP_BASE: 20,
+        SKELETON_LORD_ATTACK_BASE: 7,
         SKELETON_LORD_EXP: 50,
         
         // Mushroom Island enemies
-        SPORELING_HP_BASE: 12,
-        SPORELING_ATTACK_BASE: 5,
+        SPORELING_HP_BASE: 10,
+        SPORELING_ATTACK_BASE: 4,
         SPORELING_DEFENSE_BASE: 2,
         SPORELING_EXP: 10,
         
-        FUNGAL_KNIGHT_HP_BASE: 18,
-        FUNGAL_KNIGHT_ATTACK_BASE: 7,
-        FUNGAL_KNIGHT_DEFENSE_BASE: 4,
+        FUNGAL_KNIGHT_HP_BASE: 16,
+        FUNGAL_KNIGHT_ATTACK_BASE: 6,
+        FUNGAL_KNIGHT_DEFENSE_BASE: 3,
         FUNGAL_KNIGHT_EXP: 15,
         
-        SPORE_MOTHER_HP_BASE: 40,
-        SPORE_MOTHER_ATTACK_BASE: 10,
-        SPORE_MOTHER_DEFENSE_BASE: 5,
+        SPORE_MOTHER_HP_BASE: 30,
+        SPORE_MOTHER_ATTACK_BASE: 9,
+        SPORE_MOTHER_DEFENSE_BASE: 4,
         SPORE_MOTHER_EXP: 75,
         
         GOLD_VALUE_BASE: 5,
         GOLD_VALUE_RANGE: 10,
         
-        COMBAT_ENERGY_COST: 5,
+        COMBAT_ENERGY_COST: 4,
         MOVE_ENERGY_COST: 1,
-        FLOOR_ENERGY_RESTORE: 50,
+        FLOOR_ENERGY_RESTORE: 75,
         
         // Directional combat bonuses
         FLANKING_DAMAGE_BONUS: 0.25,
@@ -331,14 +331,15 @@ const CONFIG = {
         CORNER_DAMAGE_BONUS: 0.5,
         
         // Status effect durations and chances
-        STATUS_POISON_DURATION: 10,
+        STATUS_POISON_DURATION: 5,
+        STATUS_POISON_DAMAGE: 1,
         STATUS_STUN_DURATION: 2,
         STATUS_CONFUSED_DURATION: 5,
         STATUS_BLESSED_DURATION: 20,
         BASE_CRIT_CHANCE: 0.1,
         CRIT_CHANCE_PER_LEVEL: 0.01,
         STATUS_EFFECT_CHANCE: 0.1,
-        SKELETON_POISON_CHANCE: 0.15,
+        SKELETON_POISON_CHANCE: 0.1,
         BLESSED_POTION_CHANCE: 0.2,
         
         // Enemy and item counts
@@ -368,19 +369,19 @@ const CONFIG = {
         SPORE_MOTHER_GOLD_RANGE: 75,
         
         // Stellar Observatory enemies
-        STARDUST_SPRITE_HP_BASE: 8,
-        STARDUST_SPRITE_ATTACK_BASE: 4,
+        STARDUST_SPRITE_HP_BASE: 7,
+        STARDUST_SPRITE_ATTACK_BASE: 3,
         STARDUST_SPRITE_DEFENSE_BASE: 1,
         STARDUST_SPRITE_EXP: 8,
         
-        COSMIC_GUARDIAN_HP_BASE: 22,
-        COSMIC_GUARDIAN_ATTACK_BASE: 8,
-        COSMIC_GUARDIAN_DEFENSE_BASE: 5,
+        COSMIC_GUARDIAN_HP_BASE: 18,
+        COSMIC_GUARDIAN_ATTACK_BASE: 7,
+        COSMIC_GUARDIAN_DEFENSE_BASE: 4,
         COSMIC_GUARDIAN_EXP: 18,
         
-        STELLAR_ARCHITECT_HP_BASE: 50,
-        STELLAR_ARCHITECT_ATTACK_BASE: 12,
-        STELLAR_ARCHITECT_DEFENSE_BASE: 6,
+        STELLAR_ARCHITECT_HP_BASE: 35,
+        STELLAR_ARCHITECT_ATTACK_BASE: 10,
+        STELLAR_ARCHITECT_DEFENSE_BASE: 5,
         STELLAR_ARCHITECT_EXP: 100,
         
         // Stellar Observatory gold drops

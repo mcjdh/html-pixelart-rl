@@ -15,7 +15,7 @@ class Game {
         
         this.gameState = new GameState(this.renderer);
         this.combat = new CombatSystem(this.gameState);
-        this.upgrades = new UpgradeSystem(this.gameState);
+        // Upgrade system removed - now using passive skill progression
         this.modal = new ModalManager();
         
         // Initialize event system and narrative UI
@@ -519,6 +519,9 @@ class Game {
                 const result = item.apply(player);
                 this.gameState.addMessage(result.message, result.type);
                 
+                // Track item collection for fortune skill progression
+                player.trackAction('itemsCollected');
+                
                 // Emit item collected event
                 this.events.emit('item.collected', {
                     item: item,
@@ -794,7 +797,9 @@ Thank you for playing!
         
         // Process poison damage
         if (player.hasStatusEffect('poison')) {
-            const damage = player.takeDamage(1);
+            // Poison damage should be minimal early game, slightly more meaningful later
+            const poisonDamage = Math.max(1, Math.floor(player.maxHp * 0.05)); // 5% of max HP
+            const damage = player.takeDamage(poisonDamage);
             this.gameState.addMessage(`Poison deals ${damage} damage!`, 'damage-msg');
             
             if (player.hp <= 0) {
@@ -1067,12 +1072,8 @@ Thank you for playing!
         // Update exploration progress
         this.updateExplorationProgress();
         
-        // Upgrade costs
-        const upgradeInfo = this.upgrades.getUpgradeInfo();
-        document.getElementById('attack-cost').textContent = upgradeInfo.attack.cost;
-        document.getElementById('defense-cost').textContent = upgradeInfo.defense.cost;
-        document.getElementById('upgrade-attack').disabled = !upgradeInfo.attack.canAfford;
-        document.getElementById('upgrade-defense').disabled = !upgradeInfo.defense.canAfford;
+        // Update skill progression
+        this.updateSkillUI();
         
         // Update message log
         this.updateMessageLog();
@@ -1086,6 +1087,41 @@ Thank you for playing!
             const seconds = Math.floor((elapsed % 60000) / 1000);
             gameTimeElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
+    }
+    
+    updateSkillUI() {
+        const player = this.gameState.player;
+        if (!player || !player.skills) return;
+        
+        // Update each skill
+        const skills = ['combat', 'vitality', 'exploration', 'fortune'];
+        
+        skills.forEach(skillName => {
+            const skill = player.skills[skillName];
+            if (!skill) return;
+            
+            // Calculate experience needed for next level
+            const expNeeded = skill.level * 10;
+            const expPercent = (skill.exp / expNeeded) * 100;
+            
+            // Update level display
+            const levelElement = document.getElementById(`${skillName}-level`);
+            if (levelElement) {
+                levelElement.textContent = skill.level;
+            }
+            
+            // Update experience text
+            const expElement = document.getElementById(`${skillName}-exp`);
+            if (expElement) {
+                expElement.textContent = `${skill.exp}/${expNeeded}`;
+            }
+            
+            // Update progress bar
+            const barElement = document.getElementById(`${skillName}-bar`);
+            if (barElement) {
+                barElement.style.width = `${expPercent}%`;
+            }
+        });
     }
     
     updateExplorationProgress() {
@@ -1139,15 +1175,6 @@ Thank you for playing!
     }
     
     // Public methods for UI buttons
-    upgradeAttack() {
-        this.upgrades.purchaseAttackUpgrade();
-        this.updateUI();
-    }
-    
-    upgradeDefense() {
-        this.upgrades.purchaseDefenseUpgrade();
-        this.updateUI();
-    }
     
     saveGame() {
         try {

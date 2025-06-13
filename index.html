@@ -349,6 +349,80 @@
             color: #808080;
         }
         
+        /* Skill System Styles */
+        .skill-item {
+            margin: 6px 0;
+            padding: 4px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 3px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .skill-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+            font-size: 10px;
+        }
+        
+        .skill-icon {
+            font-size: 12px;
+            margin-right: 4px;
+        }
+        
+        .skill-name {
+            flex: 1;
+            color: #c0c0c0;
+            font-weight: bold;
+        }
+        
+        .skill-level {
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1px 4px;
+            border-radius: 2px;
+        }
+        
+        .skill-progress {
+            height: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 2px 0;
+        }
+        
+        .skill-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4a9eff, #66b3ff);
+            transition: width 0.3s ease;
+        }
+        
+        .skill-bar[id="combat-bar"] {
+            background: linear-gradient(90deg, #ff4a4a, #ff6666);
+        }
+        
+        .skill-bar[id="vitality-bar"] {
+            background: linear-gradient(90deg, #ff4a9e, #ff66b3);
+        }
+        
+        .skill-bar[id="exploration-bar"] {
+            background: linear-gradient(90deg, #4aff4a, #66ff66);
+        }
+        
+        .skill-bar[id="fortune-bar"] {
+            background: linear-gradient(90deg, #ffaa4a, #ffcc66);
+        }
+        
+        .skill-exp {
+            font-size: 8px;
+            color: #999;
+            text-align: center;
+            margin-top: 1px;
+        }
+        
         .key-hint {
             display: inline-block;
             margin-right: 8px;
@@ -584,20 +658,70 @@
                 </div>
             </div>
             
-            <!-- Actions Section - Flexible to fill space -->
+            <!-- Skills Section - Flexible to fill space -->
             <div class="panel-section flexible">
                 <div>
-                    <div class="panel-title">⚡ Actions</div>
-                    <button class="compact-button" id="upgrade-attack" onclick="game.upgradeAttack()">
-                        ⚔️ +Attack (<span id="attack-cost">10</span>g)
-                    </button>
-                    <button class="compact-button" id="upgrade-defense" onclick="game.upgradeDefense()">
-                        🛡️ +Defense (<span id="defense-cost">10</span>g)
-                    </button>
-                    <button class="compact-button" id="auto-explore" onclick="game.toggleAutoExplore()">
-                        🔍 Auto: <span id="auto-explore-status">OFF</span>
-                    </button>
-                    <button class="compact-button" onclick="game.saveGame()">💾 Save Game</button>
+                    <div class="panel-title">📊 Skills</div>
+                    
+                    <!-- Combat Skill -->
+                    <div class="skill-item">
+                        <div class="skill-header">
+                            <span class="skill-icon">⚔️</span>
+                            <span class="skill-name">Combat</span>
+                            <span class="skill-level" id="combat-level">1</span>
+                        </div>
+                        <div class="skill-progress">
+                            <div class="skill-bar" id="combat-bar" style="width: 0%;"></div>
+                        </div>
+                        <div class="skill-exp" id="combat-exp">0/10</div>
+                    </div>
+                    
+                    <!-- Vitality Skill -->
+                    <div class="skill-item">
+                        <div class="skill-header">
+                            <span class="skill-icon">❤️</span>
+                            <span class="skill-name">Vitality</span>
+                            <span class="skill-level" id="vitality-level">1</span>
+                        </div>
+                        <div class="skill-progress">
+                            <div class="skill-bar" id="vitality-bar" style="width: 0%;"></div>
+                        </div>
+                        <div class="skill-exp" id="vitality-exp">0/10</div>
+                    </div>
+                    
+                    <!-- Exploration Skill -->
+                    <div class="skill-item">
+                        <div class="skill-header">
+                            <span class="skill-icon">🗺️</span>
+                            <span class="skill-name">Explorer</span>
+                            <span class="skill-level" id="exploration-level">1</span>
+                        </div>
+                        <div class="skill-progress">
+                            <div class="skill-bar" id="exploration-bar" style="width: 0%;"></div>
+                        </div>
+                        <div class="skill-exp" id="exploration-exp">0/10</div>
+                    </div>
+                    
+                    <!-- Fortune Skill -->
+                    <div class="skill-item">
+                        <div class="skill-header">
+                            <span class="skill-icon">💰</span>
+                            <span class="skill-name">Fortune</span>
+                            <span class="skill-level" id="fortune-level">1</span>
+                        </div>
+                        <div class="skill-progress">
+                            <div class="skill-bar" id="fortune-bar" style="width: 0%;"></div>
+                        </div>
+                        <div class="skill-exp" id="fortune-exp">0/10</div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #333;">
+                        <button class="compact-button" id="auto-explore" onclick="game.toggleAutoExplore()">
+                            🔍 Auto: <span id="auto-explore-status">OFF</span>
+                        </button>
+                        <button class="compact-button" onclick="game.saveGame()">💾 Save Game</button>
+                    </div>
                 </div>
                 
                 <!-- Controls at bottom -->

@@ -107,6 +107,22 @@ class Player extends Entity {
         this.energy = CONFIG.BALANCE.PLAYER_START_ENERGY;
         this.maxEnergy = CONFIG.BALANCE.PLAYER_START_ENERGY;
         this.inventory = [];
+        
+        // Passive progression tracking (like Runescape/Pokemon)
+        this.skills = {
+            combat: { exp: 0, level: 1 },      // Gain from fighting
+            vitality: { exp: 0, level: 1 },   // Gain from taking damage
+            exploration: { exp: 0, level: 1 }, // Gain from discovering tiles
+            fortune: { exp: 0, level: 1 }     // Gain from collecting gold/items
+        };
+        
+        // Track actions for skill progression
+        this.actionCounts = {
+            enemiesKilled: 0,
+            damageTaken: 0,
+            tilesExplored: 0,
+            itemsCollected: 0
+        };
     }
     
     gainExp(amount) {
@@ -125,14 +141,94 @@ class Player extends Entity {
         this.level++;
         this.exp -= this.expToNext;
         this.expToNext = this.level * CONFIG.BALANCE.EXP_PER_LEVEL;
-        this.maxHp += CONFIG.BALANCE.LEVEL_HP_GAIN;
+        
+        // Progressive HP scaling - more HP at higher levels
+        const hpGain = CONFIG.BALANCE.LEVEL_HP_GAIN + Math.floor(this.level / 4);
+        this.maxHp += hpGain;
         this.hp = this.maxHp;
-        this.attack += CONFIG.BALANCE.LEVEL_ATTACK_GAIN;
+        
+        // Progressive attack scaling - more attack at higher levels
+        const attackGain = CONFIG.BALANCE.LEVEL_ATTACK_GAIN + Math.floor(this.level / 5);
+        this.attack += attackGain;
+    }
+    
+    // Passive skill progression system
+    gainSkillExp(skillType, amount) {
+        if (!this.skills[skillType]) return false;
+        
+        const skill = this.skills[skillType];
+        skill.exp += amount;
+        
+        // Check for skill level up (requires more exp at higher levels)
+        const expNeeded = skill.level * 10; // Simple scaling
+        if (skill.exp >= expNeeded) {
+            skill.exp -= expNeeded;
+            skill.level++;
+            this.onSkillLevelUp(skillType, skill.level);
+            return true;
+        }
+        return false;
+    }
+    
+    onSkillLevelUp(skillType, newLevel) {
+        // Apply skill bonuses based on type
+        switch(skillType) {
+            case 'combat':
+                this.attack += 1;
+                if (window.game?.gameState) {
+                    window.game.gameState.addMessage(`Combat skill increased! Attack +1`, 'level-msg');
+                }
+                break;
+            case 'vitality':
+                this.maxHp += 3;
+                this.hp += 3; // Also heal when vitality increases
+                if (window.game?.gameState) {
+                    window.game.gameState.addMessage(`Vitality skill increased! Max HP +3`, 'level-msg');
+                }
+                break;
+            case 'exploration':
+                this.maxEnergy += 5;
+                this.energy = Math.min(this.energy + 5, this.maxEnergy);
+                if (window.game?.gameState) {
+                    window.game.gameState.addMessage(`Exploration skill increased! Max Energy +5`, 'level-msg');
+                }
+                break;
+            case 'fortune':
+                this.defense += 1;
+                if (window.game?.gameState) {
+                    window.game.gameState.addMessage(`Fortune skill increased! Defense +1`, 'level-msg');
+                }
+                break;
+        }
+    }
+    
+    // Track actions and award skill experience
+    trackAction(actionType, value = 1) {
+        this.actionCounts[actionType] += value;
+        
+        switch(actionType) {
+            case 'enemiesKilled':
+                this.gainSkillExp('combat', 5);
+                break;
+            case 'damageTaken':
+                this.gainSkillExp('vitality', Math.min(value, 3)); // Cap at 3 exp per damage
+                break;
+            case 'tilesExplored':
+                this.gainSkillExp('exploration', 1);
+                break;
+            case 'itemsCollected':
+                this.gainSkillExp('fortune', 2);
+                break;
+        }
     }
     
     takeDamage(amount) {
         const damage = Math.max(1, amount - this.defense);
         this.hp -= damage;
+        
+        // Track damage for vitality skill progression
+        this.trackAction('damageTaken', damage);
+        
         return damage;
     }
     
@@ -214,10 +310,10 @@ class Enemy extends Entity {
                 };
             case 'skeletonLord':
                 return {
-                    hp: CONFIG.BALANCE.SKELETON_LORD_HP_BASE + floorBonus * 3,
-                    attack: CONFIG.BALANCE.SKELETON_LORD_ATTACK_BASE + Math.floor(floorBonus / 2),
+                    hp: CONFIG.BALANCE.SKELETON_LORD_HP_BASE + Math.floor(floorBonus * 1.5),
+                    attack: CONFIG.BALANCE.SKELETON_LORD_ATTACK_BASE + Math.floor(floorBonus / 3),
                     expValue: CONFIG.BALANCE.SKELETON_LORD_EXP,
-                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.SKELETON_LORD_GOLD_RANGE) + CONFIG.BALANCE.SKELETON_LORD_GOLD_BASE + floorBonus * 5,
+                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.SKELETON_LORD_GOLD_RANGE) + CONFIG.BALANCE.SKELETON_LORD_GOLD_BASE + floorBonus * 3,
                     viewRange: 8,
                     moveSpeed: 0.9
                 };
@@ -243,11 +339,11 @@ class Enemy extends Entity {
                 };
             case 'sporeMother':
                 return {
-                    hp: CONFIG.BALANCE.SPORE_MOTHER_HP_BASE + floorBonus * 5,
-                    attack: CONFIG.BALANCE.SPORE_MOTHER_ATTACK_BASE + Math.floor(floorBonus / 2),
+                    hp: CONFIG.BALANCE.SPORE_MOTHER_HP_BASE + Math.floor(floorBonus * 2),
+                    attack: CONFIG.BALANCE.SPORE_MOTHER_ATTACK_BASE + Math.floor(floorBonus / 3),
                     defense: CONFIG.BALANCE.SPORE_MOTHER_DEFENSE_BASE,
                     expValue: CONFIG.BALANCE.SPORE_MOTHER_EXP,
-                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.SPORE_MOTHER_GOLD_RANGE) + CONFIG.BALANCE.SPORE_MOTHER_GOLD_BASE + floorBonus * 10,
+                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.SPORE_MOTHER_GOLD_RANGE) + CONFIG.BALANCE.SPORE_MOTHER_GOLD_BASE + floorBonus * 5,
                     viewRange: 8,
                     moveSpeed: 0.7
                 };
@@ -273,11 +369,11 @@ class Enemy extends Entity {
                 };
             case 'stellarArchitect':
                 return {
-                    hp: CONFIG.BALANCE.STELLAR_ARCHITECT_HP_BASE + floorBonus * 8,
-                    attack: CONFIG.BALANCE.STELLAR_ARCHITECT_ATTACK_BASE + Math.floor(floorBonus / 2),
+                    hp: CONFIG.BALANCE.STELLAR_ARCHITECT_HP_BASE + Math.floor(floorBonus * 2.5),
+                    attack: CONFIG.BALANCE.STELLAR_ARCHITECT_ATTACK_BASE + Math.floor(floorBonus / 3),
                     defense: CONFIG.BALANCE.STELLAR_ARCHITECT_DEFENSE_BASE,
                     expValue: CONFIG.BALANCE.STELLAR_ARCHITECT_EXP,
-                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.STELLAR_ARCHITECT_GOLD_RANGE) + CONFIG.BALANCE.STELLAR_ARCHITECT_GOLD_BASE + floorBonus * 15,
+                    goldDrop: Math.floor(Math.random() * CONFIG.BALANCE.STELLAR_ARCHITECT_GOLD_RANGE) + CONFIG.BALANCE.STELLAR_ARCHITECT_GOLD_BASE + floorBonus * 8,
                     viewRange: 10,
                     moveSpeed: 0.6
                 };
@@ -334,7 +430,8 @@ class Item extends Entity {
                 return CONFIG.BALANCE.GOLD_VALUE_BASE + 
                        Math.floor(Math.random() * CONFIG.BALANCE.GOLD_VALUE_RANGE);
             case 'potion':
-                return 5; // HP restored
+                const floor = window.game?.gameState?.floor || 1;
+                return CONFIG.BALANCE.POTION_HEAL_VALUE + Math.floor(floor / 2); // HP restored, scales with floor
             case 'sword':
                 return 1; // Attack bonus
             default:

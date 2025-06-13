@@ -106,6 +106,9 @@ class CombatSystem {
         const expGain = enemy.expValue;
         const leveled = this.gameState.player.gainExp(expGain);
         
+        // Track enemy kill for combat skill progression
+        this.gameState.player.trackAction('enemiesKilled');
+        
         this.gameState.addMessage(
             `Defeated ${enemy.type}! (+${expGain} exp)`, 
             'level-msg'
