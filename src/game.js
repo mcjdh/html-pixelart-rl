@@ -513,14 +513,42 @@ class Game {
                 direction: { dx, dy }
             });
             
-            // Check for item pickup
+            // Check for item pickup with skill bonuses
             const item = this.gameState.getItemAt(newX, newY);
             if (item) {
                 const result = item.apply(player);
-                this.gameState.addMessage(result.message, result.type);
                 
-                // Track item collection for fortune skill progression
-                player.trackAction('itemsCollected');
+                // Apply skill bonuses to gold and item effects
+                if (item.type === 'gold') {
+                    const bonusGold = player.getModifiedGoldGain(item.value) - item.value;
+                    if (bonusGold > 0) {
+                        player.gold += bonusGold;
+                        this.gameState.addMessage(
+                            `${result.message} (+${bonusGold} skill bonus!)`, 
+                            result.type
+                        );
+                    } else {
+                        this.gameState.addMessage(result.message, result.type);
+                    }
+                    
+                    // Track gold for fortune skill
+                    player.trackAction('goldCollected', item.value);
+                    this.gameState.stats.goldCollected += item.value;
+                } else {
+                    this.gameState.addMessage(result.message, result.type);
+                    
+                    // Track item collection for fortune skill progression
+                    player.trackAction('itemsCollected');
+                }
+                
+                // Check for secret item discovery with exploration skill
+                if (player.skillBonuses.secretFindChance > 0 && Math.random() < player.skillBonuses.secretFindChance) {
+                    // Spawn a bonus item nearby
+                    const bonusItem = new Item(newX, newY, 'gold', Math.floor(item.value * 2));
+                    this.gameState.items.push(bonusItem);
+                    this.gameState.addMessage('🔍 Keen senses reveal hidden treasure!', 'heal-msg');
+                    player.trackAction('secretsFound');
+                }
                 
                 // Emit item collected event
                 this.events.emit('item.collected', {
@@ -535,10 +563,6 @@ class Game {
                         item: item,
                         player: player
                     });
-                }
-                
-                if (item.type === 'gold') {
-                    this.gameState.stats.goldCollected += item.value;
                 }
                 
                 this.gameState.removeItem(item);
@@ -561,7 +585,16 @@ class Game {
             // Process turn
             this.gameState.processTurn();
             this.processStatusEffects();
+            
+            // Process skill-based regeneration
+            player.processSkillRegeneration();
+            
             this.processEnemyTurns();
+            
+            // Reset consecutive kills counter if no combat this turn
+            if (player.temporaryEffects.lastDamageTime < Date.now() - 2000) {
+                player.temporaryEffects.consecutiveKills = 0;
+            }
             
             // Emit turn processed (for atmospheric events)
             this.events.emit('turn.processed', {
@@ -573,15 +606,25 @@ class Game {
     }
     
     handleCombat(enemy) {
-        if (!this.gameState.player.useEnergy(CONFIG.BALANCE.COMBAT_ENERGY_COST)) {
+        const player = this.gameState.player;
+        
+        // Apply skill-based energy cost modifications
+        const energyCost = player.getModifiedEnergyCost(CONFIG.BALANCE.COMBAT_ENERGY_COST);
+        if (!player.useEnergy(energyCost)) {
             return;
         }
         
         const result = this.combat.playerAttack(enemy);
         
+        // Check for counter-attack from Combat milestones
+        if (result.killed && player.skillBonuses.counterAttackChance > 0) {
+            // Reset consecutive kills counter on death
+            player.temporaryEffects.consecutiveKills = 0;
+        }
+        
         // Emit combat events
         this.events.emit('combat.attack', {
-            attacker: this.gameState.player,
+            attacker: player,
             target: enemy,
             damage: result.damage,
             critical: result.critical,
@@ -592,7 +635,7 @@ class Game {
             // Emit enemy killed event
             this.events.emit('enemy.killed', {
                 enemy: enemy,
-                killer: this.gameState.player,
+                killer: player,
                 floor: this.gameState.floor,
                 combat: result
             });
@@ -604,13 +647,13 @@ class Game {
         
         // Show floating combat text
         this.narrativeUI.showCombatNarrative(
-            this.gameState.player, 
+            player, 
             enemy, 
             result.damage, 
             result.critical
         );
         
-        if (this.gameState.player.hp <= 0) {
+        if (player.hp <= 0) {
             this.handleGameOver();
         }
     }
@@ -1093,7 +1136,7 @@ Thank you for playing!
         const player = this.gameState.player;
         if (!player || !player.skills) return;
         
-        // Update each skill
+        // Update each skill with new compact layout
         const skills = ['combat', 'vitality', 'exploration', 'fortune'];
         
         skills.forEach(skillName => {
@@ -1101,27 +1144,119 @@ Thank you for playing!
             if (!skill) return;
             
             // Calculate experience needed for next level
-            const expNeeded = skill.level * 10;
-            const expPercent = (skill.exp / expNeeded) * 100;
+            const expNeeded = player.getExpNeededForLevel(skill.level + 1);
+            const expPercent = skill.level >= CONFIG.BALANCE.SKILL_SYSTEM.SKILL_CAP ? 100 : 
+                             (skill.exp / expNeeded) * 100;
             
-            // Update level display
+            // Update level display with color coding based on level ranges
             const levelElement = document.getElementById(`${skillName}-level`);
             if (levelElement) {
                 levelElement.textContent = skill.level;
-            }
-            
-            // Update experience text
-            const expElement = document.getElementById(`${skillName}-exp`);
-            if (expElement) {
-                expElement.textContent = `${skill.exp}/${expNeeded}`;
+                
+                // Color code based on level milestones
+                if (skill.level >= 50) {
+                    levelElement.style.background = 'linear-gradient(135deg, #ffd700, #ffaa00)';
+                    levelElement.style.color = '#000';
+                } else if (skill.level >= 25) {
+                    levelElement.style.background = 'linear-gradient(135deg, #9932cc, #663399)';
+                } else if (skill.level >= 10) {
+                    levelElement.style.background = 'linear-gradient(135deg, #4169e1, #1e3a8a)';
+                } else if (skill.level >= 5) {
+                    levelElement.style.background = 'linear-gradient(135deg, #228b22, #006400)';
+                } else {
+                    levelElement.style.background = 'rgba(255, 255, 255, 0.15)';
+                    levelElement.style.color = '#ffffff';
+                }
             }
             
             // Update progress bar
             const barElement = document.getElementById(`${skillName}-bar`);
             if (barElement) {
                 barElement.style.width = `${expPercent}%`;
+                
+                // Add glow effect when close to leveling
+                if (expPercent > 80) {
+                    barElement.style.boxShadow = '0 0 4px rgba(255, 255, 255, 0.6)';
+                } else {
+                    barElement.style.boxShadow = 'none';
+                }
+            }
+            
+            // Update milestone display
+            const milestoneElement = document.getElementById(`${skillName}-milestone`);
+            if (milestoneElement) {
+                const nextMilestone = this.getNextMilestone(skillName, skill.level);
+                if (nextMilestone) {
+                    const distance = nextMilestone.level - skill.level;
+                    milestoneElement.textContent = `${nextMilestone.icon} ${distance} to ${nextMilestone.name}`;
+                    milestoneElement.className = 'skill-milestone';
+                } else if (skill.level >= 50) {
+                    milestoneElement.textContent = '🌟 MASTERED';
+                    milestoneElement.className = 'skill-milestone unlocked';
+                } else {
+                    milestoneElement.textContent = '';
+                }
             }
         });
+        
+        // Update synergy displays
+        this.updateSynergyUI(player);
+    }
+    
+    getNextMilestone(skillName, currentLevel) {
+        const milestones = CONFIG.BALANCE.SKILL_SYSTEM.MILESTONE_LEVELS;
+        const nextLevel = milestones.find(level => level > currentLevel);
+        
+        if (!nextLevel) return null;
+        
+        const config = CONFIG.BALANCE.SKILL_SYSTEM[skillName.toUpperCase()];
+        if (!config || !config[nextLevel]) return null;
+        
+        const milestone = config[nextLevel];
+        return {
+            level: nextLevel,
+            name: milestone.name.split(' ').slice(-1)[0], // Just the last word for space
+            icon: this.getMilestoneIcon(milestone.type)
+        };
+    }
+    
+    getMilestoneIcon(type) {
+        switch(type) {
+            case 'ability': return '⚡';
+            case 'passive': return '🛡️';
+            case 'ultimate': return '🌟';
+            default: return '✨';
+        }
+    }
+    
+    updateSynergyUI(player) {
+        const synergies = CONFIG.BALANCE.SKILL_SYSTEM.SYNERGIES;
+        
+        // Warrior Synergy (Combat + Vitality)
+        const warriorElement = document.getElementById('warrior-synergy');
+        if (warriorElement) {
+            const hasWarrior = player.skills.combat.level >= synergies.WARRIOR_THRESHOLD && 
+                             player.skills.vitality.level >= synergies.WARRIOR_THRESHOLD;
+            warriorElement.style.display = hasWarrior ? 'flex' : 'none';
+        }
+        
+        // Adventurer Synergy (Exploration + Fortune)
+        const adventurerElement = document.getElementById('adventurer-synergy');
+        if (adventurerElement) {
+            const hasAdventurer = player.skills.exploration.level >= synergies.ADVENTURER_THRESHOLD && 
+                                player.skills.fortune.level >= synergies.ADVENTURER_THRESHOLD;
+            adventurerElement.style.display = hasAdventurer ? 'flex' : 'none';
+        }
+        
+        // Master Synergy (All skills high level)
+        const masterElement = document.getElementById('master-synergy');
+        if (masterElement) {
+            const hasMaster = player.skills.combat.level >= synergies.MASTER_THRESHOLD && 
+                            player.skills.vitality.level >= synergies.MASTER_THRESHOLD &&
+                            player.skills.exploration.level >= synergies.MASTER_THRESHOLD &&
+                            player.skills.fortune.level >= synergies.MASTER_THRESHOLD;
+            masterElement.style.display = hasMaster ? 'flex' : 'none';
+        }
     }
     
     updateExplorationProgress() {

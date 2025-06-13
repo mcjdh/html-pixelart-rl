@@ -392,6 +392,66 @@ const CONFIG = {
         STELLAR_ARCHITECT_GOLD_BASE: 200,
         STELLAR_ARCHITECT_GOLD_RANGE: 100,
         
+        // Advanced Skills System
+        SKILL_SYSTEM: {
+            // Base skill mechanics
+            BASE_EXP_MULTIPLIER: 100,  // More exp needed than before
+            SKILL_CAP: 50,             // Max skill level
+            MILESTONE_LEVELS: [5, 10, 15, 25, 35, 50], // Unlock new abilities
+            
+            // Skill synergy bonuses (when multiple skills reach certain levels)
+            SYNERGIES: {
+                // Combat + Vitality = Warrior Path
+                WARRIOR_THRESHOLD: 10,  // Both skills at level 10+
+                WARRIOR_BONUS: { critChance: 0.05, damageReduction: 0.1 },
+                
+                // Exploration + Fortune = Adventurer Path
+                ADVENTURER_THRESHOLD: 10,
+                ADVENTURER_BONUS: { goldMultiplier: 1.3, itemFind: 0.15 },
+                
+                // All four skills at 25+ = Master Path
+                MASTER_THRESHOLD: 25,
+                MASTER_BONUS: { allStats: 2, energyEfficiency: 0.5 }
+            },
+            
+            // Skill-specific milestones
+            COMBAT: {
+                5: { type: 'ability', name: 'Power Strike', effect: 'critMultiplier', value: 0.5 },
+                10: { type: 'ability', name: 'Combat Reflexes', effect: 'counterAttack', value: 0.2 },
+                15: { type: 'passive', name: 'Weapon Mastery', effect: 'attackPerLevel', value: 0.5 },
+                25: { type: 'ability', name: 'Berserker', effect: 'damageAtLowHP', value: 1.5 },
+                35: { type: 'passive', name: 'Combat Veteran', effect: 'stunResist', value: 0.8 },
+                50: { type: 'ultimate', name: 'Legendary Warrior', effect: 'ultimate', value: 'combat' }
+            },
+            
+            VITALITY: {
+                5: { type: 'passive', name: 'Toughness', effect: 'hpRegen', value: 1 },
+                10: { type: 'ability', name: 'Second Wind', effect: 'lowHPBonus', value: 0.3 },
+                15: { type: 'passive', name: 'Iron Constitution', effect: 'statusResist', value: 0.4 },
+                25: { type: 'ability', name: 'Undying Will', effect: 'deathSave', value: 0.25 },
+                35: { type: 'passive', name: 'Fortress Body', effect: 'damageReduction', value: 0.15 },
+                50: { type: 'ultimate', name: 'Immortal Guardian', effect: 'ultimate', value: 'vitality' }
+            },
+            
+            EXPLORATION: {
+                5: { type: 'passive', name: 'Pathfinding', effect: 'moveSpeed', value: 0.2 },
+                10: { type: 'ability', name: 'Keen Senses', effect: 'visionRange', value: 2 },
+                15: { type: 'passive', name: 'Efficient Travel', effect: 'energyCost', value: -0.3 },
+                25: { type: 'ability', name: 'Treasure Hunter', effect: 'secretFind', value: 0.4 },
+                35: { type: 'passive', name: 'Master Explorer', effect: 'mapBonus', value: 1.0 },
+                50: { type: 'ultimate', name: 'Realm Walker', effect: 'ultimate', value: 'exploration' }
+            },
+            
+            FORTUNE: {
+                5: { type: 'passive', name: 'Lucky Find', effect: 'goldBonus', value: 0.25 },
+                10: { type: 'ability', name: 'Merchant Eye', effect: 'itemValue', value: 0.3 },
+                15: { type: 'passive', name: 'Golden Touch', effect: 'goldMultiplier', value: 1.5 },
+                25: { type: 'ability', name: 'Blessing of Fortune', effect: 'critGold', value: 2.0 },
+                35: { type: 'passive', name: 'Wealth Magnet', effect: 'goldRadius', value: 2 },
+                50: { type: 'ultimate', name: 'Lord of Fortune', effect: 'ultimate', value: 'fortune' }
+            }
+        },
+        
         // Other balance values
         ENEMY_DEFENSE_DIVISOR: 10,
         ENEMY_VIEW_RANGE: 5,

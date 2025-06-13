@@ -7,9 +7,12 @@ class CombatSystem {
     playerAttack(enemy) {
         const player = this.gameState.player;
         
-        // Calculate base damage
-        let baseDamage = player.attack;
-        const critChance = CONFIG.BALANCE.BASE_CRIT_CHANCE + (player.level * CONFIG.BALANCE.CRIT_CHANCE_PER_LEVEL);
+        // Calculate base damage with skill modifiers
+        let baseDamage = player.getModifiedDamage(player.attack);
+        
+        // Apply skill-based crit chance bonuses
+        const baseCritChance = CONFIG.BALANCE.BASE_CRIT_CHANCE + (player.level * CONFIG.BALANCE.CRIT_CHANCE_PER_LEVEL);
+        const critChance = baseCritChance + player.skillBonuses.critChance;
         const isCrit = Math.random() < critChance;
         
         // Apply directional combat bonuses
@@ -35,8 +38,14 @@ class CombatSystem {
             }
         }
         
+        // Apply skill-based crit multiplier
+        let critMultiplier = 2;
+        if (player.skills.combat.milestones.has(5)) { // Power Strike
+            critMultiplier += 0.5;
+        }
+        
         // Calculate final damage
-        const damage = Math.floor(baseDamage * (1 + positionBonus) * (isCrit ? 2 : 1));
+        const damage = Math.floor(baseDamage * (1 + positionBonus) * (isCrit ? critMultiplier : 1));
         
         // Check for status effect applications
         if (CONFIG.FEATURES.STATUS_EFFECTS && Math.random() < CONFIG.BALANCE.STATUS_EFFECT_CHANCE) {
@@ -50,14 +59,37 @@ class CombatSystem {
         
         // Add message
         let message = `You deal ${actualDamage} damage`;
-        if (isCrit) message = `CRITICAL! ${message}`;
+        if (isCrit) {
+            if (critMultiplier > 2) {
+                message = `POWER CRITICAL! ${message}`;
+            } else {
+                message = `CRITICAL! ${message}`;
+            }
+        }
         message += positionText + '!';
         this.gameState.addMessage(message, 'damage-msg');
         
         // Check if enemy died
         if (enemy.isDead()) {
             this.onEnemyDeath(enemy);
-            return { killed: true, damage: actualDamage, crit: isCrit };
+            return { killed: true, damage: actualDamage, critical: isCrit };
+        }
+        
+        // Check for counter-attack from Combat Reflexes milestone
+        if (player.skillBonuses.counterAttackChance > 0 && 
+            Math.random() < player.skillBonuses.counterAttackChance && 
+            !enemy.isDead()) {
+            const counterDamage = Math.floor(player.attack * 0.5);
+            const counterActual = enemy.takeDamage(counterDamage, player.level);
+            this.gameState.addMessage(
+                `Counter-attack deals ${counterActual} damage!`, 
+                'damage-msg'
+            );
+            
+            if (enemy.isDead()) {
+                this.onEnemyDeath(enemy);
+                return { killed: true, damage: actualDamage, critical: isCrit };
+            }
         }
         
         // Enemy counter-attack (unless stunned)
@@ -65,7 +97,7 @@ class CombatSystem {
             this.enemyAttack(enemy, player);
         }
         
-        return { killed: false, damage: actualDamage, crit: isCrit };
+        return { killed: false, damage: actualDamage, critical: isCrit };
     }
     
     enemyAttack(enemy, player) {
@@ -82,8 +114,22 @@ class CombatSystem {
             }
         }
         
-        // Apply status effects from enemy
-        if (CONFIG.FEATURES.STATUS_EFFECTS && enemy.type === 'skeleton' && Math.random() < 0.15) {
+        // Apply skill-based damage reduction
+        if (player.skillBonuses.damageReduction > 0) {
+            const reduction = Math.min(damage - 1, Math.floor(damage * player.skillBonuses.damageReduction));
+            damage -= reduction;
+            if (reduction > 0) {
+                this.gameState.addMessage(`Your training reduces ${reduction} damage!`, '');
+            }
+        }
+        
+        // Apply status effects from enemy with skill resistance
+        let statusChance = 0.15;
+        if (player.skills.vitality.passives.has('Iron Constitution')) {
+            statusChance *= 0.6; // 40% resistance
+        }
+        
+        if (CONFIG.FEATURES.STATUS_EFFECTS && enemy.type === 'skeleton' && Math.random() < statusChance) {
             player.applyStatusEffect('poison', CONFIG.BALANCE.STATUS_POISON_DURATION);
             this.gameState.addMessage('You are poisoned!', 'damage-msg');
         }
@@ -95,6 +141,18 @@ class CombatSystem {
             `${enemy.type} deals ${actualDamage} damage!`, 
             'damage-msg'
         );
+        
+        // Check for Second Wind activation (low HP bonus)
+        if (player.skills.vitality.milestones.has(10) && player.hp <= player.maxHp * 0.3) {
+            const secondWindBonus = Math.floor(player.maxHp * 0.05);
+            if (secondWindBonus > 0) {
+                player.heal(secondWindBonus);
+                this.gameState.addMessage(
+                    `Second Wind restores ${secondWindBonus} HP!`, 
+                    'heal-msg'
+                );
+            }
+        }
         
         if (player.hp <= 0) {
             this.onPlayerDeath();
