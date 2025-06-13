@@ -28,7 +28,9 @@ class AutoExplorerFinal {
         }
         
         if (this.enabled) {
-            console.log('Auto-explorer enabled');
+            if (CONFIG.DEBUG?.SHOW_AUTO_EXPLORER_LOGS) {
+                console.log('Auto-explorer enabled');
+            }
             this.step();
         }
         
@@ -226,7 +228,9 @@ class AutoExplorerFinal {
         enemies.sort((a, b) => a.distance - b.distance);
         const target = enemies[0].enemy;
         
-        console.log(`Seeking enemy at (${target.x},${target.y}), distance: ${enemies[0].distance}`);
+        if (CONFIG.DEBUG?.SHOW_AUTO_EXPLORER_LOGS) {
+            console.log(`Seeking enemy at (${target.x},${target.y}), distance: ${enemies[0].distance}`);
+        }
         
         // Move toward the closest enemy
         const path = this.findPath(player.x, player.y, target.x, target.y);
@@ -261,7 +265,9 @@ class AutoExplorerFinal {
         items.sort((a, b) => a.distance - b.distance);
         const target = items[0].item;
         
-        console.log(`Seeking item at (${target.x},${target.y}), distance: ${items[0].distance}`);
+        if (CONFIG.DEBUG?.SHOW_AUTO_EXPLORER_LOGS) {
+            console.log(`Seeking item at (${target.x},${target.y}), distance: ${items[0].distance}`);
+        }
         
         // Move toward the closest item
         const path = this.findPath(player.x, player.y, target.x, target.y);
@@ -430,7 +436,9 @@ class AutoExplorerFinal {
         
         if (!closestUnexplored) return false;
         
-        console.log(`Exploring toward (${closestUnexplored.x},${closestUnexplored.y})`);
+        if (CONFIG.DEBUG?.SHOW_AUTO_EXPLORER_LOGS) {
+            console.log(`Exploring toward (${closestUnexplored.x},${closestUnexplored.y})`);
+        }
         
         // Move toward unexplored area
         const path = this.findPath(player.x, player.y, closestUnexplored.x, closestUnexplored.y);

@@ -34,6 +34,11 @@ class Game {
         // Initialize unified auto-completion system
         this.autoSystem = null; // Will be initialized by the auto system loader
         
+        // Track resources for cleanup
+        this.eventListeners = [];
+        this.timers = [];
+        this.intervals = [];
+        
         this.inputEnabled = true;
         this.gameOver = false;
         this.gameVictory = false;
@@ -42,7 +47,7 @@ class Game {
         this.gameStartTime = Date.now();
         
         // Debug mode
-        this.debug = CONFIG.FEATURES.DEBUG_MODE;
+        this.debug = CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS;
         this.debugInfo = {
             fps: 0,
             frameTime: 0,
@@ -57,6 +62,63 @@ class Game {
             this.showErrorMessage('Failed to initialize game. Please refresh the page.');
             throw error;
         }
+    }
+    
+    /**
+     * Helper methods for tracked resource management
+     */
+    addEventListenerTracked(element, event, listener, options = {}) {
+        element.addEventListener(event, listener, options);
+        this.eventListeners.push({ element, event, listener, options });
+    }
+    
+    addTimeoutTracked(callback, delay) {
+        const timeoutId = setTimeout(callback, delay);
+        this.timers.push(timeoutId);
+        return timeoutId;
+    }
+    
+    addIntervalTracked(callback, delay) {
+        const intervalId = setInterval(callback, delay);
+        this.intervals.push(intervalId);
+        return intervalId;
+    }
+    
+    /**
+     * Clean up all tracked resources
+     */
+    destroy() {
+        // Cancel animation frame
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+            this.animationFrame = null;
+        }
+        
+        // Remove all event listeners
+        this.eventListeners.forEach(({ element, event, listener, options }) => {
+            element.removeEventListener(event, listener, options);
+        });
+        this.eventListeners = [];
+        
+        // Clear all timers
+        this.timers.forEach(clearTimeout);
+        this.timers = [];
+        
+        // Clear all intervals
+        this.intervals.forEach(clearInterval);
+        this.intervals = [];
+        
+        // Clean up auto system
+        if (this.autoSystem) {
+            this.autoSystem.destroy();
+        }
+        
+        // Clean up other systems
+        if (this.particles) {
+            this.particles.clear();
+        }
+        
+        console.log('Game resources cleaned up');
     }
     
     /**
@@ -104,6 +166,9 @@ class Game {
                 floor: this.gameState.floor,
                 player: this.gameState.player
             });
+            
+            // Force initial render after game state initialization
+            this.render();
         } catch (error) {
             console.error('Game state initialization failed:', error);
             this.showErrorMessage('Failed to start campaign. Please try again or refresh the page.');
@@ -113,7 +178,7 @@ class Game {
     
     setupVisibilityHandling() {
         // Pause auto-explore when tab becomes inactive (QoL improvement)
-        document.addEventListener('visibilitychange', () => {
+        this.addEventListenerTracked(document, 'visibilitychange', () => {
             if (document.hidden && this.autoSystem && this.autoSystem.getSystemStatus().explorerManager.enabled) {
                 this.autoSystem.pauseAutomation();
                 this.gameState.addMessage('Auto-explore paused (tab inactive)', 'level-msg');
@@ -136,7 +201,7 @@ class Game {
         });
         
         // Add keyboard shortcut for lore viewing
-        document.addEventListener('keydown', (e) => {
+        this.addEventListenerTracked(document, 'keydown', (e) => {
             if (e.key === 'l' || e.key === 'L') {
                 if (!this.modal.isShowing()) {
                     this.showLoreInConsole();
@@ -146,10 +211,10 @@ class Game {
     }
     
     setupEventListeners() {
-        document.addEventListener('keydown', (e) => this.handleInput(e));
+        this.addEventListenerTracked(document, 'keydown', (e) => this.handleInput(e));
         
         // Prevent arrow key scrolling
-        window.addEventListener('keydown', (e) => {
+        this.addEventListenerTracked(window, 'keydown', (e) => {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
                 e.preventDefault();
             }
@@ -165,12 +230,12 @@ class Game {
         
         buttons.forEach(button => {
             // Add touch event handlers
-            button.addEventListener('touchstart', (e) => {
+            this.addEventListenerTracked(button, 'touchstart', (e) => {
                 e.preventDefault();
                 button.style.backgroundColor = '#555555';
             });
             
-            button.addEventListener('touchend', (e) => {
+            this.addEventListenerTracked(button, 'touchend', (e) => {
                 e.preventDefault();
                 button.style.backgroundColor = '';
                 
@@ -180,21 +245,21 @@ class Game {
                 }
             });
             
-            button.addEventListener('touchcancel', (e) => {
+            this.addEventListenerTracked(button, 'touchcancel', (e) => {
                 e.preventDefault();
                 button.style.backgroundColor = '';
             });
             
             // Enhanced hover effects for mouse users
-            button.addEventListener('mousedown', () => {
+            this.addEventListenerTracked(button, 'mousedown', () => {
                 button.style.backgroundColor = '#555555';
             });
             
-            button.addEventListener('mouseup', () => {
+            this.addEventListenerTracked(button, 'mouseup', () => {
                 button.style.backgroundColor = '';
             });
             
-            button.addEventListener('mouseleave', () => {
+            this.addEventListenerTracked(button, 'mouseleave', () => {
                 button.style.backgroundColor = '';
             });
         });
@@ -207,7 +272,7 @@ class Game {
         let touchStartX, touchStartY, touchStartTime;
         const canvas = this.canvas;
         
-        canvas.addEventListener('touchstart', (e) => {
+        this.addEventListenerTracked(canvas, 'touchstart', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
             touchStartX = touch.clientX;
@@ -215,7 +280,7 @@ class Game {
             touchStartTime = Date.now();
         });
         
-        canvas.addEventListener('touchend', (e) => {
+        this.addEventListenerTracked(canvas, 'touchend', (e) => {
             e.preventDefault();
             if (!touchStartX || !touchStartY) return;
             
@@ -260,7 +325,7 @@ class Game {
             touchStartX = touchStartY = touchStartTime = null;
         });
         
-        canvas.addEventListener('touchcancel', (e) => {
+        this.addEventListenerTracked(canvas, 'touchcancel', (e) => {
             e.preventDefault();
             touchStartX = touchStartY = touchStartTime = null;
         });
@@ -340,7 +405,7 @@ class Game {
             // Debug keys
             case 'd':
             case 'D':
-                if (CONFIG.FEATURES.DEBUG_MODE) {
+                if (CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS) {
                     this.debug = !this.debug;
                     this.gameState.addMessage(`Debug mode: ${this.debug ? 'ON' : 'OFF'}`, 'level-msg');
                 }
@@ -563,6 +628,9 @@ class Game {
         
         this.gameState.nextFloor();
         
+        // Force immediate render after floor change
+        this.render();
+        
         // Emit floor completion and entrance events
         this.events.emit('floor.completed', {
             floor: previousFloor,
@@ -596,7 +664,7 @@ class Game {
             finalScore: this.calculateFinalScore()
         });
         
-        setTimeout(() => {
+        this.addTimeoutTracked(() => {
             this.modal.show({
                 title: 'GAME OVER',
                 message: `You have fallen on floor ${this.gameState.floor}!\n\nYour final stats:\nLevel: ${this.gameState.player.level}\nGold: ${this.gameState.player.gold}\nEnemies Killed: ${this.gameState.stats.enemiesKilled}`,
@@ -655,7 +723,7 @@ Thank you for playing!
         `.trim();
         
         // Show victory modal after a short delay
-        setTimeout(() => {
+        this.addTimeoutTracked(() => {
             this.modal.show({
                 title: '🏆 VICTORY! 🏆',
                 message: victoryMessage,
@@ -689,7 +757,7 @@ Thank you for playing!
         if (this.gameState.settings.particlesEnabled) {
             // Multiple celebration explosions
             for (let i = 0; i < 5; i++) {
-                setTimeout(() => {
+                this.addTimeoutTracked(() => {
                     const colors = ['#ffd700', '#ffcc00', '#ffaa00', '#ff8800', '#ffffff'];
                     this.particles.addExplosion(
                         this.gameState.player.x,
@@ -803,7 +871,7 @@ Thank you for playing!
     }
     
     startEnergyRegeneration() {
-        setInterval(() => {
+        this.addIntervalTracked(() => {
             const player = this.gameState.player;
             if (player && !this.gameOver && player.energy < player.maxEnergy) {
                 player.restoreEnergy(CONFIG.GAME.ENERGY_REGEN_AMOUNT);
@@ -1142,7 +1210,7 @@ Thank you for playing!
     showHelpModal() {
         let helpText = `MOVEMENT:\n↑↓←→ or WASD - Move character\n\nCOMBAT:\nMove into enemies to attack\nEnemies attack when adjacent\nPositional bonuses apply!\n\nGAME CONTROLS:\nZ - Toggle Auto-Explore\nP - Pause Auto-Explore\nESC - Stop Auto-Explore\nL - View Collected Lore\nI - Quick Info Summary\nH or ? - Show this help\n\nAUTO-EXPLORE:\nAuto-paths to stairs when\nall enemies are cleared!\n\nCAMPAIGN:\nConquer 3 cursed floors\nEach floor has unique lore\nDefeat the final evil\nSave the kingdom!`;
         
-        if (CONFIG.FEATURES.DEBUG_MODE) {
+        if (CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS) {
             helpText += `\n\nDEBUG COMMANDS:\nD - Toggle debug display\nG - Give 100 gold\nL - Level up\nR - Reveal entire map`;
         }
         
@@ -1242,7 +1310,7 @@ Thank you for playing!
         
         // After viewing lore post-victory, show options to continue
         if (this.gameOver && this.gameState.campaignProgress && this.gameState.campaignProgress.completed) {
-            setTimeout(() => {
+            this.addTimeoutTracked(() => {
                 this.modal.show({
                     title: '📜 Lore Viewed',
                     message: 'You have reviewed your collected lore.\n\nWhat would you like to do next?',
@@ -1565,7 +1633,7 @@ class ModalManager {
                 
                 // Focus first button or primary button
                 if (index === 0 || buttonConfig.primary) {
-                    setTimeout(() => button.focus(), 100);
+                    this.addTimeoutTracked(() => button.focus(), 100);
                 }
                 
                 this.buttons.appendChild(button);

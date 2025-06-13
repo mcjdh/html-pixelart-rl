@@ -51,7 +51,7 @@ class GameState {
         
         this.generateFloor();
         this.initFogOfWar();
-        this.updateFogOfWar();
+        this.updateFogOfWar(true); // Force initial fog of war calculation
     }
     
     registerAreas() {
@@ -316,6 +316,10 @@ class GameState {
                 this.explored[y][x] = false;  // true = explored before
             }
         }
+        // Reset fog tracking when initializing new floor
+        this.lastPlayerX = undefined;
+        this.lastPlayerY = undefined;
+        this.lastVisibleTiles = [];
     }
     
     placeStairsAwayFromPlayer(mapData) {
@@ -358,56 +362,97 @@ class GameState {
         }
     }
     
-    updateFogOfWar() {
+    updateFogOfWar(forceUpdate = false) {
         const viewRadius = CONFIG.VIEW_RADIUS;
         const viewRadiusSquared = viewRadius * viewRadius;
         
-        // Only update if player position changed
-        if (this.lastPlayerX === this.player.x && this.lastPlayerY === this.player.y) {
+        // Only update if player position changed or forced
+        if (!forceUpdate && this.lastPlayerX === this.player.x && this.lastPlayerY === this.player.y) {
             return;
         }
         
+        // Debug logging
+        if (CONFIG.DEBUG?.SHOW_AUTO_EXPLORER_LOGS) {
+            console.log(`Updating fog of war: player at (${this.player.x}, ${this.player.y}), force=${forceUpdate}`);
+        }
+        
+        // Check if this is the first update (no previous position)
+        const isFirstUpdate = this.lastPlayerX === undefined || this.lastPlayerY === undefined;
+        
+        const oldX = this.lastPlayerX !== undefined ? this.lastPlayerX : this.player.x;
+        const oldY = this.lastPlayerY !== undefined ? this.lastPlayerY : this.player.y;
         this.lastPlayerX = this.player.x;
         this.lastPlayerY = this.player.y;
         
-        // Only reset tiles that were previously visible (performance optimization)
-        if (this.lastVisibleTiles) {
-            for (const {x, y} of this.lastVisibleTiles) {
-                this.fogOfWar[y][x] = true;
-                // Mark previously visible tiles as dirty for fog overlay changes
+        // Calculate new visible tiles
+        const newVisibleTiles = this.calculateVisibleTiles(this.player.x, this.player.y, viewRadius, viewRadiusSquared);
+        
+        if (isFirstUpdate || forceUpdate) {
+            // On first update or forced update, just reveal all visible tiles
+            for (const tile of newVisibleTiles) {
+                this.fogOfWar[tile.y][tile.x] = false;
+                this.explored[tile.y][tile.x] = true;
                 if (this.renderer && this.renderer.markTileDirty) {
-                    this.renderer.markTileDirty(x, y);
+                    this.renderer.markTileDirty(tile.x, tile.y);
                 }
             }
-        }
-        this.lastVisibleTiles = [];
-        
-        // Pre-calculate bounds to avoid repeated checks
-        const minX = Math.max(0, this.player.x - viewRadius);
-        const maxX = Math.min(CONFIG.GRID_WIDTH - 1, this.player.x + viewRadius);
-        const minY = Math.max(0, this.player.y - viewRadius);
-        const maxY = Math.min(CONFIG.GRID_HEIGHT - 1, this.player.y + viewRadius);
-        
-        for (let y = minY; y <= maxY; y++) {
-            for (let x = minX; x <= maxX; x++) {
-                const dx = x - this.player.x;
-                const dy = y - this.player.y;
-                const distSquared = dx * dx + dy * dy;
-                
-                if (distSquared <= viewRadiusSquared) {
-                    if (this.hasLineOfSight(this.player.x, this.player.y, x, y)) {
-                        this.fogOfWar[y][x] = false;    // Currently visible
-                        this.explored[y][x] = true;     // Mark as explored
-                        this.lastVisibleTiles.push({x, y}); // Track for next frame
-                        
-                        // Mark newly visible tiles as dirty
-                        if (this.renderer && this.renderer.markTileDirty) {
-                            this.renderer.markTileDirty(x, y);
-                        }
+        } else {
+            // Normal update - only update changed tiles
+            const oldVisibleTiles = this.calculateVisibleTiles(oldX, oldY, viewRadius, viewRadiusSquared);
+            
+            // Create sets for efficient difference calculation
+            const oldSet = new Set(oldVisibleTiles.map(t => `${t.x},${t.y}`));
+            const newSet = new Set(newVisibleTiles.map(t => `${t.x},${t.y}`));
+            
+            // Hide tiles that are no longer visible
+            for (const tile of oldVisibleTiles) {
+                if (!newSet.has(`${tile.x},${tile.y}`)) {
+                    this.fogOfWar[tile.y][tile.x] = true;
+                    if (this.renderer && this.renderer.markTileDirty) {
+                        this.renderer.markTileDirty(tile.x, tile.y);
+                    }
+                }
+            }
+            
+            // Show tiles that are newly visible
+            for (const tile of newVisibleTiles) {
+                if (!oldSet.has(`${tile.x},${tile.y}`)) {
+                    this.fogOfWar[tile.y][tile.x] = false;
+                    this.explored[tile.y][tile.x] = true;
+                    if (this.renderer && this.renderer.markTileDirty) {
+                        this.renderer.markTileDirty(tile.x, tile.y);
                     }
                 }
             }
         }
+        
+        this.lastVisibleTiles = newVisibleTiles;
+    }
+    
+    calculateVisibleTiles(centerX, centerY, viewRadius, viewRadiusSquared) {
+        const visibleTiles = [];
+        
+        // Pre-calculate bounds to avoid repeated checks
+        const minX = Math.max(0, centerX - viewRadius);
+        const maxX = Math.min(CONFIG.GRID_WIDTH - 1, centerX + viewRadius);
+        const minY = Math.max(0, centerY - viewRadius);
+        const maxY = Math.min(CONFIG.GRID_HEIGHT - 1, centerY + viewRadius);
+        
+        for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
+                const dx = x - centerX;
+                const dy = y - centerY;
+                const distSquared = dx * dx + dy * dy;
+                
+                if (distSquared <= viewRadiusSquared) {
+                    if (this.hasLineOfSight(centerX, centerY, x, y)) {
+                        visibleTiles.push({x, y});
+                    }
+                }
+            }
+        }
+        
+        return visibleTiles;
     }
     
     hasLineOfSight(x0, y0, x1, y1) {
@@ -501,7 +546,7 @@ class GameState {
                 this.loadArea(nextAreaTransition.id);
                 this.generateFloor();
                 this.initFogOfWar();
-                this.updateFogOfWar();
+                this.updateFogOfWar(true); // Force initial fog of war calculation
             } else {
                 // No more areas - game complete!
                 this.addMessage('All areas conquered! Victory!', 'level-msg');
@@ -536,7 +581,7 @@ class GameState {
             
             this.generateFloor();
             this.initFogOfWar();
-            this.updateFogOfWar();
+            this.updateFogOfWar(true); // Force initial fog of war calculation
         }
         
         // Restore some energy

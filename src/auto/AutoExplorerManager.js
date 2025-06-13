@@ -9,7 +9,7 @@ class AutoExplorerManager {
         this.gameState = gameState;
         this.gameInstance = gameInstance;
         this.currentExplorer = null;
-        this.explorerType = CONFIG.AUTO_EXPLORE?.ENABLED ? 'enhanced' : 'original';
+        this.explorerType = CONFIG.AUTO_EXPLORE?.ENABLED ? 'optimized' : 'original';
         
         this.initializeExplorer();
     }
@@ -17,7 +17,10 @@ class AutoExplorerManager {
     initializeExplorer() {
         const type = this.explorerType;
         
-        if (type === 'enhanced' && window.AutoExplorerEnhanced) {
+        if (type === 'optimized' && window.AutoExplorerOptimized) {
+            this.currentExplorer = new AutoExplorerOptimized(this.gameState, this.gameInstance);
+            console.log('Auto-Explorer Manager: Using Optimized AI');
+        } else if (type === 'enhanced' && window.AutoExplorerEnhanced) {
             this.currentExplorer = new AutoExplorerEnhanced(this.gameState, this.gameInstance);
             console.log('Auto-Explorer Manager: Using Enhanced AI');
         } else if (window.AutoExplorerFinal) {
@@ -52,7 +55,7 @@ class AutoExplorerManager {
     
     // Enhanced AI specific methods
     setMode(mode) {
-        if (this.explorerType === 'enhanced' && this.currentExplorer.setMode) {
+        if (this.explorerType === 'enhanced' && this.currentExplorer?.setMode) {
             this.currentExplorer.setMode(mode);
             return true;
         }
@@ -60,7 +63,7 @@ class AutoExplorerManager {
     }
     
     toggleDecisionVisuals() {
-        if (this.explorerType === 'enhanced' && this.currentExplorer.toggleDecisionVisuals) {
+        if (this.explorerType === 'enhanced' && this.currentExplorer?.toggleDecisionVisuals) {
             return this.currentExplorer.toggleDecisionVisuals();
         }
         return false;
@@ -103,6 +106,30 @@ class AutoExplorerManager {
         return false;
     }
     
+    switchToOptimized() {
+        if (window.AutoExplorerOptimized && this.explorerType !== 'optimized') {
+            const wasEnabled = this.currentExplorer?.enabled;
+            const currentMode = this.currentExplorer?.mode;
+            this.currentExplorer?.disable();
+            
+            this.explorerType = 'optimized';
+            this.currentExplorer = new AutoExplorerOptimized(this.gameState, this.gameInstance);
+            
+            // Restore mode if it had one
+            if (currentMode && this.currentExplorer.setMode) {
+                this.currentExplorer.setMode(currentMode);
+            }
+            
+            if (wasEnabled) {
+                this.currentExplorer.toggle();
+            }
+            
+            console.log('Auto-Explorer Manager: Switched to Optimized AI');
+            return true;
+        }
+        return false;
+    }
+    
     // Status and information methods
     getCurrentType() {
         return this.explorerType;
@@ -113,7 +140,7 @@ class AutoExplorerManager {
     }
     
     getCurrentMode() {
-        if (this.explorerType === 'enhanced' && this.currentExplorer.mode) {
+        if (this.explorerType === 'enhanced' && this.currentExplorer?.mode) {
             return this.currentExplorer.mode;
         }
         return 'standard';

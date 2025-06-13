@@ -95,7 +95,7 @@ class AutoSystem {
     /**
      * Start single floor automation
      */
-    startFloorExploration(aiType = 'enhanced', mode = 'balanced') {
+    startFloorExploration(aiType = 'optimized', mode = 'balanced') {
         if (!this.explorerManager) {
             console.error('AutoSystem: Explorer manager not available');
             return false;
@@ -104,7 +104,12 @@ class AutoSystem {
         this.mode = 'auto-floor';
         
         // Switch to desired AI type
-        if (aiType === 'enhanced') {
+        if (aiType === 'optimized') {
+            this.explorerManager.switchToOptimized();
+            if (this.explorerManager.setMode) {
+                this.explorerManager.setMode(mode);
+            }
+        } else if (aiType === 'enhanced') {
             this.explorerManager.switchToEnhanced();
             if (this.explorerManager.setMode) {
                 this.explorerManager.setMode(mode);

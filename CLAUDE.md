@@ -29,6 +29,37 @@ const SPRITES = { player: function(ctx, x, y, size) {...} };
 3. **NEVER** use async/await in core game loop - causes frame drops
 4. **AVOID** creating new files - extend existing systems
 5. **CHECK** CONFIG.BALANCE before hardcoding any numbers
+6. **ALWAYS** use tracked resource management for cleanup (see Memory Management Pattern)
+
+### Memory Management Pattern (NEW - December 2025) 🔧
+```javascript
+// CORRECT: Use tracked resource management in Game class
+this.addEventListenerTracked(element, 'event', handler);
+this.addTimeoutTracked(() => callback(), delay);
+this.addIntervalTracked(() => callback(), interval);
+
+// Cleanup automatically handled in destroy() method
+this.destroy(); // Cleans up all tracked resources
+
+// WRONG: Direct event listeners without cleanup
+element.addEventListener('event', handler); // Memory leak risk
+```
+
+### Performance Optimization Patterns (NEW - December 2025) ⚡
+```javascript
+// Fog of War: Dirty region tracking pattern
+const oldSet = new Set(oldVisibleTiles.map(t => `${t.x},${t.y}`));
+const newSet = new Set(newVisibleTiles.map(t => `${t.x},${t.y}`));
+// Only update tiles that changed visibility
+
+// Console Logging: Production-safe logging
+if (CONFIG.DEBUG?.SHOW_AUTO_EXPLORER_LOGS) {
+    console.log('Debug message');
+}
+
+// Configuration: Magic numbers externalized
+this.maxStuckCounter = CONFIG.AUTO_EXPLORE?.MAX_STUCK_COUNTER || 20;
+```
 
 ## GAME BALANCE QUICK REFERENCE
 
@@ -78,15 +109,30 @@ player.takeDamage(damage);
 - Rendering: Dirty rectangle tracking (not yet implemented)
 - Particles: Object pool with 100 particle limit
 
-## AUTO-EXPLORATION SYSTEM (PRODUCTION COMPLETE) ⭐
+## AUTO-EXPLORATION SYSTEM (ENHANCED DECEMBER 2025) ⭐
 
-### Architecture: AutoExplorerFinal.js
-**Philosophy**: "Just works" - Simple, reliable, predictable behavior that mimics optimal human play.
+### Architecture: Three AI Implementations
+1. **AutoExplorerFinal.js** - Original "just works" implementation
+2. **AutoExplorerEnhanced.js** - Advanced with threat assessment and item prioritization
+3. **AutoExplorerOptimized.js** - Latest version fixing oscillation and softlock issues
+
+**Current Default**: AutoExplorerOptimized (configurable via CONFIG.AUTO_EXPLORE)
+
+### Optimized Explorer Features ✨
+**Anti-Oscillation System**: Tracks recent positions to prevent back-and-forth movement
+**Progressive Urgency**: Becomes more aggressive about stairs over time
+**Smart Completion Detection**: More accurate floor completion assessment
+**Robust Pathfinding**: Better handling of unreachable areas
 
 **Core Strategy (Priority Order):**
 1. **Attack adjacent enemies** (8-directional, immediate threat response)
-2. **Pick up nearby items** (expanding circles: current → 1 tile → 2 tiles)
-3. **Move toward stairs** (BFS pathfinding, shortest route)
+2. **Break oscillation patterns** (if detected, force exploration of new areas)
+3. **Collect nearby items** (unless urgency is high)
+4. **Seek visible enemies** (unless urgency is very high)
+5. **Check floor completion** (based on urgency and exploration %)
+6. **Explore unknown areas** (avoiding recent positions)
+7. **Move to stairs** (when appropriate or urgency demands)
+8. **Emergency movement** (randomized fallback to escape stuck states)
 
 ### Implementation Excellence ✅
 ```javascript
@@ -197,14 +243,46 @@ calculateThreat(enemy, player) {
 
 ### Configuration Integration 📋
 ```javascript
-// Recommended CONFIG.GAME additions
+// CONFIG.PATHFINDING settings
+PATHFINDING: {
+    MAX_NODES: 500,          // Maximum nodes to explore in pathfinding
+    MAX_DISTANCE: 30,        // Maximum manhattan distance for pathfinding
+    FALLBACK_SEARCH_RADIUS: 15  // Search radius for fallback exploration
+}
+
+// CONFIG.AUTO_EXPLORE settings (UPDATED - December 2025)
 AUTO_EXPLORE: {
-    ENABLED: true,
-    STEP_DELAY: 180,        // Timing feels natural
-    ENERGY_WAIT: 400,       // When waiting for regen
-    THREAT_ASSESSMENT: false,   // Future enhancement
-    ITEM_VALUE_PRIORITY: false, // Future enhancement
-    EXPLORATION_MODE: 'balanced' // complete/balanced/speedrun
+    ENABLED: true,           // Use optimized explorer by default
+    DEFAULT_MODE: 'balanced',
+    SHOW_DECISION_VISUALS: false,
+    
+    // Anti-oscillation settings (NEW)
+    MAX_RECENT_POSITIONS: 10,
+    OSCILLATION_THRESHOLD: 3,
+    MAX_STUCK_COUNTER: 20,
+    MAX_URGENCY_LEVEL: 5,
+    ENERGY_WAIT_DELAY: 400,
+    
+    MODES: {
+        speedrun: {
+            STEP_DELAY: 120,
+            EXPLORATION_THRESHOLD: 0.65,  // 65% exploration
+            ITEM_RADIUS: 2,
+            THREAT_CAUTION: 0.8
+        },
+        balanced: {
+            STEP_DELAY: 180,
+            EXPLORATION_THRESHOLD: 0.80,  // 80% exploration
+            ITEM_RADIUS: 3,
+            THREAT_CAUTION: 1.0
+        },
+        complete: {
+            STEP_DELAY: 220,
+            EXPLORATION_THRESHOLD: 0.90,  // 90% exploration
+            ITEM_RADIUS: 4,
+            THREAT_CAUTION: 1.2
+        }
+    }
 }
 ```
 
@@ -212,9 +290,19 @@ AUTO_EXPLORE: {
 - **Code Quality**: 95/100 (Clean, efficient, well-documented)
 - **Game Balance**: 90/100 (Respectful of systems, appropriate speed)
 - **User Experience**: 95/100 (Intuitive, responsive, reliable)
-- **Architecture**: 95/100 (Stateless, fail-safe, well-integrated)
+- **Architecture**: 95/100 (Multiple implementations, fail-safe, well-integrated)
 
-**Status**: Production complete. System represents exceptional software engineering - perfectly embodies "just works" philosophy while maintaining clean, efficient, and reliable code.
+**Status**: Production enhanced (December 2025). Three AI implementations available:
+- **Original (AutoExplorerFinal)**: Simple, reliable, "just works"
+- **Enhanced (AutoExplorerEnhanced)**: Advanced features, threat assessment
+- **Optimized (AutoExplorerOptimized)**: Fixes oscillation/softlock issues, progressive urgency
+
+### Recent Improvements (December 2025) ✅
+1. **Fixed oscillation bug**: AI no longer gets stuck moving back and forth
+2. **Fixed softlock issue**: Better detection of when to go to stairs
+3. **Added urgency system**: AI becomes more aggressive over time to prevent endless exploration
+4. **Improved pathfinding**: Better handling of unreachable areas
+5. **Added configuration**: Full CONFIG support for pathfinding and auto-exploration
 
 ## TESTING ROGUELIKE FEATURES
 
@@ -610,24 +698,29 @@ player.statusEffects = player.statusEffects.filter(s => {
 
 ### Current Technical Debt 🔧
 - **Testing**: No unit tests (relies on manual testing)
-- **Performance**: Some optimization opportunities remain (see Performance Bottlenecks)
+- **Performance**: Well-optimized but could benefit from sprite atlasing and particle pooling
 
-### Performance Bottlenecks ⚡
-- Fog of war recalculates entire grid each update
-- No sprite caching/atlasing
-- Full map render each frame (no dirty rectangles)
-- Particle system could use object pooling
+### Performance Status ⚡ (SIGNIFICANTLY IMPROVED)
+✅ **Fog of war**: Now uses dirty region tracking (only updates changed tiles)
+✅ **Viewport culling**: Only renders visible 20x14 tiles (not full 40x30 grid)  
+✅ **Memory management**: Proper event listener and timer cleanup implemented
+✅ **Console logging**: Wrapped in CONFIG.DEBUG checks to reduce production overhead
+- **Remaining opportunities**: Sprite atlasing, particle object pooling (low priority)
 
 ### Recently Completed Improvements ✅
-1. **Error handling**: Comprehensive try/catch blocks in game initialization and core systems
-2. **Debug tools**: Full console command suite and configurable visual overlays
-3. **JSDoc documentation**: Main classes properly documented
-4. **DOM safety**: Renderer has null checks and graceful fallbacks
-5. **TypeScript warnings**: Resolved property access issues
-6. **Sprite animations**: Time-based cavern animations (crystal glow, water drips, sparkles, bone shifting)
-7. **Boss enemy**: Skeleton Lord boss with animated sprite, balanced stats, and integration into cavern area
-8. **Sprite design audit**: Comprehensive sprite improvements for thematic accuracy and visual consistency
-9. **System simplification**: Reduced overengineered complexity while maintaining coherence and functionality
+**December 2025 Codebase Optimization:**
+1. **Memory management**: Added proper event listener and timer cleanup to prevent memory leaks
+2. **Fog of war optimization**: Implemented dirty region tracking for significant performance improvement
+3. **Console logging cleanup**: Wrapped verbose logs in CONFIG.DEBUG checks
+4. **Configuration consolidation**: Moved auto-explorer magic numbers to CONFIG.AUTO_EXPLORE
+5. **Error handling**: Comprehensive try/catch blocks in game initialization and core systems
+6. **Debug tools**: Full console command suite and configurable visual overlays
+7. **JSDoc documentation**: Main classes properly documented
+8. **DOM safety**: Renderer has null checks and graceful fallbacks
+9. **Sprite animations**: Time-based cavern animations (crystal glow, water drips, sparkles, bone shifting)
+10. **Boss enemy**: Skeleton Lord boss with animated sprite, balanced stats, and integration into cavern area
+11. **Sprite design audit**: Comprehensive sprite improvements for thematic accuracy and visual consistency
+12. **System simplification**: Reduced overengineered complexity while maintaining coherence and functionality
 
 ### Development Quality Notes 📝
 - **Robust error handling**: Game gracefully handles initialization failures
@@ -667,10 +760,11 @@ if (game.debug) {
 
 ### Streamlined Debug System ✅
 ```javascript
-// Current CONFIG.DEBUG options (simplified from 10 to 5 used features)
+// Current CONFIG.DEBUG options (UPDATED - December 2025)
 DEBUG: {
     GOLD_AMOUNT: 100,
     ENABLE_CONSOLE_COMMANDS: true,     // ✅ Implemented
+    SHOW_AUTO_EXPLORER_LOGS: false,    // ✅ NEW: Controls verbose auto-explorer logging
     SHOW_ENEMY_VISION: false,          // ✅ Implemented
     SHOW_PATHFINDING: false,           // ✅ Implemented
     SHOW_GRID_LINES: false             // ✅ Implemented
@@ -825,15 +919,17 @@ The game is now feature-complete and stable with:
 3. **Testing infrastructure** (unit tests, balance validation)
 4. **Advanced features** (hunger system, item identification)
 
-## CURRENT BUILD STATUS (December 2025)
+## CURRENT BUILD STATUS (December 2025 - OPTIMIZED)
 
-### 🎯 Production Ready State
+### 🎯 Production Ready State (ENHANCED)
 - **Content**: Complete 12-floor campaign (4 areas) with 3 boss encounters
 - **AI System**: Production-grade auto-exploration with A+ quality rating
 - **Sprites**: Thematically accurate, animated, visually consistent across 4 themes
 - **Systems**: Simplified, coherent, matching actual 12-floor scope
 - **Quality**: Comprehensive error handling, debugging tools, documentation
-- **Performance**: Smooth 60fps with camera tracking and fog of war
+- **Performance**: Optimized with dirty region tracking, memory management, viewport culling
+- **Memory**: Proper resource cleanup prevents memory leaks
+- **Configuration**: All magic numbers externalized to CONFIG sections
 
 ### 📋 Active Task Tracking
 - **Primary**: `current-task-updates.md` - Current priorities and completed work

@@ -39,7 +39,6 @@ const CONFIG = {
     GAME: {
         ENERGY_REGEN_RATE: 600, // Faster energy regen for better auto-explore flow
         ENERGY_REGEN_AMOUNT: 3, // More energy per tick
-        AUTO_EXPLORE_DELAY: 150,
         MAX_MESSAGES: 15,
         INPUT_THROTTLE: 50,
         MIN_SWIPE_DISTANCE: 40, // Increased for better mobile responsiveness
@@ -58,6 +57,13 @@ const CONFIG = {
         ENABLED: true,
         DEFAULT_MODE: 'balanced', // speedrun, balanced, complete
         SHOW_DECISION_VISUALS: false,
+        
+        // Anti-oscillation settings
+        MAX_RECENT_POSITIONS: 10,
+        OSCILLATION_THRESHOLD: 3,
+        MAX_STUCK_COUNTER: 20,
+        MAX_URGENCY_LEVEL: 5,
+        ENERGY_WAIT_DELAY: 400,
         
         // Mode configurations
         MODES: {
@@ -307,6 +313,7 @@ const CONFIG = {
         // Essential debug features (only what's actually used)
         GOLD_AMOUNT: 100,
         ENABLE_CONSOLE_COMMANDS: true,
+        SHOW_AUTO_EXPLORER_LOGS: false,
         
         // Visual debug overlays
         SHOW_ENEMY_VISION: false,
@@ -318,7 +325,7 @@ const CONFIG = {
     FEATURES: {
         DIRECTIONAL_COMBAT: true,
         STATUS_EFFECTS: true
-    }
+    },
 };
 
 // Ensure CONFIG is available globally
