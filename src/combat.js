@@ -59,7 +59,7 @@ class CombatSystem {
         player.trackAction('damageDealt', actualDamage);
         
         // Add message
-        let message = `You deal ${actualDamage} damage`;
+        let message = `You deal ${Math.round(actualDamage)} damage`;
         if (isCrit) {
             if (critMultiplier > 2) {
                 message = `POWER CRITICAL! ${message}`;
@@ -124,7 +124,7 @@ class CombatSystem {
         this.gameState.stats.totalDamageTaken += actualDamage;
         
         this.gameState.addMessage(
-            `${enemy.type} deals ${actualDamage} damage!`, 
+            `${enemy.type} deals ${Math.round(actualDamage)} damage!`, 
             'damage-msg'
         );
         

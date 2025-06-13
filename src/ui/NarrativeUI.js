@@ -83,23 +83,7 @@ class NarrativeUI {
             boxSizing: 'border-box'
         });
         
-        // Create lore discovery notification
-        this.loreNotification = this.createElement('div', 'lore-notification', {
-            position: 'absolute',
-            top: '50px',
-            right: '10px',
-            width: '200px',
-            backgroundColor: 'rgba(48, 32, 16, 0.95)',
-            color: '#d4af37',
-            display: 'none',
-            zIndex: '998',
-            fontFamily: 'monospace',
-            fontSize: '10px',
-            padding: '8px',
-            border: '1px solid #d4af37',
-            borderRadius: '4px',
-            textShadow: '1px 1px 2px rgba(0,0,0,0.8)'
-        });
+        // Lore discovery now integrated into terminal - no popup needed
         
         // Create floating combat text container  
         this.combatTextContainer = this.createElement('div', 'combat-text-container', {
@@ -116,7 +100,6 @@ class NarrativeUI {
         const gameContainer = document.getElementById('game-container');
         gameContainer.appendChild(this.narrativeOverlay);
         gameContainer.appendChild(this.narrativeBanner);
-        gameContainer.appendChild(this.loreNotification);
         gameContainer.appendChild(this.combatTextContainer);
     }
     
@@ -336,44 +319,63 @@ class NarrativeUI {
     showLoreDiscovery(loreData) {
         const { category, entry } = loreData;
         
-        // Show discovery in console with special formatting
-        const raritySymbol = {
-            common: '○',
-            uncommon: '◐', 
-            rare: '●',
-            legendary: '★'
-        }[entry.rarity] || '○';
+        // Enhanced rarity symbols and colors
+        const rarityInfo = {
+            common: { symbol: '○', color: '#c0c0c0', desc: 'Common Knowledge' },
+            uncommon: { symbol: '◐', color: '#90ee90', desc: 'Uncommon Insight' }, 
+            rare: { symbol: '●', color: '#4169e1', desc: 'Rare Revelation' },
+            legendary: { symbol: '★', color: '#ffd700', desc: 'Legendary Secret' }
+        }[entry.rarity] || { symbol: '○', color: '#c0c0c0', desc: 'Ancient Knowledge' };
         
-        // Use special lore discovery styling
-        this.addToMessageConsole(
-            `📜 LORE DISCOVERED! ${raritySymbol} [${category.toUpperCase()}]`,
-            'lore-discovery'
-        );
+        // Create enhanced lore discovery message with better formatting
+        const categoryDisplayName = this.getCategoryDisplayName(category);
+        const discoveryMessage = `📜 ${rarityInfo.desc} discovered! ${rarityInfo.symbol} ${categoryDisplayName}`;
         
-        // Show the actual lore content with special styling
+        // Show discovery announcement in console with enhanced styling
+        this.addToMessageConsole(discoveryMessage, 'lore-discovery');
+        
+        // Show the actual lore content with enhanced presentation
         setTimeout(() => {
-            this.addToMessageConsole(
-                `"${entry.content}"`,
-                'lore-content'
-            );
-        }, 500);
+            // Add some atmospheric formatting to the lore content
+            const formattedContent = this.formatLoreContent(entry.content, category);
+            this.addToMessageConsole(formattedContent, 'lore-content');
+        }, 800);
         
-        // Still show the small notification for extra visibility
-        this.loreNotification.innerHTML = `
-            <div style="font-weight: bold; color: #ffd700;">📜 Lore Discovered!</div>
-            <div style="margin-top: 4px; font-size: 9px;">
-                ${category.toUpperCase()}: ${entry.rarity.toUpperCase()}
-            </div>
-        `;
-        
-        this.loreNotification.style.display = 'block';
-        
-        // Auto-hide notification
+        // Add a subtle separator line for better readability
         setTimeout(() => {
-            this.fadeOut(this.loreNotification).then(() => {
-                this.loreNotification.style.display = 'none';
-            });
-        }, 3000);
+            this.addToMessageConsole('───────────────────────────────────', 'lore-separator');
+        }, 1200);
+    }
+    
+    getCategoryDisplayName(category) {
+        const categoryNames = {
+            'ruins': 'Ancient Ruins Lore',
+            'creatures': 'Creature Bestiary', 
+            'artifacts': 'Mystical Artifacts',
+            'legends': 'Forgotten Legends',
+            'history': 'Historical Records',
+            'magic': 'Arcane Knowledge',
+            'geography': 'Realm Geography',
+            'culture': 'Lost Civilizations'
+        };
+        return categoryNames[category] || category.charAt(0).toUpperCase() + category.slice(1);
+    }
+    
+    formatLoreContent(content, category) {
+        // Add atmospheric prefixes based on category
+        const atmosphericPrefixes = {
+            'ruins': '🏛️ ',
+            'creatures': '🐉 ',
+            'artifacts': '🔮 ',
+            'legends': '⚔️ ',
+            'history': '📚 ',
+            'magic': '✨ ',
+            'geography': '🗺️ ',
+            'culture': '🏺 '
+        };
+        
+        const prefix = atmosphericPrefixes[category] || '📜 ';
+        return `${prefix}"${content}"`;
     }
     
     showDeathNarrative() {

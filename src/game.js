@@ -973,7 +973,7 @@ Thank you for playing!
                         const healed = player.heal(healAmount);
                         
                         if (healed > 0) {
-                            this.gameState.addMessage(`Natural healing restores ${healed} HP`, 'heal-msg');
+                            this.gameState.addMessage(`Natural healing restores ${Math.round(healed)} HP`, 'heal-msg');
                             this.updateUI();
                         }
                     }
@@ -1114,13 +1114,13 @@ Thank you for playing!
             return;
         }
         
-        // Side panel stats
-        document.getElementById('player-level').textContent = player.level;
-        document.getElementById('player-hp').textContent = `${player.hp}/${player.maxHp}`;
-        document.getElementById('player-exp').textContent = `${player.exp}/${player.expToNext}`;
-        document.getElementById('player-energy').textContent = `${player.energy}/${player.maxEnergy}`;
+        // Side panel stats (ensure integers for clean display)
+        document.getElementById('player-level').textContent = Math.floor(player.level);
+        document.getElementById('player-hp').textContent = `${Math.floor(player.hp)}/${Math.floor(player.maxHp)}`;
+        document.getElementById('player-exp').textContent = `${Math.floor(player.exp)}/${Math.floor(player.expToNext)}`;
+        document.getElementById('player-energy').textContent = `${Math.floor(player.energy)}/${Math.floor(player.maxEnergy)}`;
         document.getElementById('floor-level').textContent = this.gameState.floor;
-        document.getElementById('player-gold').textContent = player.gold;
+        document.getElementById('player-gold').textContent = Math.floor(player.gold);
         
         // Update progress bars
         const healthBar = document.getElementById('health-bar');
@@ -1156,12 +1156,12 @@ Thank you for playing!
             expBar.style.width = `${expPercent}%`;
         }
         
-        // Status bar (duplicate for classic feel)
-        document.getElementById('status-hp').textContent = `${player.hp}/${player.maxHp}`;
-        document.getElementById('status-exp').textContent = `${player.exp}/${player.expToNext}`;
-        document.getElementById('status-energy').textContent = `${player.energy}/${player.maxEnergy}`;
+        // Status bar (duplicate for classic feel, ensure integers)
+        document.getElementById('status-hp').textContent = `${Math.floor(player.hp)}/${Math.floor(player.maxHp)}`;
+        document.getElementById('status-exp').textContent = `${Math.floor(player.exp)}/${Math.floor(player.expToNext)}`;
+        document.getElementById('status-energy').textContent = `${Math.floor(player.energy)}/${Math.floor(player.maxEnergy)}`;
         document.getElementById('status-floor').textContent = this.gameState.floor;
-        document.getElementById('status-gold').textContent = player.gold;
+        document.getElementById('status-gold').textContent = Math.floor(player.gold);
         
         // Update game time
         this.updateGameTime();
@@ -1250,37 +1250,41 @@ Thank you for playing!
     
     // Public methods for UI buttons
     
-    saveGame() {
+    saveGame(silent = false) {
         try {
             this.gameState.saveGame();
-            this.modal.show({
-                title: 'GAME SAVED',
-                message: 'Your progress has been saved successfully!',
-                buttons: [
-                    {
-                        text: 'Continue',
-                        primary: true,
-                        callback: () => {
-                            this.modal.hide();
+            if (!silent) {
+                this.modal.show({
+                    title: 'GAME SAVED',
+                    message: 'Your progress has been saved successfully!',
+                    buttons: [
+                        {
+                            text: 'Continue',
+                            primary: true,
+                            callback: () => {
+                                this.modal.hide();
+                            }
                         }
-                    }
-                ]
-            });
+                    ]
+                });
+            }
         } catch (error) {
             console.error('Save failed:', error);
-            this.modal.show({
-                title: 'SAVE FAILED',
-                message: 'Could not save your progress. Please check your browser storage settings.',
-                buttons: [
-                    {
-                        text: 'OK',
-                        primary: true,
-                        callback: () => {
-                            this.modal.hide();
+            if (!silent) {
+                this.modal.show({
+                    title: 'SAVE FAILED',
+                    message: 'Could not save your progress. Please check your browser storage settings.',
+                    buttons: [
+                        {
+                            text: 'OK',
+                            primary: true,
+                            callback: () => {
+                                this.modal.hide();
+                            }
                         }
-                    }
-                ]
-            });
+                    ]
+                });
+            }
         }
     }
     
@@ -1720,7 +1724,8 @@ Thank you for playing!
                     }
                     
                     this.updateUI();
-                    console.log('Natural healing will start in 4 seconds after "combat"');
+                    console.log('Natural healing will start in 8 seconds after "combat"');
+                    console.log('Healing: 1 HP every 12 seconds, max 65% HP');
                     console.log('Poison will deal ~2% max HP per turn');
                 },
                 
@@ -1751,6 +1756,48 @@ Thank you for playing!
                     });
                 },
                 
+                testLoreDisplay: () => {
+                    console.log('=== LORE DISPLAY TEST ===');
+                    
+                    // Test if message console exists
+                    const messageLog = document.getElementById('message-log');
+                    const messageConsole = document.getElementById('message-console');
+                    
+                    if (!messageLog) {
+                        console.error('ERROR: message-log element not found!');
+                        return;
+                    }
+                    if (!messageConsole) {
+                        console.error('ERROR: message-console element not found!');
+                        return;
+                    }
+                    
+                    console.log('Message console elements found');
+                    console.log(`Message log children: ${messageLog.children.length}`);
+                    
+                    // Test adding a lore message directly
+                    if (window.game?.narrativeUI) {
+                        const testLoreData = {
+                            category: 'creatures',
+                            entry: {
+                                content: 'This is a test lore entry to verify display functionality.',
+                                rarity: 'rare'
+                            }
+                        };
+                        
+                        console.log('Testing lore display...');
+                        window.game.narrativeUI.showLoreDiscovery(testLoreData);
+                        console.log('Lore display test completed - check game console!');
+                    } else {
+                        console.error('ERROR: narrativeUI not available');
+                    }
+                    
+                    // Test adding a regular message
+                    if (this.gameState) {
+                        this.gameState.addMessage('🧪 Test message for console visibility', 'level-msg');
+                    }
+                },
+                
                 help: () => {
                     console.log(`Debug Commands:
 giveGold(amount) - Add gold to player
@@ -1765,6 +1812,7 @@ giveSkillExp(skillType, amount) - Add skill experience
 testSkillBalance() - Simulate floor activities
 testHealing() - Test healing and poison balance
 testBossBalance() - Test boss difficulty vs player level
+testLoreDisplay() - Test lore display in game console
 help() - Show this help`);
                 }
             };

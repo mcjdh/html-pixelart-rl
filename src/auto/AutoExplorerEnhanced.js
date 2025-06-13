@@ -132,10 +132,21 @@ class AutoExplorerEnhanced {
             return;
         }
         
-        // Energy management
+        // Intelligent energy management with dynamic tick rates
         if (this.gameState.player.energy < CONFIG.BALANCE.MOVE_ENERGY_COST) {
-            setTimeout(() => this.step(), CONFIG.AUTO_EXPLORE?.ENERGY_WAIT_DELAY || 400);
+            const energyWaitDelay = CONFIG.AUTO_EXPLORE?.ENERGY_WAIT_DELAY || 800;
+            setTimeout(() => this.step(), energyWaitDelay);
             return;
+        }
+        
+        // Check if we're running low on energy for smarter pacing
+        const lowEnergy = this.gameState.player.energy <= (CONFIG.AUTO_EXPLORE?.MIN_ENERGY_THRESHOLD || 15);
+        if (lowEnergy) {
+            // Use slower conserving rate when energy is low
+            this.stepDelay = Math.max(this.stepDelay, CONFIG.AUTO_EXPLORE?.ENERGY_CONSERVING_RATE || 200);
+        } else {
+            // Use normal mode-based rate when energy is good
+            this.stepDelay = this.getStepDelay();
         }
         
         const player = this.gameState.player;

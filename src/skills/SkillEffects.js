@@ -73,7 +73,7 @@ class SkillEffects {
                 const healed = this.player.heal(this.player.skillBonuses.hpRegenRate);
                 if (healed > 0 && window.game?.gameState) {
                     window.game.gameState.addMessage(
-                        `⚡ Toughness restores ${healed} HP`, 
+                        `⚡ Toughness restores ${Math.round(healed)} HP`, 
                         'heal-msg'
                     );
                     this.player.lastSkillHeal = now;
@@ -91,11 +91,10 @@ class SkillEffects {
             const secondWindBonus = Math.floor(this.player.maxHp * 0.05);
             if (secondWindBonus > 0) {
                 this.player.heal(secondWindBonus);
-                if (window.game?.gameState) {
-                    window.game.gameState.addMessage(
-                        `Second Wind restores ${secondWindBonus} HP!`, 
-                        'heal-msg'
-                    );
+                if (window.game?.gameState) {                window.game.gameState.addMessage(
+                    `Second Wind restores ${Math.round(secondWindBonus)} HP!`, 
+                    'heal-msg'
+                );
                 }
                 return secondWindBonus;
             }
@@ -126,7 +125,7 @@ class SkillEffects {
             
             if (window.game?.gameState) {
                 window.game.gameState.addMessage(
-                    `Counter-attack deals ${counterActual} damage!`, 
+                    `Counter-attack deals ${Math.round(counterActual)} damage!`, 
                     'damage-msg'
                 );
             }

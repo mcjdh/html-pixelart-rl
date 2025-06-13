@@ -228,34 +228,39 @@ const CONFIG = {
         DEFAULT_MODE: 'balanced', // speedrun, balanced, complete
         SHOW_DECISION_VISUALS: false,
         
+        // Auto mode tick rate control
+        BASE_TICK_RATE: 300,        // Base delay between auto actions (ms)
+        ENERGY_CONSERVING_RATE: 200, // Slower rate when energy is low
+        MIN_ENERGY_THRESHOLD: 15,   // Energy level to trigger conservation
+        
         // Anti-oscillation settings
         MAX_RECENT_POSITIONS: 10,
         OSCILLATION_THRESHOLD: 3,
         MAX_STUCK_COUNTER: 20,
         MAX_URGENCY_LEVEL: 5,
-        ENERGY_WAIT_DELAY: 400,
+        ENERGY_WAIT_DELAY: 800,     // Increased from 400 for better energy management
         
-        // Mode configurations
+        // Mode configurations (UPDATED - better energy management)
         MODES: {
             speedrun: {
-                STEP_DELAY: 120,
+                STEP_DELAY: 200,            // Slower from 120 for energy management
                 ITEM_RADIUS: 1,
                 THREAT_CAUTION: 0.7,
-                EXPLORATION_THRESHOLD: 0.75,  // Increased for better completion
+                EXPLORATION_THRESHOLD: 0.75,
                 PRIORITIZE_STAIRS: true
             },
             balanced: {
-                STEP_DELAY: 180,
+                STEP_DELAY: 250,            // Slower from 180 for energy management
                 ITEM_RADIUS: 2,
                 THREAT_CAUTION: 1.0,
-                EXPLORATION_THRESHOLD: 0.85,  // Fixed to match implementation
+                EXPLORATION_THRESHOLD: 0.85,
                 PRIORITIZE_STAIRS: false
             },
             complete: {
-                STEP_DELAY: 220,
+                STEP_DELAY: 300,            // Slower from 220 for energy management
                 ITEM_RADIUS: 3,
                 THREAT_CAUTION: 1.3,
-                EXPLORATION_THRESHOLD: 0.95,  // Increased for thorough exploration
+                EXPLORATION_THRESHOLD: 0.95,
                 PRIORITIZE_STAIRS: false
             }
         },
@@ -342,13 +347,13 @@ const CONFIG = {
         SKELETON_POISON_CHANCE: 0.06,   // Reduced from 10% to 6%
         BLESSED_POTION_CHANCE: 0.2,
         
-        // Natural healing system
+        // Natural healing system (REBALANCED - less generous)
         NATURAL_HEALING: {
             ENABLED: true,
-            HP_REGEN_RATE: 6000,        // Heal every 6 seconds (faster from 8s)
+            HP_REGEN_RATE: 12000,       // Heal every 12 seconds (much slower)
             HP_REGEN_AMOUNT: 1,         // Heal 1 HP per tick
-            COMBAT_DELAY: 4000,         // Wait 4s after combat (faster from 5s)
-            MAX_HEAL_PERCENT: 0.85      // Heal up to 85% max HP (up from 80%)
+            COMBAT_DELAY: 8000,         // Wait 8s after combat (longer delay)
+            MAX_HEAL_PERCENT: 0.65      // Only heal up to 65% max HP (down from 85%)
         },
         
         // Enemy and item counts

@@ -511,15 +511,15 @@ class Item extends Entity {
         switch(this.type) {
             case 'gold':
                 player.gold += this.value;
-                return { message: `Found ${this.value} gold!`, type: 'heal-msg' };
+                return { message: `Found ${Math.round(this.value)} gold!`, type: 'heal-msg' };
             case 'potion':
                 const healed = player.heal(this.value);
                 // Chance for blessed effect
                 if (CONFIG.FEATURES.STATUS_EFFECTS && Math.random() < 0.2) {
                     player.applyStatusEffect('blessed', CONFIG.BALANCE.STATUS_BLESSED_DURATION);
-                    return { message: `Blessed potion! Restored ${healed} HP and feel blessed!`, type: 'heal-msg' };
+                    return { message: `Blessed potion! Restored ${Math.round(healed)} HP and feel blessed!`, type: 'heal-msg' };
                 }
-                return { message: `Restored ${healed} HP!`, type: 'heal-msg' };
+                return { message: `Restored ${Math.round(healed)} HP!`, type: 'heal-msg' };
             case 'sword':
                 player.attack += this.value;
                 return { message: `Attack increased by ${this.value}!`, type: 'level-msg' };

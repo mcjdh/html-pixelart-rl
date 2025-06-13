@@ -76,13 +76,15 @@
             background: #0f0f0f;
             border: 2px inset #404040;
             margin: 6px;
-            padding: 10px;
+            padding: 8px; /* Slightly reduced padding for more space */
             overflow-y: auto;
-            font-size: 13px;
-            line-height: 1.5;
+            font-family: 'Courier New', 'Monaco', 'Menlo', 'Consolas', monospace; /* System monospace fonts */
+            font-size: 18px; /* Increased font size for better readability */
+            line-height: 1.3; /* Slightly increased line height for better spacing */
             box-sizing: border-box;
             min-height: 150px; /* Ensure minimum height to fill available space */
             height: calc(200px - 38px); /* Fill the available space properly */
+            color: #c0c0c0; /* Ensure good contrast */
         }
         
         #status-bar {
@@ -286,15 +288,16 @@
             padding: 0;
             height: 100%; /* Fill the entire console area */
             overflow-y: auto;
-            font-size: 13px; /* Match console font size */
+            font-family: 'Courier New', 'Monaco', 'Menlo', 'Consolas', monospace; /* Match parent font */
+            font-size: 16px; /* Match console font size */
             border: none; /* Remove extra border since console already has one */
-            line-height: 1.5; /* Match console line height */
+            line-height: 1.3; /* Match console line height */
         }
         
         .message {
-            margin: 2px 0;
-            padding: 3px 0;
-            line-height: 1.4;
+            margin: 1px 0; /* Reduced spacing for pixel font */
+            padding: 2px 0; /* Reduced padding */
+            line-height: 1.2; /* Tighter for pixel font */
             word-wrap: break-word;
         }
         
@@ -303,44 +306,61 @@
         .level-msg { color: #6666ff; font-weight: bold; }
         .gold-msg { color: #ffcc66; }
         
-        /* Enhanced narrative message styles */
-        .narrative-msg { color: #dda0dd; font-style: italic; }
+        /* Enhanced narrative message styles (optimized for Micro 5 font) */
+        .narrative-msg { color: #dda0dd; font-weight: bold; } /* Bold instead of italic for pixel font */
         .narrative-urgent { 
             color: #ff6666; 
             font-weight: bold; 
-            font-size: 14px;
-            text-shadow: 1px 1px 2px rgba(255, 102, 102, 0.3);
+            font-size: 9px; /* Optimized for pixel font */
+            text-shadow: 1px 1px 2px rgba(255, 102, 102, 0.5);
         }
         .narrative-important { 
             color: #ffaa44; 
             font-weight: bold; 
-            font-size: 13px;
+            font-size: 16px; /* Base size for consistency */
         }
         .narrative-story { 
             color: #66aaff; 
-            font-style: italic; 
-            font-size: 13px;
+            font-weight: bold; /* Bold instead of italic */
+            font-size: 16px; 
         }
         .narrative-atmospheric { 
             color: #aaaaaa; 
-            font-style: italic; 
+            font-weight: normal; 
             opacity: 0.9;
-            font-size: 12px;
+            font-size: 14px; /* Smaller for atmospheric text */
         }
         
-        /* Lore-specific styling */
+        /* Lore-specific styling (optimized for Micro 5 pixel font) */
         .lore-discovery {
-            color: #ffd700;
+            color: #ffff00 !important; /* Bright yellow for visibility */
             font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(255, 215, 0, 0.3);
+            font-size: 16px; /* Consistent with base font */
+            text-shadow: 1px 1px 2px rgba(255, 255, 0, 0.6);
+            background: rgba(255, 255, 0, 0.15); /* Slightly more yellow background */
+            padding: 2px 3px; /* Reduced padding for pixel font */
+            border-radius: 1px; /* Smaller radius for pixel aesthetic */
+            margin: 1px 0;
         }
         
         .lore-content {
-            color: #e6e6fa;
-            font-style: italic;
-            background: rgba(75, 0, 130, 0.1);
-            padding: 2px 4px;
-            border-radius: 2px;
+            color: #ffffff !important; /* Pure white for maximum visibility */
+            font-weight: bold; /* Bold instead of italic for pixel font */
+            font-size: 16px; /* Consistent size */
+            background: rgba(100, 50, 150, 0.4); /* More visible purple background */
+            padding: 2px 3px; /* Reduced padding */
+            border-radius: 1px; /* Pixel-appropriate radius */
+            margin: 1px 0;
+            border-left: 2px solid #9370db; /* Purple left border for emphasis */
+        }
+        
+        .lore-separator {
+            color: #9370db; /* Purple to match lore theme */
+            font-size: 6px; /* Very small for pixel font */
+            text-align: center;
+            margin: 2px 0; /* Reduced margin for tighter spacing */
+            opacity: 0.8;
+            font-weight: bold;
         }
         
         .controls {
@@ -791,7 +811,6 @@
                         <button class="compact-button" id="auto-explore" onclick="game.toggleAutoExplore()">
                             🔍 <span id="auto-explore-status">OFF</span>
                         </button>
-                        <button class="compact-button" onclick="game.saveGame()">💾 Save</button>
                     </div>
                 </div>
                 

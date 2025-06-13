@@ -537,6 +537,15 @@ class GameState {
     }
     
     nextFloor() {
+        // Auto-save before advancing to next floor
+        if (typeof window !== 'undefined' && window.game && window.game.saveGame) {
+            window.game.saveGame(true); // Silent save without modal
+            this.addMessage('💾 Progress saved', 'info-msg');
+        } else {
+            // Fallback to local save method
+            this.saveGame();
+        }
+        
         this.floor++;
         this.stats.floorsCompleted++;
         
