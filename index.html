@@ -708,7 +708,7 @@
                             <span id="exploration-percent" class="stat-value">0%</span>
                         </div>
                         <div class="progress-bar">
-                            <div id="exploration-bar" class="progress-fill" style="width: 0%; background: linear-gradient(90deg, #44aa44, #226622);"></div>
+                            <div id="dungeon-exploration-bar" class="progress-fill" style="width: 0%; background: linear-gradient(90deg, #44aa44, #226622);"></div>
                         </div>
                     </div>
                 </div>
@@ -751,7 +751,7 @@
                                 <span class="skill-icon-small">🗺️</span>
                                 <span class="skill-level-display" id="exploration-level">1</span>
                                 <div class="skill-mini-bar">
-                                    <div class="skill-mini-fill exploration-fill" id="exploration-bar" style="width: 0%;"></div>
+                                    <div class="skill-mini-fill exploration-fill" id="exploration-skill-bar" style="width: 0%;"></div>
                                 </div>
                             </div>
                             <div class="skill-milestone" id="exploration-milestone"></div>
@@ -892,7 +892,14 @@
     
     <script src="./src/game.js"></script>
     
-    <!-- Unified Auto-Completion System (load after game) -->
+    <!-- Skills System (load after game but before auto) -->
+    <script src="./src/skills/SkillSystem.js"></script>
+    <script src="./src/skills/SkillActions.js"></script>
+    <script src="./src/skills/SkillEffects.js"></script>
+    <script src="./src/skills/SkillUI.js"></script>
+    <script src="./src/skills/index.js"></script>
+    
+    <!-- Unified Auto-Completion System (load after skills) -->
     <script src="./src/auto/AutoExplorerFinal.js"></script>
     <script src="./src/auto/AutoExplorerEnhanced.js"></script>
     <script src="./src/auto/AutoExplorerOptimized.js"></script>

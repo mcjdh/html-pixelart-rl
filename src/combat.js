@@ -39,10 +39,8 @@ class CombatSystem {
         }
         
         // Apply skill-based crit multiplier
-        let critMultiplier = 2;
-        if (player.skills.combat.milestones.has(5)) { // Power Strike
-            critMultiplier += 0.5;
-        }
+        const critMultiplier = player.skillEffects ? 
+            player.skillEffects.getCritMultiplier() : 2;
         
         // Calculate final damage
         const damage = Math.floor(baseDamage * (1 + positionBonus) * (isCrit ? critMultiplier : 1));
@@ -56,6 +54,9 @@ class CombatSystem {
         // Apply damage
         const actualDamage = enemy.takeDamage(damage, player.level);
         this.gameState.stats.totalDamageDealt += actualDamage;
+        
+        // Track damage dealt for combat skill progression
+        player.trackAction('damageDealt', actualDamage);
         
         // Add message
         let message = `You deal ${actualDamage} damage`;
@@ -75,22 +76,7 @@ class CombatSystem {
             return { killed: true, damage: actualDamage, critical: isCrit };
         }
         
-        // Check for counter-attack from Combat Reflexes milestone
-        if (player.skillBonuses.counterAttackChance > 0 && 
-            Math.random() < player.skillBonuses.counterAttackChance && 
-            !enemy.isDead()) {
-            const counterDamage = Math.floor(player.attack * 0.5);
-            const counterActual = enemy.takeDamage(counterDamage, player.level);
-            this.gameState.addMessage(
-                `Counter-attack deals ${counterActual} damage!`, 
-                'damage-msg'
-            );
-            
-            if (enemy.isDead()) {
-                this.onEnemyDeath(enemy);
-                return { killed: true, damage: actualDamage, critical: isCrit };
-            }
-        }
+        // Counter-attack is now handled in the main game loop for better flow
         
         // Enemy counter-attack (unless stunned)
         if (!enemy.hasStatusEffect('stun')) {
@@ -125,8 +111,8 @@ class CombatSystem {
         
         // Apply status effects from enemy with skill resistance
         let statusChance = 0.15;
-        if (player.skills.vitality.passives.has('Iron Constitution')) {
-            statusChance *= 0.6; // 40% resistance
+        if (player.skillEffects) {
+            statusChance *= (1 - player.skillEffects.getStatusResistance());
         }
         
         if (CONFIG.FEATURES.STATUS_EFFECTS && enemy.type === 'skeleton' && Math.random() < statusChance) {
@@ -142,17 +128,7 @@ class CombatSystem {
             'damage-msg'
         );
         
-        // Check for Second Wind activation (low HP bonus)
-        if (player.skills.vitality.milestones.has(10) && player.hp <= player.maxHp * 0.3) {
-            const secondWindBonus = Math.floor(player.maxHp * 0.05);
-            if (secondWindBonus > 0) {
-                player.heal(secondWindBonus);
-                this.gameState.addMessage(
-                    `Second Wind restores ${secondWindBonus} HP!`, 
-                    'heal-msg'
-                );
-            }
-        }
+        // Second Wind is now handled in the takeDamage method
         
         if (player.hp <= 0) {
             this.onPlayerDeath();
@@ -231,73 +207,4 @@ class CombatSystem {
     }
 }
 
-class UpgradeSystem {
-    constructor(gameState) {
-        this.gameState = gameState;
-    }
-    
-    canAffordUpgrade(type) {
-        const cost = type === 'attack' ? 
-            this.gameState.upgrades.attackCost : 
-            this.gameState.upgrades.defenseCost;
-        
-        return this.gameState.player.gold >= cost;
-    }
-    
-    purchaseAttackUpgrade() {
-        if (!this.canAffordUpgrade('attack')) return false;
-        
-        const cost = this.gameState.upgrades.attackCost;
-        this.gameState.player.gold -= cost;
-        this.gameState.player.attack += CONFIG.BALANCE.UPGRADE_ATTACK_GAIN;
-        this.gameState.upgrades.attackLevel++;
-        this.gameState.upgrades.attackCost = Math.floor(
-            cost * CONFIG.BALANCE.UPGRADE_COST_MULTIPLIER
-        );
-        
-        this.gameState.addMessage(
-            `Attack upgraded to ${this.gameState.player.attack}!`, 
-            'heal-msg'
-        );
-        
-        return true;
-    }
-    
-    purchaseDefenseUpgrade() {
-        if (!this.canAffordUpgrade('defense')) return false;
-        
-        const cost = this.gameState.upgrades.defenseCost;
-        this.gameState.player.gold -= cost;
-        this.gameState.player.defense += CONFIG.BALANCE.UPGRADE_DEFENSE_GAIN;
-        this.gameState.upgrades.defenseLevel++;
-        this.gameState.upgrades.defenseCost = Math.floor(
-            cost * CONFIG.BALANCE.UPGRADE_COST_MULTIPLIER
-        );
-        
-        this.gameState.addMessage(
-            `Defense upgraded to ${this.gameState.player.defense}!`, 
-            'heal-msg'
-        );
-        
-        return true;
-    }
-    
-    getUpgradeInfo() {
-        return {
-            attack: {
-                level: this.gameState.upgrades.attackLevel,
-                cost: this.gameState.upgrades.attackCost,
-                bonus: CONFIG.BALANCE.UPGRADE_ATTACK_GAIN,
-                canAfford: this.canAffordUpgrade('attack')
-            },
-            defense: {
-                level: this.gameState.upgrades.defenseLevel,
-                cost: this.gameState.upgrades.defenseCost,
-                bonus: CONFIG.BALANCE.UPGRADE_DEFENSE_GAIN,
-                canAfford: this.canAffordUpgrade('defense')
-            }
-        };
-    }
-}
-
-// Item class is now globally available
+// Legacy UpgradeSystem removed - now using passive skill progression

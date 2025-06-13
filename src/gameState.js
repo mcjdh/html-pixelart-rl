@@ -18,7 +18,7 @@ class GameState {
         this.messages = [];
         this.turn = 0;
         
-        // Legacy upgrade system removed - now using passive skill progression
+        // Legacy upgrade system removed - maintained for save compatibility
         this.upgrades = {
             attackCost: 10,
             defenseCost: 10,
@@ -202,22 +202,22 @@ class GameState {
     
     spawnItems(generator) {
         this.items = [];
-        const itemCount = 2 + Math.floor(this.floor / 2);
+        const itemCount = 3 + Math.floor(this.floor / 2);  // Increased from 2 to 3 base items
         
         for (let i = 0; i < itemCount; i++) {
             const pos = this.findSpawnPosition(generator);
             if (pos) {
-                // Item spawn chances (adjusted for more variety)
+                // Item spawn chances (REBALANCED - more healing items)
                 const roll = Math.random();
                 let type = 'gold';
                 
-                if (roll < 0.05) {
+                if (roll < 0.04) {
                     type = 'sword';
-                } else if (roll < 0.1) {
+                } else if (roll < 0.08) {
                     type = 'shield';
-                } else if (roll < 0.25) {
+                } else if (roll < 0.40) {        // Increased potion chance from 35% to 40%
                     type = 'potion';
-                } else if (roll < 0.35) {
+                } else if (roll < 0.47) {        // Slight increase to scroll chance
                     type = 'scroll';
                 }
                 

@@ -108,57 +108,22 @@ class Player extends Entity {
         this.maxEnergy = CONFIG.BALANCE.PLAYER_START_ENERGY;
         this.inventory = [];
         
-        // Advanced Skills System (Path of Exile / Runescape inspired)
-        this.skills = {
-            combat: { 
-                exp: 0, 
-                level: 1, 
-                milestones: new Set(), // Track unlocked abilities
-                passives: new Set()    // Track active passive effects
-            },
-            vitality: { 
-                exp: 0, 
-                level: 1, 
-                milestones: new Set(),
-                passives: new Set()
-            },
-            exploration: { 
-                exp: 0, 
-                level: 1, 
-                milestones: new Set(),
-                passives: new Set()
-            },
-            fortune: { 
-                exp: 0, 
-                level: 1, 
-                milestones: new Set(),
-                passives: new Set()
-            }
-        };
-        
-        // Active skill effects and synergies
-        this.skillBonuses = {
-            combatEfficiency: 1.0,    // Reduces energy costs
-            goldMultiplier: 1.0,      // Multiplies gold gain
-            damageReduction: 0.0,     // Flat damage reduction
-            critChance: 0.0,          // Additional crit chance
-            visionRange: 0,           // Bonus vision tiles
-            hpRegenRate: 0,           // HP regeneration per turn
-            energyEfficiency: 1.0,    // Energy cost multiplier
-            deathSaveChance: 0.0,     // Chance to survive lethal damage
-            counterAttackChance: 0.0, // Chance to counter-attack
-            secretFindChance: 0.0     // Chance to find hidden items
-        };
+        // Initialize Advanced Skills System
+        this.initializeSkillsSystem();
         
         // Track actions for skill progression
         this.actionCounts = {
             enemiesKilled: 0,
+            damageDealt: 0,
             damageTaken: 0,
             tilesExplored: 0,
             itemsCollected: 0,
             secretsFound: 0,
             goldCollected: 0
         };
+        
+        // Exploration tracking
+        this.explorationCounter = 0;
         
         // Temporary effects for combat
         this.temporaryEffects = {
@@ -195,171 +160,39 @@ class Player extends Entity {
         this.attack += attackGain;
     }
     
-    // Advanced skill progression system
-    gainSkillExp(skillType, amount) {
-        if (!this.skills[skillType]) return false;
-        
-        const skill = this.skills[skillType];
-        const oldLevel = skill.level;
-        
-        // Add experience with diminishing returns at higher levels
-        const scaledAmount = Math.max(1, Math.floor(amount * (1 - (skill.level - 1) * 0.02)));
-        skill.exp += scaledAmount;
-        
-        // Check for level up - exponential scaling like Runescape
-        let leveled = false;
-        while (skill.level < CONFIG.BALANCE.SKILL_SYSTEM.SKILL_CAP) {
-            const expNeeded = this.getExpNeededForLevel(skill.level + 1);
-            if (skill.exp >= expNeeded) {
-                skill.exp -= expNeeded;
-                skill.level++;
-                leveled = true;
-                this.onSkillLevelUp(skillType, skill.level);
-            } else {
-                break;
+    /**
+     * Initialize the skills system with proper structure
+     */
+    initializeSkillsSystem() {
+        // Advanced Skills System (Path of Exile / Runescape inspired)
+        this.skills = {
+            combat: { 
+                exp: 0, 
+                level: 1, 
+                milestones: new Set(), 
+                passives: new Set()
+            },
+            vitality: { 
+                exp: 0, 
+                level: 1, 
+                milestones: new Set(),
+                passives: new Set()
+            },
+            exploration: { 
+                exp: 0, 
+                level: 1, 
+                milestones: new Set(),
+                passives: new Set()
+            },
+            fortune: { 
+                exp: 0, 
+                level: 1, 
+                milestones: new Set(),
+                passives: new Set()
             }
-        }
+        };
         
-        // Check for synergy bonuses when multiple skills advance
-        if (leveled) {
-            this.checkSynergyBonuses();
-        }
-        
-        return leveled;
-    }
-    
-    getExpNeededForLevel(targetLevel) {
-        // Exponential scaling similar to Runescape
-        return Math.floor(CONFIG.BALANCE.SKILL_SYSTEM.BASE_EXP_MULTIPLIER * 
-                         Math.pow(targetLevel - 1, 1.5));
-    }
-    
-    onSkillLevelUp(skillType, newLevel) {
-        // Apply base stat increases (smaller than before)
-        this.applyBaseSkillBonus(skillType);
-        
-        // Check for milestone unlocks
-        this.checkMilestoneUnlock(skillType, newLevel);
-        
-        // Recalculate all skill bonuses
-        this.recalculateSkillBonuses();
-        
-        if (window.game?.gameState) {
-            const skillName = skillType.charAt(0).toUpperCase() + skillType.slice(1);
-            window.game.gameState.addMessage(
-                `${skillName} skill increased to level ${newLevel}!`, 
-                'level-msg'
-            );
-        }
-    }
-    
-    applyBaseSkillBonus(skillType) {
-        // Smaller base bonuses since milestones provide the major effects
-        switch(skillType) {
-            case 'combat':
-                this.attack += 0.5; // Half what it was before
-                break;
-            case 'vitality':
-                this.maxHp += 2;    // Reduced from 3
-                this.hp += 2;
-                break;
-            case 'exploration':
-                this.maxEnergy += 3; // Reduced from 5
-                this.energy = Math.min(this.energy + 3, this.maxEnergy);
-                break;
-            case 'fortune':
-                this.defense += 0.3; // Reduced from 1
-                break;
-        }
-    }
-    
-    checkMilestoneUnlock(skillType, level) {
-        const milestones = CONFIG.BALANCE.SKILL_SYSTEM[skillType.toUpperCase()];
-        if (!milestones || !milestones[level]) return;
-        
-        const milestone = milestones[level];
-        const skill = this.skills[skillType];
-        
-        // Mark milestone as unlocked
-        skill.milestones.add(level);
-        
-        // Add to passives if it's a passive effect
-        if (milestone.type === 'passive') {
-            skill.passives.add(milestone.name);
-        }
-        
-        if (window.game?.gameState) {
-            const icon = this.getMilestoneIcon(milestone.type);
-            window.game.gameState.addMessage(
-                `${icon} Milestone Unlocked: ${milestone.name}!`, 
-                'level-msg'
-            );
-        }
-    }
-    
-    getMilestoneIcon(type) {
-        switch(type) {
-            case 'ability': return '⚡';
-            case 'passive': return '🛡️';
-            case 'ultimate': return '🌟';
-            default: return '✨';
-        }
-    }
-    
-    checkSynergyBonuses() {
-        const synergies = CONFIG.BALANCE.SKILL_SYSTEM.SYNERGIES;
-        
-        // Check Warrior Path (Combat + Vitality)
-        if (this.skills.combat.level >= synergies.WARRIOR_THRESHOLD && 
-            this.skills.vitality.level >= synergies.WARRIOR_THRESHOLD) {
-            if (!this.skills.combat.passives.has('Warrior Synergy')) {
-                this.skills.combat.passives.add('Warrior Synergy');
-                this.skills.vitality.passives.add('Warrior Synergy');
-                if (window.game?.gameState) {
-                    window.game.gameState.addMessage(
-                        '⚔️ Synergy Unlocked: Warrior Path! +Crit Chance +Damage Reduction', 
-                        'level-msg'
-                    );
-                }
-            }
-        }
-        
-        // Check Adventurer Path (Exploration + Fortune)
-        if (this.skills.exploration.level >= synergies.ADVENTURER_THRESHOLD && 
-            this.skills.fortune.level >= synergies.ADVENTURER_THRESHOLD) {
-            if (!this.skills.exploration.passives.has('Adventurer Synergy')) {
-                this.skills.exploration.passives.add('Adventurer Synergy');
-                this.skills.fortune.passives.add('Adventurer Synergy');
-                if (window.game?.gameState) {
-                    window.game.gameState.addMessage(
-                        '🗺️ Synergy Unlocked: Adventurer Path! +Gold +Item Find', 
-                        'level-msg'
-                    );
-                }
-            }
-        }
-        
-        // Check Master Path (All skills high level)
-        if (this.skills.combat.level >= synergies.MASTER_THRESHOLD && 
-            this.skills.vitality.level >= synergies.MASTER_THRESHOLD &&
-            this.skills.exploration.level >= synergies.MASTER_THRESHOLD &&
-            this.skills.fortune.level >= synergies.MASTER_THRESHOLD) {
-            if (!this.skills.combat.passives.has('Master Synergy')) {
-                Object.keys(this.skills).forEach(skill => {
-                    this.skills[skill].passives.add('Master Synergy');
-                });
-                if (window.game?.gameState) {
-                    window.game.gameState.addMessage(
-                        '👑 MASTER SYNERGY UNLOCKED! You have transcended mortal limits!', 
-                        'level-msg'
-                    );
-                }
-            }
-        }
-    }
-    
-    recalculateSkillBonuses() {
-        // Reset bonuses
+        // Active skill effects and synergies
         this.skillBonuses = {
             combatEfficiency: 1.0,
             goldMultiplier: 1.0,
@@ -373,173 +206,68 @@ class Player extends Entity {
             secretFindChance: 0.0
         };
         
-        // Apply milestone bonuses
-        Object.keys(this.skills).forEach(skillType => {
-            this.applyMilestoneBonuses(skillType);
-        });
+        // Initialize skill system components (delayed until classes are loaded)
+        this.skillSystem = null;
+        this.skillActions = null;
+        this.skillEffects = null;
         
-        // Apply synergy bonuses
-        this.applySynergyBonuses();
+        // Initialize after a short delay to ensure classes are loaded
+        setTimeout(() => {
+            this.initializeSkillComponents();
+        }, 100);
     }
     
-    applyMilestoneBonuses(skillType) {
-        const skill = this.skills[skillType];
-        const config = CONFIG.BALANCE.SKILL_SYSTEM[skillType.toUpperCase()];
-        if (!config) return;
-        
-        skill.milestones.forEach(level => {
-            const milestone = config[level];
-            if (!milestone) return;
-            
-            switch(milestone.effect) {
-                case 'critMultiplier':
-                    this.skillBonuses.critChance += milestone.value;
-                    break;
-                case 'counterAttack':
-                    this.skillBonuses.counterAttackChance += milestone.value;
-                    break;
-                case 'hpRegen':
-                    this.skillBonuses.hpRegenRate += milestone.value;
-                    break;
-                case 'damageReduction':
-                    this.skillBonuses.damageReduction += milestone.value;
-                    break;
-                case 'visionRange':
-                    this.skillBonuses.visionRange += milestone.value;
-                    break;
-                case 'energyCost':
-                    this.skillBonuses.energyEfficiency += milestone.value;
-                    break;
-                case 'goldBonus':
-                    this.skillBonuses.goldMultiplier += milestone.value;
-                    break;
-                case 'goldMultiplier':
-                    this.skillBonuses.goldMultiplier *= milestone.value;
-                    break;
-                case 'deathSave':
-                    this.skillBonuses.deathSaveChance += milestone.value;
-                    break;
-                case 'secretFind':
-                    this.skillBonuses.secretFindChance += milestone.value;
-                    break;
+    /**
+     * Initialize skill system components after classes are loaded
+     */
+    initializeSkillComponents() {
+        if (window.SkillSystem && window.SkillActions && window.SkillEffects) {
+            try {
+                this.skillSystem = new window.SkillSystem(this);
+                this.skillActions = new window.SkillActions(this);
+                this.skillEffects = new window.SkillEffects(this);
+                console.log('Player skill system initialized successfully');
+            } catch (error) {
+                console.error('Failed to initialize skill system:', error);
             }
-        });
-    }
-    
-    applySynergyBonuses() {
-        const synergies = CONFIG.BALANCE.SKILL_SYSTEM.SYNERGIES;
-        
-        // Warrior Synergy
-        if (this.skills.combat.passives.has('Warrior Synergy')) {
-            this.skillBonuses.critChance += synergies.WARRIOR_BONUS.critChance;
-            this.skillBonuses.damageReduction += synergies.WARRIOR_BONUS.damageReduction;
-        }
-        
-        // Adventurer Synergy
-        if (this.skills.exploration.passives.has('Adventurer Synergy')) {
-            this.skillBonuses.goldMultiplier *= synergies.ADVENTURER_BONUS.goldMultiplier;
-            this.skillBonuses.secretFindChance += synergies.ADVENTURER_BONUS.itemFind;
-        }
-        
-        // Master Synergy
-        if (this.skills.combat.passives.has('Master Synergy')) {
-            this.attack += synergies.MASTER_BONUS.allStats;
-            this.defense += synergies.MASTER_BONUS.allStats;
-            this.skillBonuses.energyEfficiency -= synergies.MASTER_BONUS.energyEfficiency;
+        } else {
+            console.warn('Skill system classes not yet available, retrying in 500ms');
+            setTimeout(() => this.initializeSkillComponents(), 500);
         }
     }
     
-    // Track actions and award skill experience
+    /**
+     * Track actions and award skill experience
+     * Delegates to SkillActions for clean separation
+     */
     trackAction(actionType, value = 1) {
-        this.actionCounts[actionType] += value;
-        
-        switch(actionType) {
-            case 'enemiesKilled':
-                // More exp for stronger enemies, consecutive kills
-                const combatExp = 8 + (this.temporaryEffects.consecutiveKills * 2);
-                this.gainSkillExp('combat', combatExp);
-                this.temporaryEffects.consecutiveKills++;
-                break;
-            case 'damageTaken':
-                // More exp when taking significant damage relative to max HP
-                const vitalityExp = Math.min(value, Math.max(1, Math.floor(value / this.maxHp * 10)));
-                this.gainSkillExp('vitality', vitalityExp);
-                break;
-            case 'tilesExplored':
-                // Bonus exp for exploring new areas
-                this.gainSkillExp('exploration', 2);
-                break;
-            case 'itemsCollected':
-                // Different exp based on item type
-                this.gainSkillExp('fortune', 3);
-                break;
-            case 'goldCollected':
-                // Fortune exp scales with gold amount
-                this.actionCounts.goldCollected += value;
-                const fortuneExp = Math.min(5, Math.max(1, Math.floor(value / 10)));
-                this.gainSkillExp('fortune', fortuneExp);
-                break;
-            case 'secretsFound':
-                // High exp for finding secrets
-                this.gainSkillExp('exploration', 15);
-                this.gainSkillExp('fortune', 10);
-                break;
+        if (this.skillActions) {
+            this.skillActions.trackAction(actionType, value);
         }
     }
     
-    // Apply skill bonuses to damage calculation
+    /**
+     * Delegate skill effect methods to SkillEffects class
+     */
     getModifiedDamage(baseDamage) {
-        let damage = baseDamage;
-        
-        // Apply combat skill bonuses
-        if (this.skills.combat.passives.has('Weapon Mastery')) {
-            damage += this.skills.combat.level * 0.5;
-        }
-        
-        // Berserker mode when low HP
-        if (this.skills.combat.passives.has('Berserker') && this.hp <= this.maxHp * 0.3) {
-            damage *= 1.5;
-        }
-        
-        return Math.floor(damage);
+        return this.skillEffects ? this.skillEffects.getModifiedDamage(baseDamage) : baseDamage;
     }
     
-    // Apply skill bonuses to energy costs
     getModifiedEnergyCost(baseCost) {
-        return Math.max(1, Math.floor(baseCost * this.skillBonuses.energyEfficiency));
+        return this.skillEffects ? this.skillEffects.getModifiedEnergyCost(baseCost) : baseCost;
     }
     
-    // Apply skill bonuses to gold gains
     getModifiedGoldGain(baseGold) {
-        return Math.floor(baseGold * this.skillBonuses.goldMultiplier);
+        return this.skillEffects ? this.skillEffects.getModifiedGoldGain(baseGold) : baseGold;
     }
     
-    // Check for death save from Vitality milestone
     attemptDeathSave() {
-        if (this.skillBonuses.deathSaveChance > 0 && Math.random() < this.skillBonuses.deathSaveChance) {
-            this.hp = 1;
-            if (window.game?.gameState) {
-                window.game.gameState.addMessage(
-                    '💫 Undying Will saves you from death!', 
-                    'heal-msg'
-                );
-            }
-            return true;
-        }
-        return false;
+        return this.skillEffects ? this.skillEffects.attemptDeathSave() : false;
     }
     
-    // Process skill-based regeneration
     processSkillRegeneration() {
-        // HP regeneration from Vitality
-        if (this.skillBonuses.hpRegenRate > 0 && this.hp < this.maxHp) {
-            const healed = this.heal(this.skillBonuses.hpRegenRate);
-            if (healed > 0 && window.game?.gameState) {
-                window.game.gameState.addMessage(
-                    `Toughness restores ${healed} HP`, 
-                    'heal-msg'
-                );
-            }
+        if (this.skillEffects) {
+            this.skillEffects.processSkillRegeneration();
         }
     }
     
@@ -562,6 +290,11 @@ class Player extends Entity {
         this.temporaryEffects.lastDamageTime = Date.now();
         if (this.hp <= this.maxHp * 0.3) {
             this.temporaryEffects.turnsAtLowHP++;
+        }
+        
+        // Trigger Second Wind if available
+        if (this.skillEffects) {
+            this.skillEffects.triggerSecondWind();
         }
         
         return damage;

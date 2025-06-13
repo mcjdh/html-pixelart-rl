@@ -273,9 +273,9 @@ const CONFIG = {
         PLAYER_START_DEFENSE: 0,
         PLAYER_START_ENERGY: 100,
         
-        LEVEL_HP_GAIN: 5,
+        LEVEL_HP_GAIN: 6,                // Increased from 5 for better survivability
         LEVEL_ATTACK_GAIN: 1,
-        EXP_PER_LEVEL: 10,
+        EXP_PER_LEVEL: 8,                // Reduced from 10 for faster early leveling
         
         UPGRADE_ATTACK_GAIN: 2,
         UPGRADE_DEFENSE_GAIN: 1,
@@ -283,46 +283,46 @@ const CONFIG = {
         
         GOBLIN_HP_BASE: 3,
         GOBLIN_ATTACK_BASE: 1,
-        GOBLIN_EXP: 5,
+        GOBLIN_EXP: 8,            // Increased from 5 for better early leveling
         
         SKELETON_HP_BASE: 5,
         SKELETON_ATTACK_BASE: 2,
-        SKELETON_EXP: 8,
+        SKELETON_EXP: 12,         // Increased from 8 for better progression
         
         WOLF_HP_BASE: 8,
         WOLF_ATTACK_BASE: 4,
-        WOLF_EXP: 6,
+        WOLF_EXP: 10,            // Increased from 6 for better progression
         
         TREANT_HP_BASE: 15,
         TREANT_ATTACK_BASE: 6,
-        TREANT_EXP: 12,
+        TREANT_EXP: 18,          // Increased from 12 for better progression
         
-        SKELETON_LORD_HP_BASE: 20,
-        SKELETON_LORD_ATTACK_BASE: 7,
-        SKELETON_LORD_EXP: 50,
+        SKELETON_LORD_HP_BASE: 15,        // Reduced from 20 - first boss was too hard
+        SKELETON_LORD_ATTACK_BASE: 5,     // Reduced from 7 - was 3-shotting players
+        SKELETON_LORD_EXP: 75,            // Increased from 50 for better progression
         
         // Mushroom Island enemies
-        SPORELING_HP_BASE: 10,
+        SPORELING_HP_BASE: 9,            // Slightly reduced from 10
         SPORELING_ATTACK_BASE: 4,
-        SPORELING_DEFENSE_BASE: 2,
-        SPORELING_EXP: 10,
+        SPORELING_DEFENSE_BASE: 1,       // Reduced from 2 - defense was too high
+        SPORELING_EXP: 15,               // Increased from 10 for better progression
         
-        FUNGAL_KNIGHT_HP_BASE: 16,
+        FUNGAL_KNIGHT_HP_BASE: 14,       // Reduced from 16
         FUNGAL_KNIGHT_ATTACK_BASE: 6,
-        FUNGAL_KNIGHT_DEFENSE_BASE: 3,
-        FUNGAL_KNIGHT_EXP: 15,
+        FUNGAL_KNIGHT_DEFENSE_BASE: 2,   // Reduced from 3
+        FUNGAL_KNIGHT_EXP: 20,           // Increased from 15
         
-        SPORE_MOTHER_HP_BASE: 30,
-        SPORE_MOTHER_ATTACK_BASE: 9,
-        SPORE_MOTHER_DEFENSE_BASE: 4,
-        SPORE_MOTHER_EXP: 75,
+        SPORE_MOTHER_HP_BASE: 25,        // Reduced from 30 for smoother progression
+        SPORE_MOTHER_ATTACK_BASE: 7,     // Reduced from 9 to avoid damage spike
+        SPORE_MOTHER_DEFENSE_BASE: 3,    // Reduced from 4
+        SPORE_MOTHER_EXP: 100,           // Increased from 75 for better rewards
         
         GOLD_VALUE_BASE: 5,
         GOLD_VALUE_RANGE: 10,
         
-        COMBAT_ENERGY_COST: 4,
+        COMBAT_ENERGY_COST: 3,   // Reduced from 4 - combat was too energy-expensive
         MOVE_ENERGY_COST: 1,
-        FLOOR_ENERGY_RESTORE: 75,
+        FLOOR_ENERGY_RESTORE: 60, // Reduced from 75 for more strategic energy management
         
         // Directional combat bonuses
         FLANKING_DAMAGE_BONUS: 0.25,
@@ -330,20 +330,29 @@ const CONFIG = {
         BLOCK_DAMAGE_REDUCTION: 0.25,
         CORNER_DAMAGE_BONUS: 0.5,
         
-        // Status effect durations and chances
-        STATUS_POISON_DURATION: 5,
-        STATUS_POISON_DAMAGE: 1,
+        // Status effect durations and chances (REBALANCED)
+        STATUS_POISON_DURATION: 3,      // Reduced from 5 to 3 turns
+        STATUS_POISON_DAMAGE: 1,        // Keep as 1 (now calculated as 2% max HP)
         STATUS_STUN_DURATION: 2,
         STATUS_CONFUSED_DURATION: 5,
         STATUS_BLESSED_DURATION: 20,
         BASE_CRIT_CHANCE: 0.1,
         CRIT_CHANCE_PER_LEVEL: 0.01,
         STATUS_EFFECT_CHANCE: 0.1,
-        SKELETON_POISON_CHANCE: 0.1,
+        SKELETON_POISON_CHANCE: 0.06,   // Reduced from 10% to 6%
         BLESSED_POTION_CHANCE: 0.2,
         
+        // Natural healing system
+        NATURAL_HEALING: {
+            ENABLED: true,
+            HP_REGEN_RATE: 6000,        // Heal every 6 seconds (faster from 8s)
+            HP_REGEN_AMOUNT: 1,         // Heal 1 HP per tick
+            COMBAT_DELAY: 4000,         // Wait 4s after combat (faster from 5s)
+            MAX_HEAL_PERCENT: 0.85      // Heal up to 85% max HP (up from 80%)
+        },
+        
         // Enemy and item counts
-        BASE_ENEMY_COUNT: 3,
+        BASE_ENEMY_COUNT: 4,             // Increased from 3 for more XP opportunities
         ENEMIES_PER_FLOOR: 2,
         BASE_ITEM_COUNT: 2,
         ITEM_COUNT_DIVISOR: 2,
@@ -379,10 +388,10 @@ const CONFIG = {
         COSMIC_GUARDIAN_DEFENSE_BASE: 4,
         COSMIC_GUARDIAN_EXP: 18,
         
-        STELLAR_ARCHITECT_HP_BASE: 35,
-        STELLAR_ARCHITECT_ATTACK_BASE: 10,
-        STELLAR_ARCHITECT_DEFENSE_BASE: 5,
-        STELLAR_ARCHITECT_EXP: 100,
+        STELLAR_ARCHITECT_HP_BASE: 40,   // Increased from 35 - final boss should be epic
+        STELLAR_ARCHITECT_ATTACK_BASE: 9, // Reduced from 10 for balanced challenge
+        STELLAR_ARCHITECT_DEFENSE_BASE: 4, // Reduced from 5
+        STELLAR_ARCHITECT_EXP: 150,      // Increased from 100 for epic finale
         
         // Stellar Observatory gold drops
         STARDUST_SPRITE_GOLD_BASE: 12,
@@ -395,7 +404,7 @@ const CONFIG = {
         // Advanced Skills System
         SKILL_SYSTEM: {
             // Base skill mechanics
-            BASE_EXP_MULTIPLIER: 100,  // More exp needed than before
+            BASE_EXP_MULTIPLIER: 60,   // Reduced for better progression feel
             SKILL_CAP: 50,             // Max skill level
             MILESTONE_LEVELS: [5, 10, 15, 25, 35, 50], // Unlock new abilities
             
@@ -456,7 +465,7 @@ const CONFIG = {
         ENEMY_DEFENSE_DIVISOR: 10,
         ENEMY_VIEW_RANGE: 5,
         ENEMY_ATTACK_DISTANCE: 1.5,
-        POTION_HEAL_VALUE: 5,
+        POTION_HEAL_VALUE: 10,       // Increased from 8 to 10 for better survival
         SWORD_ATTACK_BONUS: 1,
         CONFUSION_CHANCE: 0.5,
         LOW_HEALTH_THRESHOLD: 0.25,
