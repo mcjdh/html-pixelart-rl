@@ -123,7 +123,34 @@ class Renderer {
                 return true;
             }
         } catch (error) {
-            console.warn(`Failed to render sprite ${spriteKey}:`, error);
+            if (CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS) {
+                console.warn(`Failed to render sprite ${spriteKey}:`, error);
+            }
+            return false;
+        }
+    }
+    
+    /**
+     * Safely render a sprite with error handling and fallback
+     */
+    renderSpriteSafe(spriteFunc, x, y, size, fallbackColor = '#444') {
+        try {
+            if (spriteFunc && typeof spriteFunc === 'function') {
+                spriteFunc(this.ctx, x, y, size);
+                return true;
+            } else {
+                // Fallback rendering
+                this.ctx.fillStyle = fallbackColor;
+                this.ctx.fillRect(x, y, size, size);
+                return false;
+            }
+        } catch (error) {
+            if (CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS) {
+                console.warn('Sprite render error:', error);
+            }
+            // Fallback rendering
+            this.ctx.fillStyle = fallbackColor;
+            this.ctx.fillRect(x, y, size, size);
             return false;
         }
     }
@@ -311,9 +338,9 @@ class Renderer {
             if (explored[y][x]) {
                 // Explored but not currently visible - show dimmed terrain sprites
                 if (tile === '#' || tile === 1) {
-                    terrainSprites.wall(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                    this.renderSpriteSafe(terrainSprites?.wall, pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.COLORS.WALL);
                 } else {
-                    terrainSprites.floor(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                    this.renderSpriteSafe(terrainSprites?.floor, pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.COLORS.FLOOR);
                 }
                 
                 // Add fog overlay
@@ -327,16 +354,16 @@ class Renderer {
         } else {
             // Currently visible - render beautiful sprite tiles
             if (tile === '#' || tile === 1) {
-                terrainSprites.wall(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                this.renderSpriteSafe(terrainSprites?.wall, pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.COLORS.WALL);
             } else if (tile === 3) {
                 // Decoration - use area-specific decoration
                 const decorSprite = currentArea && currentArea.getTileSprite('bones');
                 if (decorSprite && typeof decorSprite === 'function') {
                     decorSprite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
                 } else {
-                    terrainSprites.floor(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
-                    if (decorationSprites.bones) {
-                        decorationSprites.bones(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                    this.renderSpriteSafe(terrainSprites?.floor, pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.COLORS.FLOOR);
+                    if (decorationSprites?.bones) {
+                        this.renderSpriteSafe(decorationSprites.bones, pixelX, pixelY, CONFIG.CELL_SIZE);
                     }
                 }
             } else if (tile === 4) {
@@ -345,9 +372,9 @@ class Renderer {
                 if (stalagmiteSprite && typeof stalagmiteSprite === 'function') {
                     stalagmiteSprite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
                 } else {
-                    terrainSprites.floor(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
-                    if (decorationSprites.stalagmite) {
-                        decorationSprites.stalagmite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                    this.renderSpriteSafe(terrainSprites?.floor, pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.COLORS.FLOOR);
+                    if (decorationSprites?.stalagmite) {
+                        this.renderSpriteSafe(decorationSprites.stalagmite, pixelX, pixelY, CONFIG.CELL_SIZE);
                     }
                 }
             } else if (tile === 5) {
@@ -356,14 +383,14 @@ class Renderer {
                 if (crystalSprite && typeof crystalSprite === 'function') {
                     crystalSprite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
                 } else {
-                    terrainSprites.floor(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
-                    if (decorationSprites.crystal) {
-                        decorationSprites.crystal(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                    this.renderSpriteSafe(terrainSprites?.floor, pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.COLORS.FLOOR);
+                    if (decorationSprites?.crystal) {
+                        this.renderSpriteSafe(decorationSprites.crystal, pixelX, pixelY, CONFIG.CELL_SIZE);
                     }
                 }
             } else if (tile === 6) {
                 // Flower (forest)
-                terrainSprites.floor(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
+                this.renderSpriteSafe(terrainSprites?.floor, pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.COLORS.FLOOR);
                 const flowerSprite = currentArea && currentArea.getTileSprite('flower');
                 if (flowerSprite && typeof flowerSprite === 'function') {
                     flowerSprite(this.ctx, pixelX, pixelY, CONFIG.CELL_SIZE);
@@ -636,6 +663,15 @@ class ParticleSystem {
     }
     
     addParticle(x, y, vx, vy, color, lifetime) {
+        // Enforce maximum active particles limit to prevent memory bloat
+        if (this.particles.length >= this.maxPoolSize * 2) {
+            // Remove oldest particle if we hit the limit
+            const removed = this.particles.shift();
+            if (removed && this.particlePool.length < this.maxPoolSize) {
+                this.particlePool.push(removed);
+            }
+        }
+        
         let particle = this.particlePool.pop();
         
         if (!particle) {

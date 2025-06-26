@@ -216,6 +216,7 @@ const CONFIG = {
         TOUCH_DEADZONE: 10, // Minimum distance to register as intentional swipe
         HIGH_SCORES_LIMIT: 10,
         GAME_OVER_DELAY: 1000,
+        CONSECUTIVE_KILL_TIMEOUT: 2000, // Time before consecutive kills effect resets
         
         // Animation settings
         DAMAGE_NUMBER_DURATION: 1000,

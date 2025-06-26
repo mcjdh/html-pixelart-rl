@@ -99,7 +99,7 @@ window.PlayerController = {
             gameInstance.processEnemyTurns();
             
             // Reset consecutive kills counter if no combat this turn
-            if (player.temporaryEffects.lastDamageTime < Date.now() - 2000) {
+            if (player.temporaryEffects.lastDamageTime < Date.now() - CONFIG.GAME.CONSECUTIVE_KILL_TIMEOUT) {
                 player.temporaryEffects.consecutiveKills = 0;
             }
         } else {

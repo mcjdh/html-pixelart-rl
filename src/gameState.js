@@ -232,6 +232,11 @@ class GameState {
     }
     
     findSpawnPosition(generator, minDistanceFromPlayer = 0) {
+        if (!generator || typeof generator.getRandomFloorTile !== 'function') {
+            console.error('findSpawnPosition: Invalid generator provided');
+            return null;
+        }
+        
         for (let attempts = 0; attempts < 200; attempts++) {
             const pos = generator.getRandomFloorTile();
             if (pos) {

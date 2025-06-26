@@ -61,7 +61,7 @@ class Entity {
                 const checkY = target.y + dy;
                 if (checkX < 0 || checkX >= CONFIG.GRID_WIDTH || 
                     checkY < 0 || checkY >= CONFIG.GRID_HEIGHT ||
-                    (window.game && window.game.gameState.isWall(checkX, checkY))) {
+                    (window.game?.gameState?.isWall?.(checkX, checkY))) {
                     wallCount++;
                 }
             }
@@ -210,9 +210,10 @@ class Player extends Entity {
         this.skillSystem = null;
         this.skillActions = null;
         this.skillEffects = null;
+        this.skillInitTimeoutId = null;
         
         // Initialize after a short delay to ensure classes are loaded
-        setTimeout(() => {
+        this.skillInitTimeoutId = setTimeout(() => {
             this.initializeSkillComponents();
         }, 100);
     }
@@ -221,18 +222,28 @@ class Player extends Entity {
      * Initialize skill system components after classes are loaded
      */
     initializeSkillComponents() {
+        // Clear any existing timeout
+        if (this.skillInitTimeoutId) {
+            clearTimeout(this.skillInitTimeoutId);
+            this.skillInitTimeoutId = null;
+        }
+        
         if (window.SkillSystem && window.SkillActions && window.SkillEffects) {
             try {
                 this.skillSystem = new window.SkillSystem(this);
                 this.skillActions = new window.SkillActions(this);
                 this.skillEffects = new window.SkillEffects(this);
-                console.log('Player skill system initialized successfully');
+                if (CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS) {
+                    console.log('Player skill system initialized successfully');
+                }
             } catch (error) {
                 console.error('Failed to initialize skill system:', error);
             }
         } else {
-            console.warn('Skill system classes not yet available, retrying in 500ms');
-            setTimeout(() => this.initializeSkillComponents(), 500);
+            if (CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS) {
+                console.warn('Skill system classes not yet available, retrying in 500ms');
+            }
+            this.skillInitTimeoutId = setTimeout(() => this.initializeSkillComponents(), 500);
         }
     }
     
@@ -482,6 +493,16 @@ class Enemy extends Entity {
         else if (this.y > targetY) dy = -1;
         
         return { dx, dy };
+    }
+    
+    /**
+     * Clean up resources when player is destroyed
+     */
+    cleanup() {
+        if (this.skillInitTimeoutId) {
+            clearTimeout(this.skillInitTimeoutId);
+            this.skillInitTimeoutId = null;
+        }
     }
 }
 

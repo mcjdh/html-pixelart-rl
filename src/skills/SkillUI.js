@@ -11,7 +11,9 @@ class SkillUI {
      */
     updateSkillUI(player) {
         if (!player || !player.skills) {
-            console.warn('SkillUI: No player or skills data available');
+            if (CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS) {
+                console.warn('SkillUI: No player or skills data available');
+            }
             return;
         }
         
@@ -31,7 +33,12 @@ class SkillUI {
      */
     updateSkillDisplay(skillName, player) {
         const skill = player.skills[skillName];
-        if (!skill) return;
+        if (!skill) {
+            if (CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS) {
+                console.warn(`SkillUI: No skill data for ${skillName}`);
+            }
+            return;
+        }
         
         // Calculate experience needed for next level
         let expPercent = 0;
@@ -97,11 +104,18 @@ class SkillUI {
         const barElement = document.getElementById(elementId);
         
         if (!barElement) {
-            console.warn(`SkillUI: Could not find progress bar element: ${elementId}`);
+            if (CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS) {
+                console.warn(`SkillUI: Could not find progress bar element: ${elementId}`);
+            }
             return;
         }
         
         barElement.style.width = `${expPercent}%`;
+        
+        // Debug info for testing
+        if (CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS && Math.random() < 0.01) { // 1% chance to avoid spam
+            console.log(`SkillUI: Updated ${skillName} bar to ${expPercent.toFixed(1)}%`);
+        }
         
         // Add glow effect when close to leveling
         if (expPercent > 80) {

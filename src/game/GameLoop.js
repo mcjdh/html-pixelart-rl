@@ -202,21 +202,15 @@ window.GameLoop = {
             expBar.style.width = `${expPercent}%`;
         }
         
-        // Update skill progress if skill system is available
-        if (player.skills) {
-            Object.keys(player.skills).forEach(skillName => {
-                const skill = player.skills[skillName];
-                const skillBar = document.getElementById(`skill-${skillName.toLowerCase()}-bar`);
-                if (skillBar) {
-                    const skillPercent = (skill.exp / skill.expToNext) * 100;
-                    skillBar.style.width = `${skillPercent}%`;
-                }
-                
-                const skillLevel = document.getElementById(`skill-${skillName.toLowerCase()}-level`);
-                if (skillLevel) {
-                    skillLevel.textContent = skill.level;
-                }
-            });
+        // Update skill UI using dedicated SkillUI system
+        if (player.skills && window.skillUI) {
+            window.skillUI.updateSkillUI(player);
+        } else if (CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS && player) {
+            // Debug info - only show occasionally to avoid spam
+            if (!this.skillUIDebugShown || Date.now() - this.skillUIDebugShown > 5000) {
+                console.log('GameLoop Debug: player.skills:', !!player.skills, 'window.skillUI:', !!window.skillUI);
+                this.skillUIDebugShown = Date.now();
+            }
         }
         
         // Update attack and defense display

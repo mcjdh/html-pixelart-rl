@@ -70,6 +70,16 @@ class SkillSystem {
                 `${skillName} skill increased to level ${newLevel}!`, 
                 'level-msg'
             );
+            
+            // Force immediate UI update after skill level up
+            if (window.game.updateUI) {
+                window.game.updateUI();
+            }
+            
+            // Additional direct skill UI update to ensure visual feedback
+            if (window.skillUI && this.player) {
+                window.skillUI.updateSkillUI(this.player);
+            }
         }
     }
     
