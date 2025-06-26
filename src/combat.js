@@ -55,6 +55,11 @@ class CombatSystem {
         const actualDamage = enemy.takeDamage(damage, player.level);
         this.gameState.stats.totalDamageDealt += actualDamage;
         
+        // Show floating damage text
+        if (window.game && window.game.narrativeUI) {
+            window.game.narrativeUI.showCombatNarrative(player, enemy, actualDamage, isCrit);
+        }
+        
         // Track damage dealt for combat skill progression
         player.trackAction('damageDealt', actualDamage);
         
@@ -123,6 +128,17 @@ class CombatSystem {
         const actualDamage = player.takeDamage(damage);
         this.gameState.stats.totalDamageTaken += actualDamage;
         
+        // Add screen shake when player takes damage
+        if (actualDamage > 0 && window.game && window.game.renderer) {
+            const shakeIntensity = Math.min(8, actualDamage * 0.5); // Scale with damage
+            window.game.renderer.addScreenShake(shakeIntensity, 200);
+        }
+        
+        // Show floating damage text on player
+        if (actualDamage > 0 && window.game && window.game.narrativeUI) {
+            window.game.narrativeUI.showCombatNarrative(enemy, player, actualDamage, false);
+        }
+        
         this.gameState.addMessage(
             `${enemy.type} deals ${Math.round(actualDamage)} damage!`, 
             'damage-msg'
@@ -142,6 +158,11 @@ class CombatSystem {
         
         // Track enemy kill for combat skill progression
         this.gameState.player.trackAction('enemiesKilled');
+        
+        // Add small screen shake on enemy death for impact
+        if (window.game && window.game.renderer) {
+            window.game.renderer.addScreenShake(3, 100);
+        }
         
         this.gameState.addMessage(
             `Defeated ${enemy.type}! (+${expGain} exp)`, 

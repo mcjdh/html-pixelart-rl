@@ -41,6 +41,12 @@ class GameState {
         
         // Victory flag to prevent actions after winning
         this.gameVictory = false;
+        
+        // Animation tracking for smooth movement
+        this.animations = {
+            entities: new Map(), // Map of entity ID to animation state
+            lastFrameTime: 0
+        };
     }
     
     init() {
@@ -782,5 +788,74 @@ class GameState {
             console.error('Failed to load save:', e);
             return false;
         }
+    }
+    
+    // Animation system for smooth movement
+    startEntityAnimation(entity, fromX, fromY, toX, toY, duration = 150) {
+        const id = entity === this.player ? 'player' : `enemy_${entity.id || Math.random()}`;
+        
+        this.animations.entities.set(id, {
+            entity: entity,
+            fromX: fromX,
+            fromY: fromY,
+            toX: toX,
+            toY: toY,
+            startTime: Date.now(),
+            duration: duration,
+            easing: 'easeOutQuad'
+        });
+    }
+    
+    updateAnimations(currentTime) {
+        const toRemove = [];
+        
+        for (const [id, anim] of this.animations.entities) {
+            const elapsed = currentTime - anim.startTime;
+            const progress = Math.min(elapsed / anim.duration, 1);
+            
+            // Calculate interpolated position
+            const t = this.getEasingValue(progress, anim.easing);
+            anim.entity.renderX = anim.fromX + (anim.toX - anim.fromX) * t;
+            anim.entity.renderY = anim.fromY + (anim.toY - anim.fromY) * t;
+            
+            // Mark tiles dirty for smooth animation
+            if (this.renderer) {
+                const prevTileX = Math.floor(anim.entity.renderX);
+                const prevTileY = Math.floor(anim.entity.renderY);
+                const currTileX = Math.floor(anim.entity.renderX);
+                const currTileY = Math.floor(anim.entity.renderY);
+                
+                this.renderer.markTileDirty(prevTileX, prevTileY);
+                this.renderer.markTileDirty(currTileX, currTileY);
+            }
+            
+            if (progress >= 1) {
+                // Animation complete
+                anim.entity.renderX = anim.toX;
+                anim.entity.renderY = anim.toY;
+                toRemove.push(id);
+            }
+        }
+        
+        // Clean up completed animations
+        toRemove.forEach(id => this.animations.entities.delete(id));
+        
+        return this.animations.entities.size > 0; // Return true if animations are still running
+    }
+    
+    getEasingValue(t, easing) {
+        switch (easing) {
+            case 'easeOutQuad':
+                return t * (2 - t);
+            case 'easeInOutQuad':
+                return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+            case 'linear':
+            default:
+                return t;
+        }
+    }
+    
+    hasActiveAnimations() {
+        return this.animations.entities.size > 0;
     }
 }

@@ -58,6 +58,9 @@ window.PlayerController = {
             const oldX = player.x;
             const oldY = player.y;
             
+            // Start smooth movement animation
+            gameInstance.gameState.startEntityAnimation(player, oldX, oldY, newX, newY);
+            
             player.moveTo(newX, newY);
             
             // Mark dirty regions for rendering optimization

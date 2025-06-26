@@ -2,6 +2,8 @@ class Entity {
     constructor(x, y) {
         this.x = x;
         this.y = y;
+        this.renderX = x; // For smooth animation
+        this.renderY = y; // For smooth animation
         this.facing = 'down'; // up, down, left, right
         this.statusEffects = [];
     }
@@ -333,6 +335,7 @@ class Player extends Entity {
 class Enemy extends Entity {
     constructor(x, y, type, floor = 1) {
         super(x, y);
+        this.id = `${type}_${x}_${y}_${Math.random().toString(36).substr(2, 9)}`; // Unique ID for animation tracking
         this.type = type;
         this.floor = floor;
         

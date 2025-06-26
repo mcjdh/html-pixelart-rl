@@ -21,8 +21,13 @@ class Renderer {
         // Camera tracking
         this.cameraX = 0;
         this.cameraY = 0;
+        this.targetCameraX = 0;
+        this.targetCameraY = 0;
         this.lastCameraX = null;
         this.lastCameraY = null;
+        this.cameraSmoothing = 0.25; // Higher = more responsive
+        this.lastPlayerGridX = null;
+        this.lastPlayerGridY = null;
         
         // Enable pixel art rendering
         this.ctx.imageSmoothingEnabled = false;
@@ -37,6 +42,13 @@ class Renderer {
         this.spriteCache = new Map();
         this.spriteCacheSize = 0;
         this.maxCacheSize = 100; // Limit memory usage
+        
+        // Screen shake effect
+        this.screenShake = {
+            intensity: 0,
+            duration: 0,
+            startTime: 0
+        };
     }
     
     // Sprite caching system for performance optimization
@@ -159,17 +171,17 @@ class Renderer {
         const oldCameraX = this.cameraX;
         const oldCameraY = this.cameraY;
         
-        // Center camera on player
-        this.cameraX = playerX - Math.floor(CONFIG.VIEWPORT_WIDTH / 2);
-        this.cameraY = playerY - Math.floor(CONFIG.VIEWPORT_HEIGHT / 2);
+        // Calculate target camera position (centered on player) - follow player directly
+        const targetCameraX = playerX - Math.floor(CONFIG.VIEWPORT_WIDTH / 2);
+        const targetCameraY = playerY - Math.floor(CONFIG.VIEWPORT_HEIGHT / 2);
         
-        // Clamp camera to map bounds
-        this.cameraX = Math.max(0, Math.min(CONFIG.GRID_WIDTH - CONFIG.VIEWPORT_WIDTH, this.cameraX));
-        this.cameraY = Math.max(0, Math.min(CONFIG.GRID_HEIGHT - CONFIG.VIEWPORT_HEIGHT, this.cameraY));
+        // Clamp to map bounds
+        this.cameraX = Math.max(0, Math.min(CONFIG.GRID_WIDTH - CONFIG.VIEWPORT_WIDTH, targetCameraX));
+        this.cameraY = Math.max(0, Math.min(CONFIG.GRID_HEIGHT - CONFIG.VIEWPORT_HEIGHT, targetCameraY));
         
-        // Efficiently mark only new regions as dirty when camera moves
-        if (oldCameraX !== this.cameraX || oldCameraY !== this.cameraY) {
-            this.markCameraMovementDirty(oldCameraX, oldCameraY);
+        // Only mark dirty if camera actually moved significantly
+        if (Math.abs(oldCameraX - this.cameraX) > 0.01 || Math.abs(oldCameraY - this.cameraY) > 0.01) {
+            this.markCameraMovementDirty(Math.floor(oldCameraX), Math.floor(oldCameraY));
         }
     }
     
@@ -249,11 +261,11 @@ class Renderer {
             return;
         }
 
-        // Render only the viewport area
-        const startX = this.cameraX;
-        const endX = Math.min(this.cameraX + CONFIG.VIEWPORT_WIDTH, CONFIG.GRID_WIDTH);
-        const startY = this.cameraY;
-        const endY = Math.min(this.cameraY + CONFIG.VIEWPORT_HEIGHT, CONFIG.GRID_HEIGHT);
+        // Render only the viewport area (ensure integer values for array indexing)
+        const startX = Math.floor(this.cameraX);
+        const endX = Math.min(Math.floor(this.cameraX) + CONFIG.VIEWPORT_WIDTH, CONFIG.GRID_WIDTH);
+        const startY = Math.floor(this.cameraY);
+        const endY = Math.min(Math.floor(this.cameraY) + CONFIG.VIEWPORT_HEIGHT, CONFIG.GRID_HEIGHT);
 
         // Optimization: Check if we need to render based on fog changes
         const gameState = window.game && window.game.gameState;
@@ -299,8 +311,8 @@ class Renderer {
     
     renderTile(map, fogOfWar, explored, x, y) {
         const tile = map[y][x];
-        const pixelX = (x - this.cameraX) * CONFIG.CELL_SIZE;
-        const pixelY = (y - this.cameraY) * CONFIG.CELL_SIZE;
+        const pixelX = (x - Math.floor(this.cameraX)) * CONFIG.CELL_SIZE;
+        const pixelY = (y - Math.floor(this.cameraY)) * CONFIG.CELL_SIZE;
         
         // Track animated tiles for continuous updates
         if (tile === 5) { // Crystal tiles need animation
@@ -434,8 +446,10 @@ class Renderer {
         }
         
         // Check if stairs are in viewport
-        if (x >= this.cameraX && x < this.cameraX + CONFIG.VIEWPORT_WIDTH &&
-            y >= this.cameraY && y < this.cameraY + CONFIG.VIEWPORT_HEIGHT &&
+        const camX = Math.floor(this.cameraX);
+        const camY = Math.floor(this.cameraY);
+        if (x >= camX && x < camX + CONFIG.VIEWPORT_WIDTH &&
+            y >= camY && y < camY + CONFIG.VIEWPORT_HEIGHT &&
             !fogOfWar[y][x]) {
             
             const pixelX = (x - this.cameraX) * CONFIG.CELL_SIZE;
@@ -457,8 +471,10 @@ class Renderer {
             }
             
             // Check if item is in viewport
-            if (item.x >= this.cameraX && item.x < this.cameraX + CONFIG.VIEWPORT_WIDTH &&
-                item.y >= this.cameraY && item.y < this.cameraY + CONFIG.VIEWPORT_HEIGHT &&
+            const camX = Math.floor(this.cameraX);
+            const camY = Math.floor(this.cameraY);
+            if (item.x >= camX && item.x < camX + CONFIG.VIEWPORT_WIDTH &&
+                item.y >= camY && item.y < camY + CONFIG.VIEWPORT_HEIGHT &&
                 !fogOfWar[item.y][item.x]) {
                 
                 const pixelX = (item.x - this.cameraX) * CONFIG.CELL_SIZE;
@@ -492,12 +508,18 @@ class Renderer {
             }
             
             // Check if enemy is in viewport
-            if (enemy.x >= this.cameraX && enemy.x < this.cameraX + CONFIG.VIEWPORT_WIDTH &&
-                enemy.y >= this.cameraY && enemy.y < this.cameraY + CONFIG.VIEWPORT_HEIGHT &&
+            const camX = Math.floor(this.cameraX);
+            const camY = Math.floor(this.cameraY);
+            if (enemy.x >= camX && enemy.x < camX + CONFIG.VIEWPORT_WIDTH &&
+                enemy.y >= camY && enemy.y < camY + CONFIG.VIEWPORT_HEIGHT &&
                 !fogOfWar[enemy.y][enemy.x]) {
                 
-                const pixelX = (enemy.x - this.cameraX) * CONFIG.CELL_SIZE;
-                const pixelY = (enemy.y - this.cameraY) * CONFIG.CELL_SIZE;
+                // Use renderX/renderY for smooth animation, fallback to x/y
+                const renderX = enemy.renderX !== undefined ? enemy.renderX : enemy.x;
+                const renderY = enemy.renderY !== undefined ? enemy.renderY : enemy.y;
+                
+                const pixelX = (renderX - this.cameraX) * CONFIG.CELL_SIZE;
+                const pixelY = (renderY - this.cameraY) * CONFIG.CELL_SIZE;
                 
                 const sprite = ENEMY_SPRITES[enemy.type];
                 if (sprite && typeof sprite === 'function') {
@@ -530,8 +552,12 @@ class Renderer {
             return;
         }
         
-        const x = (player.x - this.cameraX) * CONFIG.CELL_SIZE;
-        const y = (player.y - this.cameraY) * CONFIG.CELL_SIZE;
+        // Use renderX/renderY for smooth animation, fallback to x/y
+        const renderX = player.renderX !== undefined ? player.renderX : player.x;
+        const renderY = player.renderY !== undefined ? player.renderY : player.y;
+        
+        const x = (renderX - this.cameraX) * CONFIG.CELL_SIZE;
+        const y = (renderY - this.cameraY) * CONFIG.CELL_SIZE;
         
         // Draw player sprite with facing direction
         try {
@@ -635,6 +661,53 @@ class Renderer {
         this.ctx.strokeText(text, pixelX, pixelY);
         this.ctx.fillText(text, pixelX, pixelY);
     }
+    
+    // Screen shake effect methods
+    addScreenShake(intensity, duration) {
+        this.screenShake = {
+            intensity: intensity,
+            duration: duration,
+            startTime: Date.now()
+        };
+    }
+    
+    updateScreenShake() {
+        if (this.screenShake.duration <= 0) return { x: 0, y: 0 };
+        
+        const elapsed = Date.now() - this.screenShake.startTime;
+        const remaining = Math.max(0, this.screenShake.duration - elapsed);
+        
+        if (remaining === 0) {
+            this.screenShake.duration = 0;
+            return { x: 0, y: 0 };
+        }
+        
+        // Decay intensity over time
+        const progress = remaining / this.screenShake.duration;
+        const currentIntensity = this.screenShake.intensity * progress;
+        
+        // Random shake offset
+        const shakeX = (Math.random() - 0.5) * 2 * currentIntensity;
+        const shakeY = (Math.random() - 0.5) * 2 * currentIntensity;
+        
+        return { x: Math.round(shakeX), y: Math.round(shakeY) };
+    }
+    
+    // Apply screen shake to rendering context
+    applyScreenShake() {
+        const shake = this.updateScreenShake();
+        if (shake.x !== 0 || shake.y !== 0) {
+            this.ctx.save();
+            this.ctx.translate(shake.x, shake.y);
+        }
+        return shake;
+    }
+    
+    resetScreenShake(shake) {
+        if (shake.x !== 0 || shake.y !== 0) {
+            this.ctx.restore();
+        }
+    }
 }
 
 class ParticleSystem {
@@ -696,16 +769,31 @@ class ParticleSystem {
         const centerX = x * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
         const centerY = y * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
         
+        // Main explosion particles
         for (let i = 0; i < count; i++) {
-            const angle = (Math.PI * 2 * i) / count;
-            const speed = 2 + Math.random() * 2;
+            const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
+            const speed = 2 + Math.random() * 3;
+            this.addParticle(
+                centerX + (Math.random() - 0.5) * 4,
+                centerY + (Math.random() - 0.5) * 4,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed - 1, // Slight upward bias
+                color,
+                20 + Math.random() * 15
+            );
+        }
+        
+        // Add some smaller, faster particles for extra impact
+        for (let i = 0; i < count / 2; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 4 + Math.random() * 2;
             this.addParticle(
                 centerX,
                 centerY,
                 Math.cos(angle) * speed,
-                Math.sin(angle) * speed,
-                color,
-                20 + Math.random() * 10
+                Math.sin(angle) * speed - 2,
+                '#fff', // White sparks
+                10 + Math.random() * 5
             );
         }
     }

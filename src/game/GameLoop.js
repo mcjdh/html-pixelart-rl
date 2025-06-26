@@ -36,9 +36,16 @@ window.GameLoop = {
             return;
         }
         
-        // Update camera to follow player
+        // Update animations
+        const currentTime = Date.now();
+        const hasAnimations = gameInstance.gameState.updateAnimations(currentTime);
+        
+        // Update camera to follow player (use render position for smooth following)
         if (gameInstance.gameState.player) {
-            gameInstance.renderer.updateCamera(gameInstance.gameState.player.x, gameInstance.gameState.player.y);
+            const player = gameInstance.gameState.player;
+            const camX = player.renderX !== undefined ? player.renderX : player.x;
+            const camY = player.renderY !== undefined ? player.renderY : player.y;
+            gameInstance.renderer.updateCamera(camX, camY);
         }
         
         // Performance optimization: Check if we need full clear
@@ -52,6 +59,12 @@ window.GameLoop = {
             gameInstance.renderer.clearDirtyRegions();
         }
         
+        // Apply screen shake effect (check if method exists first)
+        let shake = { x: 0, y: 0 };
+        if (gameInstance.renderer.applyScreenShake) {
+            shake = gameInstance.renderer.applyScreenShake();
+        }
+        
         gameInstance.renderer.renderMap(gameInstance.gameState.map, gameInstance.gameState.fogOfWar, gameInstance.gameState.explored);
         gameInstance.renderer.renderStairs(
             gameInstance.gameState.stairsX, 
@@ -63,6 +76,11 @@ window.GameLoop = {
         
         if (gameInstance.gameState.player) {
             gameInstance.renderer.renderPlayer(gameInstance.gameState.player);
+        }
+        
+        // Reset screen shake transform (check if method exists first)
+        if (gameInstance.renderer.resetScreenShake) {
+            gameInstance.renderer.resetScreenShake(shake);
         }
         
         // Update particles

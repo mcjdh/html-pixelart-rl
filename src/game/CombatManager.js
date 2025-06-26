@@ -140,6 +140,9 @@ window.CombatManager = {
             const oldX = enemy.x;
             const oldY = enemy.y;
             
+            // Start smooth movement animation for enemy
+            gameInstance.gameState.startEntityAnimation(enemy, oldX, oldY, newX, newY, 120);
+            
             enemy.moveTo(newX, newY);
             
             // Mark dirty regions for rendering optimization
