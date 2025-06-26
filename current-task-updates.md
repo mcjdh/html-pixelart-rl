@@ -27,6 +27,29 @@
   - [x] Proper viewport bounds checking for floating text
   - [x] Container sizing to match canvas area
 
+- [x] **Performance Optimization Suite** (`src/gameState.js`, `src/renderer.js`, `src/game.js`, `src/config.js`) 
+  - [x] Fog of war caching - only update when player moves, massive CPU savings
+  - [x] Selective canvas clearing - only clear dirty regions instead of full screen
+  - [x] Enhanced viewport culling - optimized rendering for large maps
+  - [x] Particle system pooling - pre-allocated object pool with cleanup
+  - [x] Dirty rectangle tracking - smart render decisions for better frame rates
+  - [x] Configurable performance thresholds in CONFIG.RENDERING section
+
+- [x] **Game.js Modular Refactor** (`src/game/` folder, `index.html`)
+  - [x] Extracted ModalManager - modal dialog management and accessibility
+  - [x] Extracted ResourceManager - memory leak prevention with tracked listeners
+  - [x] Extracted InputManager - keyboard/touch input handling and mobile support  
+  - [x] Extracted GameLoop - rendering pipeline and UI updates
+  - [x] Extracted PlayerController - movement, interactions, auto-explore
+  - [x] Extracted CombatManager - combat processing, enemy AI, status effects
+  - [x] Created GameCore - main Game class with mixin composition pattern
+  - [x] Modular loader system - maintains vanilla JS compatibility 
+  - [x] Split 1900-line monolith into 7 focused modules (~150-300 lines each)
+  - [x] Zero breaking changes - all existing functionality preserved
+  - [x] Fixed startup crash - added missing ModalManager dependency  
+  - [x] Fully tested - game completable by players and auto mode
+  - [x] Clean removal of old game.js file and backup (modular integration complete)
+
 ---
 
 ## 🚀 Current Game State: Production Ready

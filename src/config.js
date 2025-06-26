@@ -566,6 +566,24 @@ const CONFIG = {
         SHOW_GRID_LINES: false
     },
     
+    // Rendering optimization settings
+    RENDERING: {
+        PARTICLES: {
+            POOL_MAX: 50,           // Maximum particles in pool
+            INITIAL_POOL_SIZE: 20,  // Initial pool allocation
+            CLEANUP_THRESHOLD: 100  // Clean up when pool exceeds this
+        },
+        
+        // Dirty rectangle optimization
+        DIRTY_RECT_THRESHOLD: 0.3,  // Use full clear if > 30% of viewport is dirty
+        
+        // Sprite caching settings
+        SPRITE_CACHE_SIZE: 100,     // Maximum cached sprites
+        
+        // Performance monitoring
+        PERFORMANCE_MONITORING: false
+    },
+
     // Core game features (only implemented features)
     FEATURES: {
         DIRECTIONAL_COMBAT: true,

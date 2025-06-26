@@ -909,7 +909,15 @@
     <script src="./src/core/CampaignSystem.js"></script>
     <script src="./src/ui/MenuSystem.js"></script>
     
-    <script src="./src/game.js"></script>
+    <!-- Modular Game System -->
+    <script src="./src/game/ModalManager.js"></script>
+    <script src="./src/game/ResourceManager.js"></script>
+    <script src="./src/game/InputManager.js"></script>
+    <script src="./src/game/GameLoop.js"></script>
+    <script src="./src/game/PlayerController.js"></script>
+    <script src="./src/game/CombatManager.js"></script>
+    <script src="./src/game/GameCore.js"></script>
+    <script src="./src/game/index.js"></script>
     
     <!-- Skills System (load after game but before auto) -->
     <script src="./src/skills/SkillSystem.js"></script>
@@ -955,17 +963,21 @@
         window.addEventListener('resize', scaleGameContainer);
         window.addEventListener('load', scaleGameContainer);
         
-        // Create and start game
-        window.game = new Game();
-        game.init();
-        
-        // Initialize auto system after game is ready
-        if (window.initAutoSystem) {
-            setTimeout(window.initAutoSystem, 300);
+        // Initialize modular game system
+        if (window.initializeGame) {
+            window.initializeGame();
+            
+            // Initialize auto system after game is ready
+            if (window.initAutoSystem) {
+                setTimeout(window.initAutoSystem, 300);
+            }
+            
+            // Scale again after game initialization
+            setTimeout(scaleGameContainer, 200);
+        } else {
+            console.error('Modular game system not loaded properly');
+            alert('Game failed to load. Please refresh the page.');
         }
-        
-        // Scale again after game initialization
-        setTimeout(scaleGameContainer, 200);
     </script>
 </body>
 </html>

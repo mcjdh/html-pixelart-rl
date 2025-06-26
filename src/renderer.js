@@ -82,6 +82,29 @@ class Renderer {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
     
+    // Selective clearing - only clear changed areas
+    clearDirtyRegions() {
+        if (!this.ctx || this.dirtyRegions.size === 0) {
+            return;
+        }
+        
+        this.ctx.fillStyle = '#222';
+        
+        // Clear only dirty tiles
+        for (const tileKey of this.dirtyRegions) {
+            const [x, y] = tileKey.split(',').map(Number);
+            
+            // Only clear if tile is in viewport
+            if (x >= this.cameraX && x < this.cameraX + CONFIG.VIEWPORT_WIDTH &&
+                y >= this.cameraY && y < this.cameraY + CONFIG.VIEWPORT_HEIGHT) {
+                
+                const pixelX = (x - this.cameraX) * CONFIG.CELL_SIZE;
+                const pixelY = (y - this.cameraY) * CONFIG.CELL_SIZE;
+                this.ctx.fillRect(pixelX, pixelY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+            }
+        }
+    }
+    
     // Optimized sprite rendering with caching
     renderCachedSprite(spriteKey, spriteFunction, x, y, size) {
         if (!spriteFunction || typeof spriteFunction !== 'function') {
@@ -193,7 +216,7 @@ class Renderer {
     markTileDirty(x, y) {
         this.dirtyRegions.add(`${x},${y}`);
     }
-     renderMap(map, fogOfWar, explored, forceFullRender = false) {
+    renderMap(map, fogOfWar, explored, forceFullRender = false) {
         if (!this.ctx || !map || !fogOfWar || !explored) {
             console.warn('Renderer: Missing required data for renderMap');
             return;
@@ -205,12 +228,29 @@ class Renderer {
         const startY = this.cameraY;
         const endY = Math.min(this.cameraY + CONFIG.VIEWPORT_HEIGHT, CONFIG.GRID_HEIGHT);
 
-        // Since we clear the canvas every frame, we need to render all visible tiles
-        // The dirty system is now used primarily for tracking changes and optimizations
-        // but we always render the full viewport to maintain visual consistency
-        for (let y = startY; y < endY; y++) {
-            for (let x = startX; x < endX; x++) {
-                if (y >= 0 && y < map.length && x >= 0 && x < map[y].length) {
+        // Optimization: Check if we need to render based on fog changes
+        const gameState = window.game && window.game.gameState;
+        const shouldFullRender = forceFullRender || !this.hasRenderedOnce || 
+                                (gameState && gameState.hasFogChanged && gameState.hasFogChanged()) ||
+                                this.dirtyRegions.size > CONFIG.VIEWPORT_WIDTH * CONFIG.VIEWPORT_HEIGHT * CONFIG.RENDERING.DIRTY_RECT_THRESHOLD;
+
+        if (shouldFullRender) {
+            // Full render for major changes
+            for (let y = startY; y < endY; y++) {
+                for (let x = startX; x < endX; x++) {
+                    if (y >= 0 && y < map.length && x >= 0 && x < map[y].length) {
+                        this.renderTile(map, fogOfWar, explored, x, y);
+                    }
+                }
+            }
+        } else {
+            // Selective render for minor changes
+            for (const tileKey of this.dirtyRegions) {
+                const [x, y] = tileKey.split(',').map(Number);
+                
+                // Only render if tile is in viewport
+                if (x >= startX && x < endX && y >= startY && y < endY &&
+                    y >= 0 && y < map.length && x >= 0 && x < map[y].length) {
                     this.renderTile(map, fogOfWar, explored, x, y);
                 }
             }
@@ -575,7 +615,24 @@ class ParticleSystem {
         this.renderer = renderer;
         this.particles = [];
         this.particlePool = [];
-        this.maxPoolSize = 100;
+        this.maxPoolSize = CONFIG.RENDERING.PARTICLES.POOL_MAX;
+        this.cleanupThreshold = CONFIG.RENDERING.PARTICLES.CLEANUP_THRESHOLD;
+        
+        // Pre-allocate initial pool for better performance
+        this.preAllocatePool(CONFIG.RENDERING.PARTICLES.INITIAL_POOL_SIZE);
+        
+        // Performance tracking
+        this.lastCleanup = Date.now();
+        this.cleanupInterval = 10000; // Clean up every 10 seconds
+    }
+    
+    preAllocatePool(size) {
+        for (let i = 0; i < size; i++) {
+            this.particlePool.push({
+                x: 0, y: 0, vx: 0, vy: 0,
+                color: '', lifetime: 0, maxLifetime: 0
+            });
+        }
     }
     
     addParticle(x, y, vx, vy, color, lifetime) {
@@ -618,7 +675,10 @@ class ParticleSystem {
     }
     
     update() {
-        for (let i = this.particles.length - 1; i >= 0; i--) {
+        // Batch particle updates for better performance
+        const deadParticles = [];
+        
+        for (let i = 0; i < this.particles.length; i++) {
             const p = this.particles[i];
             p.x += p.vx;
             p.y += p.vy;
@@ -631,12 +691,46 @@ class ParticleSystem {
                 this.renderer.renderParticle(p.x, p.y, p.color);
                 this.renderer.ctx.globalAlpha = 1;
             } else {
-                // Return to pool
-                if (this.particlePool.length < this.maxPoolSize) {
-                    this.particlePool.push(p);
-                }
-                this.particles.splice(i, 1);
+                deadParticles.push(i);
             }
         }
+        
+        // Remove dead particles and return to pool in batch
+        for (let i = deadParticles.length - 1; i >= 0; i--) {
+            const deadIndex = deadParticles[i];
+            const deadParticle = this.particles[deadIndex];
+            
+            // Return to pool if there's space
+            if (this.particlePool.length < this.maxPoolSize) {
+                this.particlePool.push(deadParticle);
+            }
+            
+            // Remove from active particles
+            this.particles.splice(deadIndex, 1);
+        }
+        
+        // Periodic cleanup to prevent memory bloat
+        this.periodicCleanup();
+    }
+    
+    periodicCleanup() {
+        const now = Date.now();
+        if (now - this.lastCleanup > this.cleanupInterval) {
+            // If pool is too large, trim it down
+            if (this.particlePool.length > this.cleanupThreshold) {
+                this.particlePool.length = this.maxPoolSize;
+            }
+            this.lastCleanup = now;
+        }
+    }
+    
+    clear() {
+        // Clear all particles and return them to pool
+        for (const particle of this.particles) {
+            if (this.particlePool.length < this.maxPoolSize) {
+                this.particlePool.push(particle);
+            }
+        }
+        this.particles.length = 0;
     }
 }

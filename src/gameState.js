@@ -321,6 +321,8 @@ class GameState {
         this.lastPlayerX = undefined;
         this.lastPlayerY = undefined;
         this.lastVisibleTiles = [];
+        this.fogStateChanged = false;
+        this.lastFogChecksum = null;
     }
     
     placeStairsAwayFromPlayer(mapData) {
@@ -369,8 +371,12 @@ class GameState {
         
         // Only update if player position changed or forced
         if (!forceUpdate && this.lastPlayerX === this.player.x && this.lastPlayerY === this.player.y) {
+            this.fogStateChanged = false;
             return;
         }
+        
+        // Mark that fog state will change
+        this.fogStateChanged = true;
         
         // Debug logging
         if (CONFIG.DEBUG?.SHOW_AUTO_EXPLORER_LOGS) {
@@ -442,6 +448,37 @@ class GameState {
         }
         
         this.lastVisibleTiles = newVisibleTiles;
+        
+        // Generate checksum for renderer optimization
+        this.generateFogChecksum();
+    }
+    
+    generateFogChecksum() {
+        // Only generate checksum for viewport area for performance
+        if (!this.renderer) {
+            this.lastFogChecksum = null;
+            return;
+        }
+        
+        const startX = this.renderer.cameraX || 0;
+        const endX = Math.min(startX + CONFIG.VIEWPORT_WIDTH, CONFIG.GRID_WIDTH);
+        const startY = this.renderer.cameraY || 0;
+        const endY = Math.min(startY + CONFIG.VIEWPORT_HEIGHT, CONFIG.GRID_HEIGHT);
+        
+        let checksum = 0;
+        for (let y = startY; y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
+                if (this.fogOfWar[y] && this.fogOfWar[y][x] !== undefined) {
+                    checksum = (checksum * 31 + (this.fogOfWar[y][x] ? 1 : 0)) & 0x7FFFFFFF;
+                }
+            }
+        }
+        
+        this.lastFogChecksum = checksum;
+    }
+    
+    hasFogChanged() {
+        return this.fogStateChanged;
     }
     
     calculateVisibleTiles(centerX, centerY, viewRadius, viewRadiusSquared) {
