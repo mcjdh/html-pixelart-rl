@@ -521,14 +521,21 @@ const CONFIG = {
         STROKE_WIDTH: 1,
         DAMAGE_TEXT: { SIZE: 12, STROKE: 2 },
         
-        // Particle system (essential values only)
+        // Particle system (merged settings)
         PARTICLES: { 
             SIZE: 2, 
-            POOL_MAX: 100, 
+            POOL_MAX: 50,           // Maximum particles in pool (was 100, using optimized value)
+            INITIAL_POOL_SIZE: 20,  // Initial pool allocation
+            CLEANUP_THRESHOLD: 100, // Clean up when pool exceeds this
             EXPLOSION_COUNT: 10,
             LIFETIME: 20,
             GRAVITY: 0.2 
-        }
+        },
+        
+        // Performance optimization settings
+        DIRTY_RECT_THRESHOLD: 0.3,  // Use full clear if > 30% of viewport is dirty
+        SPRITE_CACHE_SIZE: 100,     // Maximum cached sprites
+        PERFORMANCE_MONITORING: false
     },
     
     MAP: {
@@ -565,24 +572,6 @@ const CONFIG = {
         SHOW_ENEMY_VISION: false,
         SHOW_PATHFINDING: false,
         SHOW_GRID_LINES: false
-    },
-    
-    // Rendering optimization settings
-    RENDERING: {
-        PARTICLES: {
-            POOL_MAX: 50,           // Maximum particles in pool
-            INITIAL_POOL_SIZE: 20,  // Initial pool allocation
-            CLEANUP_THRESHOLD: 100  // Clean up when pool exceeds this
-        },
-        
-        // Dirty rectangle optimization
-        DIRTY_RECT_THRESHOLD: 0.3,  // Use full clear if > 30% of viewport is dirty
-        
-        // Sprite caching settings
-        SPRITE_CACHE_SIZE: 100,     // Maximum cached sprites
-        
-        // Performance monitoring
-        PERFORMANCE_MONITORING: false
     },
 
     // Core game features (only implemented features)

@@ -37,15 +37,15 @@ const SPRITE_CATEGORIES = {
     enemies: {
         goblin: goblinSprites,
         skeleton: skeletonSprites,
-        skeletonLord: window.skeletonLordSprites,
+        skeletonLord: window.skeletonLordSprites || skeletonSprites,
         wolf: wolfSprites,
         treant: treantSprites,
-        sporeling: window.sporelingSprites,
-        fungalKnight: window.fungalKnightSprites,
-        sporeMother: window.sporeMotherSprites,
-        stardustSprite: window.stardustSpriteSprites,
-        cosmicGuardian: window.cosmicGuardianSprites,
-        stellarArchitect: window.stellarArchitectSprites
+        sporeling: window.sporelingSprites || goblinSprites,
+        fungalKnight: window.fungalKnightSprites || skeletonSprites,
+        sporeMother: window.sporeMotherSprites || skeletonSprites,
+        stardustSprite: window.stardustSpriteSprites || goblinSprites,
+        cosmicGuardian: window.cosmicGuardianSprites || skeletonSprites,
+        stellarArchitect: window.stellarArchitectSprites || skeletonSprites
     },
     items: {
         consumables: consumableSprites,

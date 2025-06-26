@@ -89,11 +89,25 @@ class GameState {
             console.error(`Failed to load area: ${areaId}`);
             // Fallback to caverns
             this.currentArea = this.areaManager.loadArea('caverns');
+            
+            // If caverns also fails, create a minimal fallback area
+            if (!this.currentArea) {
+                console.error('Critical: caverns fallback also failed, creating minimal area');
+                this.currentArea = {
+                    id: 'emergency',
+                    name: 'Emergency Area',
+                    floors: 3,
+                    enemies: ['goblin'],
+                    description: 'Fallback area due to loading failure'
+                };
+            }
         }
         
         // Reset floor to 1 when entering new area
         this.floor = 1;
-        this.areaManager.updateAreaProgress(areaId, this.floor);
+        if (this.areaManager && this.areaManager.updateAreaProgress) {
+            this.areaManager.updateAreaProgress(areaId, this.floor);
+        }
     }
     
     generateFloor() {
