@@ -13,6 +13,13 @@ window.GameLoop = {
             lastFrameTime: performance.now(),
             frameCount: 0
         };
+        
+        // Track skill UI state to prevent unnecessary updates
+        gameInstance.skillUICache = {
+            lastUpdate: 0,
+            lastSkillLevels: {},
+            updateInterval: 500 // Update every 500ms max
+        };
     },
 
     /**
@@ -220,9 +227,9 @@ window.GameLoop = {
             expBar.style.width = `${expPercent}%`;
         }
         
-        // Update skill UI using dedicated SkillUI system
+        // Update skill UI using dedicated SkillUI system (with caching to prevent lag)
         if (player.skills && window.skillUI) {
-            window.skillUI.updateSkillUI(player);
+            this.updateSkillUIOptimized(gameInstance, player);
         } else if (CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS && player) {
             // Debug info - only show occasionally to avoid spam
             if (!this.skillUIDebugShown || Date.now() - this.skillUIDebugShown > 5000) {
@@ -240,6 +247,40 @@ window.GameLoop = {
         
         // Update message log display
         this.updateMessageLog(gameInstance);
+    },
+
+    /**
+     * Optimized skill UI update that only updates when skills actually change
+     */
+    updateSkillUIOptimized(gameInstance, player) {
+        const now = Date.now();
+        const cache = gameInstance.skillUICache;
+        
+        // Check if enough time has passed since last update
+        if (now - cache.lastUpdate < cache.updateInterval) {
+            return;
+        }
+        
+        // Check if any skill levels have actually changed
+        let needsUpdate = false;
+        const skillNames = ['combat', 'vitality', 'exploration', 'fortune'];
+        
+        for (const skillName of skillNames) {
+            const skill = player.skills[skillName];
+            if (!skill) continue;
+            
+            const cacheKey = `${skillName}_${skill.level}_${Math.floor(skill.exp / 100)}`;
+            if (cache.lastSkillLevels[skillName] !== cacheKey) {
+                cache.lastSkillLevels[skillName] = cacheKey;
+                needsUpdate = true;
+            }
+        }
+        
+        // Only update if skills have changed
+        if (needsUpdate) {
+            window.skillUI.updateSkillUI(player);
+            cache.lastUpdate = now;
+        }
     },
 
     /**

@@ -315,7 +315,12 @@ class Renderer {
         const pixelY = (y - Math.floor(this.cameraY)) * CONFIG.CELL_SIZE;
         
         // Track animated tiles for continuous updates
-        if (tile === 5) { // Crystal tiles need animation
+        if (tile === 5 || // Crystal tiles need animation
+            tile === 6 || // Flower tiles (trees/bushes in forest)
+            tile === 8 || // Bush tiles
+            tile === 3 || // Decoration tiles (mushrooms, spores, etc.)
+            tile === '#' || tile === 1 || // Walls (sparkles, stars)
+            tile === 0 || tile === '.') { // Floors (cosmic dust, spores)
             this.animatedTiles.add(`${x},${y}`);
         }
         

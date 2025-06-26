@@ -6,24 +6,42 @@ const forestSprites = {
         ctx.fillStyle = '#90EE90';
         ctx.fillRect(x, y, size, size);
         
-        // Tree trunk (brown)
+        // Animation: Gentle swaying
+        const time = Date.now() * 0.002; // Slow sway
+        const seed = (x * 7 + y * 11) * 0.01; // Position-based offset
+        const sway = Math.sin(time + seed) * 0.5; // -0.5 to 0.5
+        const swayOffset = Math.round(sway * unit); // Convert to pixel offset
+        
+        // Tree trunk (brown) - static
         ctx.fillStyle = '#654321';
         ctx.fillRect(x + 6*unit, y + 10*unit, 4*unit, 6*unit);
         
-        // Tree leaves (multiple layers for depth)
+        // Tree leaves (multiple layers for depth) - with sway
         ctx.fillStyle = '#228B22';
         // Bottom layer
-        ctx.fillRect(x + 2*unit, y + 8*unit, 12*unit, 4*unit);
+        ctx.fillRect(x + 2*unit + swayOffset, y + 8*unit, 12*unit, 4*unit);
         // Middle layer
-        ctx.fillRect(x + 3*unit, y + 5*unit, 10*unit, 4*unit);
+        ctx.fillRect(x + 3*unit + swayOffset, y + 5*unit, 10*unit, 4*unit);
         // Top layer
-        ctx.fillRect(x + 5*unit, y + 2*unit, 6*unit, 4*unit);
+        ctx.fillRect(x + 5*unit + swayOffset, y + 2*unit, 6*unit, 4*unit);
         
-        // Darker green for depth
+        // Darker green for depth - with sway
         ctx.fillStyle = '#006400';
-        ctx.fillRect(x + 3*unit, y + 9*unit, 2*unit, 2*unit);
-        ctx.fillRect(x + 11*unit, y + 9*unit, 2*unit, 2*unit);
-        ctx.fillRect(x + 6*unit, y + 3*unit, 2*unit, 1*unit);
+        ctx.fillRect(x + 3*unit + swayOffset, y + 9*unit, 2*unit, 2*unit);
+        ctx.fillRect(x + 11*unit + swayOffset, y + 9*unit, 2*unit, 2*unit);
+        ctx.fillRect(x + 6*unit + swayOffset, y + 3*unit, 2*unit, 1*unit);
+        
+        // Occasional falling leaves
+        const leafTime = Date.now() * 0.001;
+        const leafCycle = (leafTime + seed * 10) % 8; // 8-second cycle
+        if (leafCycle > 6 && leafCycle < 7) {
+            const fallProgress = (leafCycle - 6) * 16; // 0 to 16
+            const leafY = y + 8*unit + fallProgress*unit;
+            if (leafY < y + 15*unit) {
+                ctx.fillStyle = 'rgba(255, 140, 0, 0.7)'; // Orange autumn leaf
+                ctx.fillRect(x + (8 + Math.sin(leafTime * 5 + seed) * 2)*unit, leafY, 1*unit, 1*unit);
+            }
+        }
     },
     
     flower: function(ctx, x, y, size) {
@@ -86,17 +104,32 @@ const forestSprites = {
         ctx.fillStyle = '#90EE90';
         ctx.fillRect(x, y, size, size);
         
-        // Bush body
-        ctx.fillStyle = '#228B22';
-        ctx.fillRect(x + 3*unit, y + 9*unit, 10*unit, 6*unit);
-        ctx.fillRect(x + 4*unit, y + 8*unit, 8*unit, 1*unit);
-        ctx.fillRect(x + 4*unit, y + 15*unit, 8*unit, 1*unit);
+        // Animation: Subtle rustling
+        const time = Date.now() * 0.003; // Slightly faster than trees
+        const seed = (x * 13 + y * 7) * 0.01; // Different seed pattern
+        const rustle = Math.sin(time + seed) * 0.3; // Smaller movement than trees
+        const rustleOffset = Math.round(rustle * unit);
         
-        // Darker areas for depth
+        // Bush body - with rustle
+        ctx.fillStyle = '#228B22';
+        ctx.fillRect(x + 3*unit + rustleOffset, y + 9*unit, 10*unit, 6*unit);
+        ctx.fillRect(x + 4*unit + rustleOffset, y + 8*unit, 8*unit, 1*unit);
+        ctx.fillRect(x + 4*unit + rustleOffset, y + 15*unit, 8*unit, 1*unit);
+        
+        // Darker areas for depth - with rustle
         ctx.fillStyle = '#006400';
-        ctx.fillRect(x + 4*unit, y + 11*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 10*unit, y + 10*unit, 2*unit, 3*unit);
-        ctx.fillRect(x + 7*unit, y + 12*unit, 2*unit, 2*unit);
+        ctx.fillRect(x + 4*unit + rustleOffset, y + 11*unit, 2*unit, 3*unit);
+        ctx.fillRect(x + 10*unit + rustleOffset, y + 10*unit, 2*unit, 3*unit);
+        ctx.fillRect(x + 7*unit + rustleOffset, y + 12*unit, 2*unit, 2*unit);
+        
+        // Occasional berries appearing
+        const berryTime = Date.now() * 0.0005;
+        const berryCycle = (berryTime + seed * 20) % 12; // 12-second cycle
+        if (berryCycle > 8) {
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.8)'; // Red berries
+            ctx.fillRect(x + 5*unit + rustleOffset, y + 10*unit, 1*unit, 1*unit);
+            ctx.fillRect(x + 9*unit + rustleOffset, y + 12*unit, 1*unit, 1*unit);
+        }
         
         // Small berries
         ctx.fillStyle = '#DC143C';

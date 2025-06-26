@@ -47,11 +47,34 @@ const stellarSprites = {
             ctx.fillRect(x + unit * 8, y + unit * 2, unit, unit * 12);
         }
         
-        // Star field dots
-        ctx.fillStyle = '#5a5a7a';
+        // Animated star field dots
+        const time = Date.now() * 0.003;
+        const seed1 = (x * 13 + y * 7) * 0.01;
+        const seed2 = (x * 19 + y * 11) * 0.01;
+        const seed3 = (x * 23 + y * 17) * 0.01;
+        
+        const twinkle1 = Math.sin(time + seed1) * 0.3 + 0.7;
+        const twinkle2 = Math.sin(time * 1.3 + seed2) * 0.3 + 0.7;
+        const twinkle3 = Math.sin(time * 0.7 + seed3) * 0.3 + 0.7;
+        
+        // Twinkling stars
+        ctx.fillStyle = `rgba(90, 90, 122, ${twinkle1})`;
         ctx.fillRect(x + unit * 4, y + unit * 4, unit, unit);
+        
+        ctx.fillStyle = `rgba(90, 90, 122, ${twinkle2})`;
         ctx.fillRect(x + unit * 12, y + unit * 7, unit, unit);
+        
+        ctx.fillStyle = `rgba(90, 90, 122, ${twinkle3})`;
         ctx.fillRect(x + unit * 8, y + unit * 11, unit, unit);
+        
+        // Cosmic dust particles (very subtle)
+        const dustTime = Date.now() * 0.0005;
+        for (let i = 0; i < 2; i++) {
+            const dustX = (dustTime * (i + 1) * 3) % 16;
+            const dustY = 8 + Math.sin(dustTime * (i + 1) + seed1) * 4;
+            ctx.fillStyle = 'rgba(100, 100, 150, 0.2)';
+            ctx.fillRect(x + dustX*unit, y + dustY*unit, unit, unit);
+        }
     },
     
     starChart: function(ctx, x, y, size) {
