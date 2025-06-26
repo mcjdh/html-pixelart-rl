@@ -229,37 +229,276 @@ class Game {
         }
     }
 
-    // Placeholder methods for systems not yet modularized
+    // Game state management methods
 
     handleGameOver() {
-        // Will be implemented in StateManager
-        console.warn('handleGameOver not yet implemented in modular system');
+        if (this.gameOver) return; // Prevent multiple triggers
+        
+        this.gameOver = true;
+        const finalScore = this.calculateFinalScore();
+        
+        // Emit game over event
+        this.events.emit('game.over', {
+            player: this.gameState.player,
+            floor: this.gameState.floor,
+            score: finalScore
+        });
+        
+        this.modal.show({
+            title: 'GAME OVER',
+            message: `Your adventure ends on floor ${this.gameState.floor}.\n\nFinal Score: ${finalScore}`,
+            buttons: [
+                {
+                    text: 'New Game',
+                    primary: true,
+                    callback: () => {
+                        this.modal.hide();
+                        window.location.reload();
+                    }
+                },
+                {
+                    text: 'View Stats',
+                    callback: () => {
+                        this.showFinalStats();
+                    }
+                }
+            ]
+        });
     }
 
     handleVictory(victoryData) {
-        // Will be implemented in StateManager
-        console.warn('handleVictory not yet implemented in modular system');
+        if (this.gameVictory) return; // Prevent multiple triggers
+        
+        this.gameVictory = true;
+        const finalScore = this.calculateFinalScore();
+        
+        // Emit victory event
+        this.events.emit('game.victory', {
+            player: this.gameState.player,
+            victoryData: victoryData,
+            score: finalScore
+        });
+        
+        this.modal.show({
+            title: 'VICTORY!',
+            message: `Congratulations! You have completed the campaign!\n\nFinal Score: ${finalScore}\n\nYou have proven yourself a true hero of the realm.`,
+            buttons: [
+                {
+                    text: 'New Game',
+                    primary: true,
+                    callback: () => {
+                        this.modal.hide();
+                        window.location.reload();
+                    }
+                },
+                {
+                    text: 'View Stats',
+                    callback: () => {
+                        this.showFinalStats();
+                    }
+                }
+            ]
+        });
     }
 
     calculateFinalScore() {
-        // Will be implemented in StateManager
-        console.warn('calculateFinalScore not yet implemented in modular system');
-        return 0;
+        if (!this.gameState || !this.gameState.player) return 0;
+        
+        const player = this.gameState.player;
+        const gameTime = Date.now() - this.gameStartTime;
+        const timeBonus = Math.max(0, 100000 - Math.floor(gameTime / 1000)); // Time bonus
+        
+        const score = 
+            (this.gameState.floor * 1000) +           // 1000 per floor completed
+            (player.gold) +                           // Gold collected
+            (player.level * 500) +                    // 500 per level
+            (player.enemiesKilled * 50) +             // 50 per enemy killed
+            (player.hp > 0 ? player.hp * 10 : 0) +   // 10 per remaining HP
+            timeBonus;                                // Time bonus
+        
+        return Math.max(0, score);
     }
 
     setupDebugCommands() {
-        // Will be implemented in DebugManager
-        console.warn('setupDebugCommands not yet implemented in modular system');
+        if (!CONFIG.DEBUG.ENABLE_CONSOLE_COMMANDS) return;
+        
+        const commands = {
+            help: () => {
+                console.log('Available debug commands:');
+                console.log('debugCommands.giveGold(amount) - Add gold');
+                console.log('debugCommands.teleport(x, y) - Teleport player');
+                console.log('debugCommands.godMode() - Toggle invincibility');
+                console.log('debugCommands.revealMap() - Remove fog of war');
+                console.log('debugCommands.spawnEnemy(type) - Spawn enemy');
+                console.log('debugCommands.levelUp() - Gain a level');
+                console.log('debugCommands.nextFloor() - Go to next floor');
+                console.log('debugCommands.toggleDebugRender() - Toggle debug overlays');
+            },
+            
+            giveGold: (amount = CONFIG.DEBUG.GOLD_AMOUNT) => {
+                if (this.gameState && this.gameState.player) {
+                    this.gameState.player.gold += amount;
+                    this.updateUI();
+                    console.log(`Added ${amount} gold`);
+                }
+            },
+            
+            teleport: (x, y) => {
+                if (this.gameState && this.gameState.player && typeof x === 'number' && typeof y === 'number') {
+                    this.gameState.player.x = x;
+                    this.gameState.player.y = y;
+                    this.gameState.updateFogOfWar();
+                    this.render();
+                    console.log(`Teleported to (${x}, ${y})`);
+                }
+            },
+            
+            godMode: () => {
+                if (this.gameState && this.gameState.player) {
+                    this.gameState.player.godMode = !this.gameState.player.godMode;
+                    console.log('God mode:', this.gameState.player.godMode ? 'ON' : 'OFF');
+                }
+            },
+            
+            revealMap: () => {
+                if (this.gameState) {
+                    this.gameState.revealAllTiles();
+                    this.render();
+                    console.log('Map revealed');
+                }
+            },
+            
+            spawnEnemy: (type = 'goblin') => {
+                if (this.gameState) {
+                    const player = this.gameState.player;
+                    const enemy = this.gameState.spawnEnemyNear(player.x, player.y, type);
+                    if (enemy) {
+                        this.render();
+                        console.log(`Spawned ${type} at (${enemy.x}, ${enemy.y})`);
+                    }
+                }
+            },
+            
+            levelUp: () => {
+                if (this.gameState && this.gameState.player) {
+                    this.gameState.player.gainExperience(this.gameState.player.expToNext);
+                    this.updateUI();
+                    console.log('Level up!');
+                }
+            },
+            
+            nextFloor: () => {
+                if (this.gameState) {
+                    this.gameState.goToNextFloor();
+                    console.log(`Advanced to floor ${this.gameState.floor}`);
+                }
+            },
+            
+            toggleDebugRender: () => {
+                CONFIG.DEBUG.SHOW_ENEMY_VISION = !CONFIG.DEBUG.SHOW_ENEMY_VISION;
+                CONFIG.DEBUG.SHOW_PATHFINDING = !CONFIG.DEBUG.SHOW_PATHFINDING;
+                this.render();
+                console.log('Debug overlays:', CONFIG.DEBUG.SHOW_ENEMY_VISION ? 'ON' : 'OFF');
+            }
+        };
+        
+        window.debugCommands = commands;
+        console.log('Debug commands loaded. Type debugCommands.help() for help.');
     }
 
     showLoreInConsole() {
-        // Will be implemented in StateManager
-        console.warn('showLoreInConsole not yet implemented in modular system');
+        if (!this.gameState || !this.gameState.areaManager) return;
+        
+        const currentArea = this.gameState.areaManager.currentArea;
+        if (!currentArea || !currentArea.lore) {
+            this.gameState.addMessage('No lore available for this area.', 'system-msg');
+            return;
+        }
+        
+        this.gameState.addMessage('=== AREA LORE ===', 'lore-msg');
+        this.gameState.addMessage(currentArea.name + ':', 'lore-msg');
+        
+        if (typeof currentArea.lore === 'string') {
+            this.gameState.addMessage(currentArea.lore, 'lore-msg');
+        } else if (Array.isArray(currentArea.lore)) {
+            currentArea.lore.forEach(line => {
+                this.gameState.addMessage(line, 'lore-msg');
+            });
+        }
+        
+        this.gameState.addMessage('================', 'lore-msg');
     }
 
     showHelpModal() {
-        // Will be implemented in StateManager  
-        console.warn('showHelpModal not yet implemented in modular system');
+        this.modal.show({
+            title: 'HELP',
+            message: `MOVEMENT:
+Arrow Keys / WASD - Move player
+Diagonal movement supported
+
+COMBAT:
+Move into enemies to attack
+Energy system limits actions
+Status effects may apply
+
+EXPLORATION:
+L - View area lore
+Stairs advance to next floor
+Collect gold and items
+
+AUTO-EXPLORE:
+Type in console:
+autoSystem.startFloor() - AI explores current floor
+autoSystem.startSpeedRun() - Complete campaign`,
+            buttons: [
+                {
+                    text: 'Close',
+                    primary: true,
+                    callback: () => this.modal.hide()
+                }
+            ]
+        });
+    }
+
+    showFinalStats() {
+        if (!this.gameState || !this.gameState.player) return;
+        
+        const player = this.gameState.player;
+        const gameTime = Math.floor((Date.now() - this.gameStartTime) / 1000);
+        const minutes = Math.floor(gameTime / 60);
+        const seconds = gameTime % 60;
+        
+        const stats = `FINAL STATISTICS:
+
+Floor Reached: ${this.gameState.floor}
+Player Level: ${player.level}
+Enemies Defeated: ${player.enemiesKilled || 0}
+Gold Collected: ${player.gold}
+Time Played: ${minutes}m ${seconds}s
+Final Score: ${this.calculateFinalScore()}
+
+HP: ${player.hp}/${player.maxHp}
+Attack: ${player.attack}
+Defense: ${player.defense}`;
+        
+        this.modal.show({
+            title: 'FINAL STATISTICS',
+            message: stats,
+            buttons: [
+                {
+                    text: 'New Game',
+                    primary: true,
+                    callback: () => {
+                        this.modal.hide();
+                        window.location.reload();
+                    }
+                },
+                {
+                    text: 'Close',
+                    callback: () => this.modal.hide()
+                }
+            ]
+        });
     }
 
     // Public methods for UI buttons
